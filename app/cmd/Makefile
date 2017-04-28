@@ -1,0 +1,27 @@
+SOURCENAME=main.go
+BINARYNAME_X11=erago_amd64
+BINARYNAME_WIN=erago_amd64.exe
+
+GOBUILD=go build
+GOOPTION=-ldflags="-s -w" -gcflags="-trimpath=$(GOPATH)" -asmflags="-trimpath=$(GOPATH)"
+
+X11ENV=GOOS=linux GOARCH=amd64 GOROOT_FINAL="GOROOT"
+WINENV=GOOS=windows GOARCH=386 GOROOT_FINAL="GOROOT"
+
+UPX=upx
+UPX_OPT=-1
+
+
+all: $(BINARYNAME_X11) $(BINARYNAME_WIN)
+
+linux: $(SOURCENAME)
+	$(X11ENV) $(GOBUILD) $(GOOPTION) -o $(BINARYNAME_X11)
+	$(UPX) $(UPX_OPT) $(BINARYNAME_X11)
+
+windows: $(SOURCENAME)
+	$(WINENV) $(GOBUILD) $(GOOPTION) -o $(BINARYNAME_WIN)
+	$(UPX) $(UPX_OPT) $(BINARYNAME_WIN)
+
+.PHONY: clean
+clean:
+	$(RM) $(BINARYNAME_X11) $(BINARYNAME_WIN)

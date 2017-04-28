@@ -1,0 +1,61 @@
+; *
+; このファイルはキャラクターのcsvを読み込む際の、
+; 1列目の表記ゆれを吸収するためのものです。
+; 
+; 例えば、chara00.csvとして
+;
+;		番号,0
+;		名前,あなた
+;		base,体力,3000
+;
+;	という内容のファイルがあったとして、1行目、1列目の"番号"
+; というフィールド名は、システムからは解釈されません。
+; これは、システム内では"ID"として扱われているため、通常は"ID"というフィールド名を
+; 検索するためです。同様に、"名前"はシステム内では、"Name"です。
+;
+; この表記の違いを吸収するために、別名を用意してあげます。
+; 上の例では、番号->IDというような別名を用意してあげることで、
+; システムから見た、"番号"は"ID"であると解釈してくれます。
+;
+; これによって、基礎->baseという別名を用意すれば、上の例での"base,体力,3000"は
+; "基礎,体力,3000"と書くことができます。
+;
+; *
+; 書式：
+;		別名、元の名前
+
+番号,ID
+名前,Name
+呼び名, CallName,
+あだ名, NickName,
+主人の呼び方, MasterName,
+
+能力,       Abl,
+経験,       Exp,
+快感,       Ex,
+基礎,       Base,
+文字,       CStr,
+刻印,       Mark,
+珠,			    Juel,
+フラグ,     CFlag,
+装着物,     Equip,
+素質,       Talent,
+パラメータ, Param,
+相性,       Relation,
+ソース,     Source,
+汚れ,       Stain,
+
+ABL,        Abl,
+EXP,        Exp,
+EX,         Ex,
+BASE,       Base,
+CSTR,       CStr,
+MARK,       Mark,
+JUEL,       Juel,
+FLAG,       CFlag,
+EQUIP,      Equip,
+TALENT,     Talent,
+PARAM,      Param,
+RELATION,   Relation,
+SOURCE,     Source,
+STAIN,      Stain,

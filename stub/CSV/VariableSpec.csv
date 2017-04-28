@@ -1,0 +1,34 @@
+;; このファイルでは、ユーザー定義の変数を記述します。
+;;
+;; ここに定義された変数は、システム内にデータ領域が確保されます。	
+;; 基本的に全ての変数は１次元以上の配列です。
+;; 
+;;
+;; 各列の設定の仕方:
+;		Scope, DataType, VarName, FileName, Size, (Size2...)
+;
+;; 以下、データ定義
+Chara, Int, Base,    Base.csv, 
+; Chara, Int, Abl,     Abl.csv, 100
+Chara, Int, Equip,   Equip.csv, 
+Chara, Int, TEquip,  Tequip.csv, 
+Chara, Int, CFlag,   Cflag.csv, 3500
+; Chara, Int, Juel,    Juel.csv, 200
+; Chara, Int, Mark,    Mark.csv, 15
+; Chara, Int, Ex,      Ex.csv, 
+Chara, Int, NowEx,   NowEx.csv, 
+; Chara, Int, Exp,     Exp.csv, 100
+; Chara, Int, Param,   Param.csv, 200
+; Chara, Int, Source,  Source.csv, 45
+Chara, Int, Stain,   Stain.csv, 
+; Chara, Int, Talent,  Talent.csv, 1000
+Chara, Int, Relation,        , 1000
+Chara, Str, CStr,    CStr.csv, 
+
+System, Str, , Str.csv, 
+System, Int, Number, Number.csv, 
+
+; no used data are ignored
+; Share, Int, , Global.csv, 1000
+; Share, String, , ClobalS.csv, 1000
+

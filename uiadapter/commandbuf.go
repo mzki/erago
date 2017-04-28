@@ -1,0 +1,158 @@
+package uiadapter
+
+import (
+	"errors"
+	"sync"
+
+	"local/erago/uiadapter/macro"
+)
+
+// Error notifying XXXBuffer is Closed.
+var ErrorPipelineClosed = errors.New("pipeline is closed")
+
+// commandBuffer is buffer for input string command.
+type commandBuffer struct {
+	cmdCh    chan string
+	commands []string
+
+	closed bool
+
+	mu     *sync.Mutex
+	cond   *sync.Cond
+	macroQ *macroQ
+}
+
+func newCommandBuffer() *commandBuffer {
+	mu := new(sync.Mutex)
+	return &commandBuffer{
+		commands: make([]string, 0, 1),
+		cmdCh:    make(chan string, 1),
+		mu:       mu,
+		cond:     sync.NewCond(mu),
+		macroQ:   newMacroQ(),
+	}
+}
+
+// not zero means macro is running.
+func (cbuf commandBuffer) MacroSize() int {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	return cbuf.macroQ.Size()
+}
+
+func (cbuf commandBuffer) StopMacro() {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	cbuf.macroQ.Clear()
+}
+
+// send macro command and starts it.
+func (cbuf commandBuffer) StartMacro(m *macro.Macro) {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	cbuf.macroQ.SetMacro(m)
+	cbuf.cond.Signal()
+}
+
+// Close this buffer.
+func (cbuf *commandBuffer) Close() {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+
+	cbuf.closed = true
+	close(cbuf.cmdCh)
+	cbuf.macroQ.Clear()
+	cbuf.cond.Broadcast()
+}
+
+// clear internal command buffer. macro is still remained.
+func (cbuf *commandBuffer) Clear() {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	cbuf.commands = cbuf.commands[:0]
+}
+
+// send command string.
+func (cbuf *commandBuffer) Send(cmd string) {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	cbuf.commands = append(cbuf.commands, cmd)
+	cbuf.cond.Signal()
+}
+
+// wait any input or macro skip
+func (cbuf *commandBuffer) Wait() error {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	for {
+		if cbuf.closed {
+			return ErrorPipelineClosed
+		}
+
+		if cbuf.macroQ.DequeUntilSkip() {
+			return nil
+		}
+
+		if _, ok := cbuf.receive(); ok {
+			return nil
+		}
+		cbuf.cond.Wait()
+	}
+}
+
+// receive input string from user input.
+func (cbuf *commandBuffer) Receive() (string, error) {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	for {
+		if cbuf.closed {
+			return "", ErrorPipelineClosed
+		}
+
+		if cmd, ok := cbuf.macroQ.DequeCommand(); ok {
+			return cmd, nil
+		}
+
+		if cmd, ok := cbuf.receive(); ok {
+			return cmd, nil
+		}
+		cbuf.cond.Wait()
+	}
+}
+
+func (cbuf *commandBuffer) receive() (string, bool) {
+	if l := len(cbuf.commands); l > 0 {
+		cmd := cbuf.commands[0]
+		copy(cbuf.commands[0:], cbuf.commands[1:])
+		cbuf.commands = cbuf.commands[:l-1]
+		return cmd, true
+	}
+	return "", false
+}
+
+// recieve string command as command channel.
+// channel returns only one data. after that channel'behavior is unknown.
+// it is intended to use with select-timeout pattern.
+func (cbuf *commandBuffer) ReceiveCh() <-chan string {
+	cbuf.mu.Lock()
+	defer cbuf.mu.Unlock()
+	go func() {
+		for {
+			if cbuf.closed {
+				return
+			}
+
+			if cmd, ok := cbuf.macroQ.DequeCommand(); ok {
+				cbuf.cmdCh <- cmd
+				return
+			}
+
+			if cmd, ok := cbuf.receive(); ok {
+				cbuf.cmdCh <- cmd
+				return
+			}
+			cbuf.cond.Wait()
+		}
+	}()
+	return cbuf.cmdCh
+}
