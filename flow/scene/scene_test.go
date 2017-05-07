@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"context"
 	"testing"
 
 	"local/erago/stub"
@@ -26,7 +27,8 @@ func TestSceneManager(t *testing.T) {
 	manager := buildSceneManager()
 	defer manager.Free()
 
-	if err := manager.Run(); err == nil {
+	ctx := context.Background()
+	if err := manager.Run(ctx); err == nil {
 		t.Error("must be error( not found next scene )")
 	} else {
 		t.Log("SceneManager.Run() returns:")
@@ -34,7 +36,7 @@ func TestSceneManager(t *testing.T) {
 	}
 
 	manager.UnRegisterScene(SceneNameTitle)
-	if err := manager.Run(); err == nil {
+	if err := manager.Run(ctx); err == nil {
 		t.Error("must be error( not found next scene )")
 	} else {
 		t.Log("SceneManager.Run() returns:")

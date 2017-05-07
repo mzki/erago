@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"context"
 	"fmt"
 
 	"local/erago/flow"
@@ -50,7 +51,7 @@ func (sm *SceneManager) Free() {
 
 // run scene transitions.
 // it blocks until done, you can use go func() to avoid blocking main thread.
-func (sm *SceneManager) Run() (err error) {
+func (sm *SceneManager) Run(ctx context.Context) (err error) {
 	sceneHolder := sm.sf.Scenes()
 	sm.currentScene, err = sceneHolder.GetScene(SceneNameTitle)
 	if err != nil {
@@ -58,6 +59,13 @@ func (sm *SceneManager) Run() (err error) {
 	}
 
 	for {
+		// check cancelaration.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		log.Debug("SceneManager.Run(): starting scene ", sm.currentScene.Name())
 
 		next, err := sm.currentScene.Next()
