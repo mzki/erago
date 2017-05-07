@@ -60,7 +60,6 @@ func loadGameSceneProcess(sf *sceneFields) (Scene, error) {
 			}
 		} // .. switch
 	}
-	panic("loadGameSceneProcess: This line must not be reached")
 }
 
 // * SAVE GAME SCENE

@@ -129,7 +129,6 @@ func charaListAdd(L *lua.LState) int {
 		L.Push(added_charas)
 		return 1
 	}
-	return 0
 }
 
 // +gendoc "Characters"
@@ -375,7 +374,7 @@ func setCharaFields(L *lua.LState) int {
 		c.NickName = val
 
 	default:
-		L.ArgError(2, fmt.Sprint("character can not assign %s", key))
+		L.ArgError(2, "character does not have "+key)
 	}
 	return 0
 }

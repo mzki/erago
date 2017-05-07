@@ -34,11 +34,11 @@ type Config struct {
 	LogFile  string `toml:"logfile"`
 	LogLevel string `toml:"loglevel"`
 
-	Font     string  `toml: "font"`     // path for fontfile. empty means that use builtin font.
-	FontSize float64 `toml: "fontsize"` // font size in pt.
+	Font     string  `toml:"font"`     // path for fontfile. empty means that use builtin font.
+	FontSize float64 `toml:"fontsize"` // font size in pt.
 
-	Width  int `toml: "width"`  // initial window width.
-	Height int `toml: "height"` // initial window height.
+	Width  int `toml:"width"`  // initial window width.
+	Height int `toml:"height"` // initial window height.
 	// TODO: Title string  // title on window top.
 
 	Game erago.Config `toml:"game"`

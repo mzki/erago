@@ -300,7 +300,6 @@ func (aus ablUpScene) inputLoop() error {
 			return err
 		}
 	}
-	return nil
 }
 
 // * TURN END SCENE

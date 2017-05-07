@@ -7,8 +7,8 @@ import (
 type Config struct {
 	path util.PathManager
 
-	Dir              string `toml: "load_dir"` // extracting CSV directory
-	LoadCharaPattern string `toml: "load_chara_pattern"`
+	Dir              string `toml:"load_dir"` // extracting CSV directory
+	LoadCharaPattern string `toml:"load_chara_pattern"`
 }
 
 const (

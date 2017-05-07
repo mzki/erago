@@ -1,4 +1,4 @@
-//go:generate  go run gendoc.go
+//go:generate  go run _gendoc.go
 
 package script
 

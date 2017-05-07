@@ -113,7 +113,7 @@ func (vm viewManager) currentViewNode() node.Node {
 }
 
 func errorViewNotFound(vname string) error {
-	return fmt.Errorf("viewManager: view `%s` is not found.")
+	return fmt.Errorf("viewManager: view `%s` is not found.", vname)
 }
 
 func (vm viewManager) findViewNode(name string) (*textVNode, error) {

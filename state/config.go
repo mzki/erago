@@ -9,7 +9,7 @@ const defaultSaveFileDir = "sav"
 // Scene Config with csv Config
 type Config struct {
 	path        util.PathManager
-	SaveFileDir string `toml: "savefile_dir"`
+	SaveFileDir string `toml:"savefile_dir"`
 }
 
 // return new default config

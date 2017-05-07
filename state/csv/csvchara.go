@@ -142,7 +142,6 @@ func readCharacter(file string, cm *CsvManager) (*Character, error) {
 		default:
 			return parseUserField(&character.Parameter, cm, key, record)
 		}
-		return nil
 	})
 	return character, err
 }

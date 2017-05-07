@@ -300,7 +300,6 @@ func (sc shopScene) inputLoop() error {
 			return nil
 		}
 	}
-	return nil
 }
 
 const DefaultShowItemFormat = "[%d] %s (%d圓)"

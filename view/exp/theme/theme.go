@@ -65,7 +65,7 @@ func init() {
 const UnitLh = unit.Unit(1 << 6)
 
 // returns Lh as unit.Value.
-func Lhs(f float64) unit.Value { return unit.Value{f, UnitLh} }
+func Lhs(f float64) unit.Value { return unit.Value{F: f, U: UnitLh} }
 
 // Extension of theme.Pixels() which can treat Lh unit.Value.
 // Otherwise, it returns same as theme.Pixels()
