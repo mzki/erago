@@ -121,6 +121,7 @@ func (g *Game) main() error {
 	defer g.uiAdapter.Quit()
 
 	// run game flow.
+	g.ipr.SetContext(ctx)
 	err := g.scene.Run(ctx)
 	if err == uiadapter.ErrorPipelineClosed {
 		return nil

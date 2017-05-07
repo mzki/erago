@@ -1,7 +1,6 @@
 package stub
 
 import (
-	"context"
 	"fmt"
 )
 
@@ -24,7 +23,4 @@ func (ss sceneScripter) EraCallBoolArgInt(str string, n int64) (bool, error) {
 
 func (ss sceneScripter) HasEraValue(str string) bool {
 	return false
-}
-
-func (ss sceneScripter) SetContext(ctx context.Context) {
 }

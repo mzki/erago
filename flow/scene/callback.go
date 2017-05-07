@@ -1,7 +1,6 @@
 package scene
 
 import (
-	"context"
 	"local/erago/flow"
 )
 
@@ -13,8 +12,6 @@ type Scripter interface {
 	EraCall(string) error
 	EraCallBoolArgInt(string, int64) (bool, error)
 	HasEraValue(string) bool
-
-	SetContext(context.Context)
 }
 
 const (

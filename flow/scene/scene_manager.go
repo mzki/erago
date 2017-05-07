@@ -58,7 +58,6 @@ func (sm *SceneManager) Run(ctx context.Context) (err error) {
 		return
 	}
 
-	sm.sf.callbacker.SetContext(ctx)
 	for {
 		// check cancelaration.
 		select {
