@@ -4,10 +4,8 @@
 package csv
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -101,11 +99,22 @@ type CsvManager struct {
 
 	// alias for reading character defined csv, chara*.csv
 	aliasMap map[string]string
+
+	// Define buffers for reading csv fields.
+	//
+	// NOTE: These are allocated at the first of CsvManager.Initialize(),
+	// and released at the last.
+	// After released, accessing these occurs panic().
+	readIntBuffer    []int
+	readStringBuffer []string
 }
 
 // return empty CsvManager same as &CsvManager{} .
 func NewCsvManager() *CsvManager {
-	return &CsvManager{}
+	return &CsvManager{
+		CharaMap: make(map[int64]*Character), // to prevent nil reference
+		aliasMap: make(map[string]string),    // to prevent nil reference
+	}
 }
 
 // get index using group name: BASE, ABL ... , and param name: 体力　... ,
@@ -162,8 +171,7 @@ const (
 // scope where, where = {System, Share}.
 // It allocates new valiables every call.
 func (cm *CsvManager) BuildStrUserVars(where VarScope) map[string][]string {
-	scope := vspecIdent(where)
-	if scope == scopeChara {
+	if scope := vspecIdent(where); scope == scopeChara {
 		return newStrMapByVSpecs(cm.vspecsCharaStr)
 	} else {
 		vs := cm.vspecs.selectByScopeAndDType(scope, dTypeStr)
@@ -175,8 +183,7 @@ func (cm *CsvManager) BuildStrUserVars(where VarScope) map[string][]string {
 // scope where, where = {System, Share}.
 // It allocates new valiables every call.
 func (cm *CsvManager) BuildIntUserVars(where VarScope) map[string][]int64 {
-	scope := vspecIdent(where)
-	if scope == scopeChara {
+	if scope := vspecIdent(where); scope == scopeChara {
 		return newIntMapByVSpecs(cm.vspecsCharaStr)
 	} else {
 		vs := cm.vspecs.selectByScopeAndDType(scope, dTypeInt)
@@ -200,32 +207,18 @@ func newStrMapByVSpecs(vspecs variableSpecs) map[string][]string {
 	return str_map
 }
 
-var (
-	// Define buffers for reading csv fields.
-	// Its contents are mutable since
-	// it is accessed in any readXXX().
-	// So, don't use concurrentlly.
-	//
-	// NOTE: These are allocated at the first of CsvManager.Initialize(),
-	// and released at the last.
-	// After released, accessing these occurs panic().
-	//
-	readIntBuffer    []int
-	readStringBuffer []string
-)
+var ()
 
 // initialize by reading csv files.
-// NOTE: It is not callable concurrently,
-// must call in the single thread.
 func (cm *CsvManager) Initialize(config Config) (err error) {
 	// initialize reading-buffer
-	readIntBuffer = make([]int, 0, 1000)
-	readStringBuffer = make([]string, 0, 1000)
+	cm.readIntBuffer = make([]int, 0, 1000)
+	cm.readStringBuffer = make([]string, 0, 1000)
 
 	// finalize reading-buffer
 	defer func() {
-		readIntBuffer = nil
-		readStringBuffer = nil
+		cm.readIntBuffer = nil
+		cm.readStringBuffer = nil
 	}()
 
 	cm.config = config
@@ -234,8 +227,12 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 	{
 		errs := util.NewMultiErr()
 		var err error
-		cm.aliasMap, err = readAliases(config.loadPathOf(aliasFileName))
-		errs.Add(err)
+
+		if aliasFile := config.loadPathOf(aliasFileName); FileExists(aliasFile) {
+			cm.aliasMap, err = readAliases(aliasFile)
+			errs.Add(err)
+		}
+
 		// cm.GameBase, err = newGameBase(config.loadPathOf(gameGaseFileName))
 		// errs.Add(err)
 		// cm.Replace, err = newReplace(config.loadPathOf(replaceFileName))
@@ -249,7 +246,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 	{
 		var all_vspecs variableSpecs
 		var vspec_path = config.loadPathOf(variableSpecFile)
-		if util.FileExists(vspec_path) {
+		if FileExists(vspec_path) {
 			if vs, err := readVariableSpecs(vspec_path); err != nil {
 				return err
 			} else {
@@ -264,7 +261,11 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 	// load builtin exceptional variables
 	{
-		names, prices, err := readItemAndPrice(config.loadPathOf(BuiltinItemName + ".csv"))
+		names, prices, err := readItemAndPrice(
+			config.loadPathOf(BuiltinItemName+".csv"),
+			cm.readIntBuffer,
+			cm.readStringBuffer,
+		)
 		if err != nil {
 			return fmt.Errorf("csv: can not be initialized: %v", err)
 		}
@@ -316,7 +317,11 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 		constant, has := cm.constants[fname]
 		if !has {
 			// load new csv file
-			names, err := readNames(cm.config.loadPathOf(fname))
+			names, err := readNames(
+				cm.config.loadPathOf(fname),
+				cm.readIntBuffer,
+				cm.readStringBuffer,
+			)
 			if err != nil {
 				return err
 			}
@@ -344,50 +349,6 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 	return nil
 }
 
-const (
-	// Configures of Reading CSV Files.
-	Comma   = ","
-	Comment = ";"
-)
-
-// readCsv handles file open and reading csv.
-// each csv line is separated as some fields.
-// Given function processes the some fields for each CSV line,
-// and return error to notify the line is wrong format.
-func readCsv(file string, f func([]string) error) error {
-	fp, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-
-	nline := 0
-	scanner := bufio.NewScanner(fp)
-
-	for scanner.Scan() {
-		nline++
-		line := scanner.Text()
-		// trimming trainling text at occuring comment symbol, ";".
-		if i := strings.Index(line, Comment); i != -1 { // ignore comment
-			line = line[:i]
-		}
-
-		record := strings.Split(line, Comma)
-		if len(record) < 2 { // ignore empty line and line having only 1 fields.
-			continue
-		}
-		for i, field := range record {
-			record[i] = strings.TrimSpace(field)
-		}
-
-		// run user function with record.
-		if err := f(record); err != nil {
-			return fmt.Errorf("csv: %s: line %d: '%v', %v", file, nline, line, err)
-		}
-	}
-	return scanner.Err()
-}
-
 // It converts field specified by column i to int number and returns the number.
 // It occurs panic if the passed index is in invalid range or the specified field doesn't represent the number.
 func getAsInt(record []string, i int) int {
@@ -405,12 +366,12 @@ func getAsInt(record []string, i int) int {
 
 // read CSV file that defines names for each variable,
 // return read names and occured error.
-func readNames(file string) (Names, error) {
-	readIntBuffer = readIntBuffer[:0]
-	readStringBuffer = readStringBuffer[:0]
+func readNames(file string, intBuffer []int, strBuffer []string) (Names, error) {
+	intBuffer = intBuffer[:0]
+	strBuffer = strBuffer[:0]
 
 	var max_index int
-	err := readCsv(file, func(record []string) error {
+	err := ReadFileFunc(file, func(record []string) error {
 		if len(record) < 2 { // ignore
 			return nil
 		}
@@ -418,8 +379,8 @@ func readNames(file string) (Names, error) {
 		index := getAsInt(record, 0)
 		key := record[1]
 
-		readIntBuffer = append(readIntBuffer, index)
-		readStringBuffer = append(readStringBuffer, key)
+		intBuffer = append(intBuffer, index)
+		strBuffer = append(strBuffer, key)
 
 		if max_index < index {
 			max_index = index
@@ -431,8 +392,8 @@ func readNames(file string) (Names, error) {
 	}
 
 	names := newNames(max_index + 1)
-	for i, index := range readIntBuffer {
-		name := readStringBuffer[i]
+	for i, index := range intBuffer {
+		name := strBuffer[i]
 		if len(names[index]) > 0 {
 			return nil, fmt.Errorf("file(%s), >\"%d,%s\": csv index(%d) is already used.", file, index, name, index)
 		}
@@ -445,13 +406,13 @@ func readNames(file string) (Names, error) {
 // So treat as special.
 //
 // It return ItemNames, ItemPrices and error.
-func readItemAndPrice(file string) (Names, []int64, error) {
-	readIntBuffer = readIntBuffer[:0]
-	readStringBuffer = readStringBuffer[:0]
+func readItemAndPrice(file string, intBuffer []int, strBuffer []string) (Names, []int64, error) {
+	intBuffer = intBuffer[:0]
+	strBuffer = strBuffer[:0]
 	priceBuffer := make([]int64, 0, 200)
 
 	var max_index int
-	err := readCsv(file, func(record []string) error {
+	err := ReadFileFunc(file, func(record []string) error {
 		if len(record) < 3 {
 			return fmt.Errorf("csv require 3 field but: %v", record)
 		}
@@ -471,8 +432,8 @@ func readItemAndPrice(file string) (Names, []int64, error) {
 			return err
 		}
 
-		readIntBuffer = append(readIntBuffer, index)
-		readStringBuffer = append(readStringBuffer, name)
+		intBuffer = append(intBuffer, index)
+		strBuffer = append(strBuffer, name)
 		priceBuffer = append(priceBuffer, price)
 
 		if index > max_index {
@@ -486,8 +447,8 @@ func readItemAndPrice(file string) (Names, []int64, error) {
 
 	names := newNames(max_index + 1)
 	prices := make([]int64, max_index+1)
-	for i, index := range readIntBuffer {
-		names[index] = readStringBuffer[i]
+	for i, index := range intBuffer {
+		names[index] = strBuffer[i]
 		prices[index] = priceBuffer[i]
 	}
 	return names, prices, err

@@ -2,8 +2,10 @@ package csv
 
 import "testing"
 
+var validConfig = NewConfig("./../../stub/")
+
 func TestCsvInit(t *testing.T) {
-	config := NewConfig("./../../stub/")
+	config := validConfig
 	csv := &CsvManager{}
 	if err := csv.Initialize(config); err != nil {
 		t.Fatal(err)
@@ -57,14 +59,14 @@ func TestCsvBuildConstants(t *testing.T) {
 }
 
 func TestReadNames(t *testing.T) {
-	_, err := readNames("not-exists.file")
+	_, err := readNames("not-exists.file", make([]int, 0), make([]string, 0))
 	if err == nil {
 		t.Fatal("Fatal Error: processing non exist file but non-error")
 	}
 }
 
 func newCsvManagerInited() (*CsvManager, error) {
-	config := NewConfig("./")
+	config := validConfig
 	csv := &CsvManager{}
 	err := csv.Initialize(config)
 	return csv, err

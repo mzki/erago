@@ -126,7 +126,7 @@ var nameAlias = map[string]string{
 // and return it.
 func readCharacter(file string, cm *CsvManager) (*Character, error) {
 	character := newCharacter(cm)
-	err := readCsv(file, func(record []string) error {
+	err := ReadFileFunc(file, func(record []string) error {
 		key := record[0]
 		if alias, has := cm.aliasMap[key]; has {
 			key = alias

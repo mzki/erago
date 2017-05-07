@@ -39,7 +39,7 @@ func newReplace(file string) (*Replace, error) {
 			700, 1000, 1500, 2000},
 		PBandIndex: 4,
 	}
-	err := readCsv(file, func(record []string) error {
+	err := ReadFileFunc(file, func(record []string) error {
 		i := 0
 		var err error = nil
 		switch record[0] {
@@ -104,7 +104,7 @@ func newGameBase(file string) (*GameBase, error) {
 		return gb, nil
 	}
 
-	err := readCsv(file, func(record []string) error {
+	err := ReadFileFunc(file, func(record []string) error {
 		switch record[0] {
 		case "コード":
 			gb.Code = record[1]

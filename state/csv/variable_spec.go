@@ -71,7 +71,7 @@ func readVariableSpecs(fname string) (variableSpecs, error) {
 		vspecs[k] = v
 	}
 
-	err := readCsv(fname, func(record []string) error {
+	err := ReadFileFunc(fname, func(record []string) error {
 		vs, err := parseVariableSpec(record)
 		if err != nil {
 			return err
