@@ -1,6 +1,7 @@
 package uiadapter
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -73,8 +74,10 @@ func TestInputState(t *testing.T) {
 
 func TestInputRecieve(t *testing.T) {
 	port := newInputPort()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	go port.RunFilter()
+	go port.RunFilter(ctx)
 
 	go func() {
 		time.Sleep(30 * time.Millisecond)
@@ -102,7 +105,9 @@ func SendCommand(port *inputPort, cmd string) {
 
 func TestInputWait(t *testing.T) {
 	port := newInputPort()
-	go port.RunFilter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
 
 	now_t := time.Now()
 	wait_time := 2 * time.Millisecond
@@ -124,7 +129,9 @@ func TestInputWait(t *testing.T) {
 
 func TestInputMacro(t *testing.T) {
 	port := newInputPort()
-	go port.RunFilter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		SendCommand(port, `\e\n100\e\n10`)
@@ -165,7 +172,9 @@ func TestInputMacro(t *testing.T) {
 
 func TestSkippingWait(t *testing.T) {
 	port := newInputPort()
-	go port.RunFilter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
 
 	go func() {
 		time.Sleep(10 * time.Millisecond)

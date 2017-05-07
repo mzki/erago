@@ -1,6 +1,7 @@
 package script
 
 import (
+	"context"
 	"path/filepath"
 
 	"local/erago/state"
@@ -96,6 +97,12 @@ func (ip *Interpreter) init() {
 	L.SetField(L.GetGlobal("package"), "path", lua.LString(reg_path))
 
 	ip.config.register(L)
+}
+
+// set context to internal virtual machine.
+// context must not be nil.
+func (ip Interpreter) SetContext(ctx context.Context) {
+	ip.vm.SetContext(ctx)
 }
 
 // Quit quits virtual machine in Interpreter.

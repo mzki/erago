@@ -1,6 +1,7 @@
 package uiadapter
 
 import (
+	"context"
 	"strconv"
 	"sync"
 
@@ -82,26 +83,43 @@ func (port inputPort) requestChanged(typ InputRequestType) {
 }
 
 // starting filtering input Event.
-// it blocks until calling Quit() or Send(EventQuit).
+// It blocks until context is canceled,
 // you can use go statement to run other thread.
-func (p *inputPort) RunFilter() {
+// After canceling, inputPort is closed and can not be used.
+//
+// It returns error which indicates what context is canceled by.
+func (p *inputPort) RunFilter(ctx context.Context) error {
+	// Because p.close closes p.ebuf,
+	// for-loop is quited at the moment.
 	defer p.close()
 
-	for {
-		ev := p.ebuf.NextEvent()
-		if ev, ok := ev.(input.Event); ok && ev.Type == input.EventQuit {
-			return
+	doneCh := make(chan struct{}, 1)
+	go func() {
+		defer close(doneCh)
+		for {
+			ev := p.ebuf.NextEvent()
+			if ev, ok := ev.(input.Event); ok && ev.Type == input.EventQuit {
+				doneCh <- struct{}{}
+				return
+			}
+
+			// update macro state
+			macroNext := p.macroState.NextState(p, ev)
+			p.updateState(p.macroState, macroNext)
+			p.macroState = macroNext
+
+			// update input state
+			next := p.state.NextState(p, ev)
+			p.updateState(p.state, next)
+			p.state = next
 		}
+	}()
 
-		// update macro state
-		macroNext := p.macroState.NextState(p, ev)
-		p.updateState(p.macroState, macroNext)
-		p.macroState = macroNext
-
-		// update input state
-		next := p.state.NextState(p, ev)
-		p.updateState(p.state, next)
-		p.state = next
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-doneCh:
+		return nil
 	}
 }
 
@@ -136,6 +154,7 @@ func (port *inputPort) Send(ev input.Event) {
 	port.ebuf.Send(ev)
 }
 
+// DEPLECATED
 // send quit event signal
 func (port *inputPort) Quit() {
 	if port.isClosed() {
@@ -160,22 +179,13 @@ func (port *inputPort) Wait() error {
 // 	if port.isClosed {
 // 		return ErrorPipelineClosed
 // 	}
+//  ctx, cancel := context.WithTimeout(context.Background(), d)
+//  defer cancel()
 //
 // 	port.ebuf.Send(internalEventStartInput.New())
 // 	defer port.ebuf.SendFirst(internalEventStopInput.New())
 //
-// 	timer := time.NewTimer(d)
-// 	defer timer.Stop()
 //
-// 	select {
-// 	case _, ok := <- port.cbuf.ReceiveCh():
-// 		if !ok {
-// 			return ErrorPipelineClosed
-// 		}
-// 		return nil
-// 	case <- timer.C:
-// 		return ErrorTimeouted
-// 	}
 // }
 
 // wait for string command.

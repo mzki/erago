@@ -1,10 +1,12 @@
 package script
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"local/erago/flow"
 	"local/erago/stub"
@@ -67,7 +69,7 @@ func TestInterpreterEraCall(t *testing.T) {
 	for _, file := range []string{
 		"eracall.lua",
 	} {
-		if err := ip.DoFile(filepath.Join("./testing/", file)); err != nil {
+		if err := ip.DoFile(filepath.Join(scriptDir, file)); err != nil {
 			t.Error(err)
 		}
 	}
@@ -110,6 +112,60 @@ func TestInterpreterSpecialErrors(t *testing.T) {
 	}
 }
 
-func BenchmarkScript(b *testing.B) {
-	// TODO
+func TestInterpreterContextCancel(t *testing.T) {
+	ip := newInterpreter()
+	defer ip.Quit()
+	ctx, cancel := context.WithCancel(context.Background())
+	ip.SetContext(ctx)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- ip.DoFile(filepath.Join(scriptDir, "infinite_loop.lua"))
+		close(errCh)
+	}()
+
+	time.Sleep(1 * time.Millisecond)
+	cancel()
+	if err := <-errCh; err != context.Canceled {
+		t.Fatal(err)
+	}
+}
+
+// ------------------------
+// benchmarking
+// ------------------------
+
+func newBenchInterpreter(b *testing.B) *Interpreter {
+	ip := newInterpreter()
+	if err := ip.DoFile(filepath.Join(scriptDir, "bench.lua")); err != nil {
+		ip.Quit()
+		b.Fatal(err)
+	}
+	return ip
+}
+
+func BenchmarkScriptWithoutContext(b *testing.B) {
+	ip := newBenchInterpreter(b)
+	defer ip.Quit()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := ip.EraCall("bench1"); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkScriptWithContext(b *testing.B) {
+	ip := newBenchInterpreter(b)
+	defer ip.Quit()
+
+	ip.SetContext(context.Background())
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := ip.EraCall("bench2"); err != nil {
+			b.Fatal(err)
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package erago
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 
@@ -90,7 +91,7 @@ func (g Game) InputPort() uiadapter.Sender {
 //
 // Example:
 //	go func() {
-//		game.Main()
+//		game.Main(ctx)
 //	}()
 //
 // It returns nil if game quits correctly, otherwise return erorr containing
@@ -112,12 +113,15 @@ func withRecoverRun(run func() error) (err error) {
 }
 
 func (g *Game) main() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// run filtering user input on other thread.
-	go g.uiAdapter.RunFilter()
+	go g.uiAdapter.RunFilter(ctx)
 	defer g.uiAdapter.Quit()
 
 	// run game flow.
-	err := g.scene.Run()
+	err := g.scene.Run(ctx)
 	if err == uiadapter.ErrorPipelineClosed {
 		return nil
 	}
@@ -158,7 +162,7 @@ func (g *Game) Quit() {
 	if g.uiAdapter == nil {
 		panic("Game: game is not initialized")
 	}
-	g.uiAdapter.GetInputPort().Quit()
+	g.uiAdapter.Quit()
 	g.scene.Free()
 	g.ipr.Quit()
 }
