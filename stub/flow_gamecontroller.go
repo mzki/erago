@@ -1,6 +1,7 @@
 package stub
 
 import (
+	"context"
 	"fmt"
 
 	"local/erago/uiadapter"
@@ -19,20 +20,32 @@ func NewFlowGameController() *flowGameController {
 func (ui flowGameController) RawInput() (string, error) {
 	return "", nil
 }
+func (ui flowGameController) RawInputWithContext(context.Context) (string, error) {
+	return "", nil
+}
 func (ui flowGameController) Command() (string, error) {
+	return "", nil
+}
+func (ui flowGameController) CommandWithContext(context.Context) (string, error) {
 	return "", nil
 }
 func (ui flowGameController) CommandNumber() (int, error) {
 	return 0, nil
 }
-func (ui flowGameController) CommandNumberRange(min, max int) (int, error) {
+func (ui flowGameController) CommandNumberWithContext(context.Context) (int, error) {
 	return 0, nil
 }
-func (ui flowGameController) CommandNumberSelect(ns ...int) (int, error) {
+func (ui flowGameController) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
+	return 0, nil
+}
+func (ui flowGameController) CommandNumberSelect(ctx context.Context, ns ...int) (int, error) {
 	return 0, nil
 }
 
 func (ui flowGameController) Wait() error {
+	return nil
+}
+func (ui flowGameController) WaitWithContext(context.Context) error {
 	return nil
 }
 

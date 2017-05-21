@@ -275,15 +275,15 @@ func (port *inputPort) RawInputWithContext(ctx context.Context) (string, error) 
 	return port.commandWithContext(ctx)
 }
 
-// TODO: below functions should be implemented int the user layer?
+// TODO: below functions should be implemented in the user layer?
 
-// wait for number command that mathes given nums.
-func (port *inputPort) CommandNumberSelect(nums ...int) (int, error) {
+// wait for number command that matches given nums.
+func (port *inputPort) CommandNumberSelect(ctx context.Context, nums ...int) (int, error) {
 	if len(nums) == 0 {
-		return port.CommandNumber()
+		return port.CommandNumberWithContext(ctx)
 	}
 	for {
-		got, err := port.CommandNumber()
+		got, err := port.CommandNumberWithContext(ctx)
 		if err != nil {
 			return 0, err
 		}
@@ -296,12 +296,12 @@ func (port *inputPort) CommandNumberSelect(nums ...int) (int, error) {
 }
 
 // wait for number command that mathes in range [min : max]
-func (port *inputPort) CommandNumberRange(min, max int) (int, error) {
+func (port *inputPort) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
 	if min > max {
-		return port.CommandNumber()
+		return port.CommandNumberWithContext(ctx)
 	}
 	for {
-		got, err := port.CommandNumber()
+		got, err := port.CommandNumberWithContext(ctx)
 		if err != nil {
 			return 0, err
 		}

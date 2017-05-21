@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"context"
 	"fmt"
 
 	"local/erago/flow"
@@ -65,7 +66,7 @@ func (scene *titleScene) Next() (Scene, error) {
 
 		game.SetAlignment(flow.AlignmentLeft)
 
-		input, err := game.CommandNumberSelect(0, 1, 9)
+		input, err := game.CommandNumberSelect(context.Background(), 0, 1, 9)
 		if err != nil {
 			return nil, err
 		}

@@ -1,6 +1,8 @@
 package flow
 
 import (
+	"context"
+
 	attr "local/erago/attribute"
 )
 
@@ -23,22 +25,40 @@ type GameController interface {
 // input interface.
 type InputPort interface {
 	// RawInput returns user input (i.e. key press) directly.
+	// shorthand for RawInputWithContext with context.Background.
 	RawInput() (string, error)
 
+	// RawInput returns user input (i.e. key press) directly.
+	RawInputWithContext(context.Context) (string, error)
+
 	// Command returns string command which is emitted with user confirming.
+	// shorthand for CommandWithContext with context.Background.
 	Command() (string, error)
 
+	// it returns string command which is emitted with user confirming.
+	// it can be canceled by canceling context.
+	CommandWithContext(context.Context) (string, error)
+
 	// Same as Command but return number command.
+	// shorthand for CommandNumberWithContext with context.Background.
 	CommandNumber() (int, error)
 
 	// return number command limiting in range [min:max]
-	CommandNumberRange(min, max int) (int, error)
+	// it can be canceled by canceling context.
+	CommandNumberWithContext(context.Context) (int, error)
+
+	// return number command limiting in range [min:max]
+	CommandNumberRange(ctx context.Context, min, max int) (int, error)
 
 	// return number command matching to given candidates.
-	CommandNumberSelect(...int) (int, error)
+	CommandNumberSelect(context.Context, ...int) (int, error)
 
 	// wait for any user confirming.
+	// shorthand for Wait with context.Background.
 	Wait() error
+
+	// wait for any user confirming.
+	WaitWithContext(ctx context.Context) error
 }
 
 // output interface.

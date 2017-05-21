@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -103,7 +104,7 @@ func (sg *saveGameScene) Next() (Scene, error) {
 				game.PrintC("[0] はい", 10)
 				game.PrintC("[1] いいえ", 10)
 				game.PrintL("")
-				if yesno, err := game.CommandNumberSelect(0, 1); err != nil {
+				if yesno, err := game.CommandNumberSelect(context.Background(), 0, 1); err != nil {
 					return nil, err
 				} else if yesno == 1 {
 					game.PrintL("")

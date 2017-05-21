@@ -1,6 +1,7 @@
 package script
 
 import (
+	"context"
 	"github.com/yuin/gopher-lua"
 
 	attr "local/erago/attribute"
@@ -708,7 +709,7 @@ func (ft functor) inputNumRange(L *lua.LState) int {
 	if min > max {
 		L.ArgError(2, "1st argument is less than 2nd")
 	}
-	num, err := ft.game.CommandNumberRange(min, max)
+	num, err := ft.game.CommandNumberRange(context.Background(), min, max)
 	return pushIntError(L, num, err)
 }
 
@@ -726,7 +727,7 @@ func (ft functor) inputNumSelect(L *lua.LState) int {
 	for i := 1; i <= arg_size; i++ {
 		candidates = append(candidates, L.CheckInt(i))
 	}
-	num, err := ft.game.CommandNumberSelect(candidates...)
+	num, err := ft.game.CommandNumberSelect(context.Background(), candidates...)
 	return pushIntError(L, num, err)
 }
 
