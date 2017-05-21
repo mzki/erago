@@ -11,6 +11,8 @@ import (
 
 // inputport is interface of ui input.
 // it filters input.Event and send command to command buffer.
+// handling incoming event (user input) is responsible for ebuf,
+// and outgoing event (command) is responsible for cbuf.
 type inputPort struct {
 	state      inputState
 	macroState inputState
@@ -89,10 +91,6 @@ func (port inputPort) requestChanged(typ InputRequestType) {
 //
 // It returns error which indicates what context is canceled by.
 func (p *inputPort) RunFilter(ctx context.Context) error {
-	// Because p.close closes p.ebuf,
-	// for-loop is quited at the moment.
-	defer p.close()
-
 	doneCh := make(chan struct{}, 1)
 	go func() {
 		defer close(doneCh)
@@ -114,6 +112,10 @@ func (p *inputPort) RunFilter(ctx context.Context) error {
 			p.state = next
 		}
 	}()
+
+	// Because p.close closes p.ebuf,
+	// for-loop in above goroutine is quited at the moment.
+	defer p.close()
 
 	select {
 	case <-ctx.Done():
@@ -154,8 +156,7 @@ func (port *inputPort) Send(ev input.Event) {
 	port.ebuf.Send(ev)
 }
 
-// DEPLECATED
-// send quit event signal
+// send quit event signal to terminate RunFilter.
 func (port *inputPort) Quit() {
 	if port.isClosed() {
 		return
@@ -163,47 +164,90 @@ func (port *inputPort) Quit() {
 	port.ebuf.Send(input.NewEventQuit())
 }
 
-// wait for any input.
+// wait for any input. it will never return until getting any input.
 func (port *inputPort) Wait() error {
+	return port.WaitWithContext(context.Background())
+}
+
+// wait for any input with context. it can cancel by cancelation for context.
+// it returns error which is uiadapter.ErrorPipelineClosed,
+// context.DeadLineExceeded or context.Canceled.
+func (port *inputPort) WaitWithContext(ctx context.Context) error {
 	if port.isClosed() {
 		return ErrorPipelineClosed
 	}
-
 	port.ebuf.Send(internalEventStartInput.New())
 	defer port.ebuf.SendFirst(internalEventStopInput.New())
 
-	return port.cbuf.Wait()
+	return port.waitWithContext(ctx)
 }
 
-// func (port *inputPort) TWait(d time.Duration) error {
-// 	if port.isClosed {
-// 		return ErrorPipelineClosed
-// 	}
-//  ctx, cancel := context.WithTimeout(context.Background(), d)
-//  defer cancel()
-//
-// 	port.ebuf.Send(internalEventStartInput.New())
-// 	defer port.ebuf.SendFirst(internalEventStopInput.New())
-//
-//
-// }
+func (port *inputPort) waitWithContext(ctx context.Context) error {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- port.cbuf.Wait()
+		close(errCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		port.cbuf.Cancel()
+		return ctx.Err()
+	case err := <-errCh:
+		return err
+	}
+}
 
 // wait for string command.
 func (port *inputPort) Command() (string, error) {
+	return port.CommandWithContext(context.Background())
+}
+
+// wait for string command with context. it can cancel by cancelation for context.
+// it returns command string and error which is uiadapter.ErrorPipelineClosed,
+// context.DeadLineExceeded or context.Canceled.
+func (port *inputPort) CommandWithContext(ctx context.Context) (string, error) {
 	if port.isClosed() {
 		return "", ErrorPipelineClosed
 	}
-
 	port.ebuf.Send(internalEventStartCommand.New())
 	defer port.ebuf.SendFirst(internalEventStopCommand.New())
 
-	return port.cbuf.Receive()
+	return port.commandWithContext(ctx)
+}
+
+func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
+	cmdCh := make(chan struct {
+		Cmd string
+		Err error
+	}, 1)
+	go func() {
+		cmd, err := port.cbuf.Receive()
+		cmdCh <- struct {
+			Cmd string
+			Err error
+		}{Cmd: cmd, Err: err}
+		close(cmdCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		port.cbuf.Cancel()
+		return "", ctx.Err()
+	case cmd := <-cmdCh:
+		return cmd.Cmd, cmd.Err
+	}
 }
 
 // wait for integer command.
 func (port *inputPort) CommandNumber() (int, error) {
+	return port.CommandNumberWithContext(context.Background())
+}
+
+// wait for integer command.
+func (port *inputPort) CommandNumberWithContext(ctx context.Context) (int, error) {
 	for {
-		cmd, err := port.Command()
+		cmd, err := port.CommandWithContext(ctx)
 		if err != nil {
 			return 0, err
 		}
@@ -212,6 +256,26 @@ func (port *inputPort) CommandNumber() (int, error) {
 		}
 	}
 }
+
+// wait for raw input without user confirming, hit enter key.
+func (port *inputPort) RawInput() (string, error) {
+	return port.RawInputWithContext(context.Background())
+}
+
+// wait for raw input with timeout.
+// raw input does not need user confirming, hit enter key.
+// It returns command string and error which is uiadapter.ErrorPipelineClosed or
+// context.DeadLineExceeded.
+func (port *inputPort) RawInputWithContext(ctx context.Context) (string, error) {
+	if port.isClosed() {
+		return "", ErrorPipelineClosed
+	}
+	port.ebuf.Send(internalEventStartRawInput)
+	defer port.ebuf.SendFirst(internalEventStopRawInput)
+	return port.commandWithContext(ctx)
+}
+
+// TODO: below functions should be implemented int the user layer?
 
 // wait for number command that mathes given nums.
 func (port *inputPort) CommandNumberSelect(nums ...int) (int, error) {
@@ -245,16 +309,4 @@ func (port *inputPort) CommandNumberRange(min, max int) (int, error) {
 			return got, nil
 		}
 	}
-}
-
-// wait for raw input such as user press key.
-func (port *inputPort) RawInput() (string, error) {
-	if port.isClosed() {
-		return "", ErrorPipelineClosed
-	}
-
-	port.ebuf.Send(internalEventStartRawInput)
-	defer port.ebuf.SendFirst(internalEventStopRawInput)
-
-	return port.cbuf.Receive()
 }

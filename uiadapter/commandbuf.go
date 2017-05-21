@@ -12,7 +12,6 @@ var ErrorPipelineClosed = errors.New("pipeline is closed")
 
 // commandBuffer is buffer for input string command.
 type commandBuffer struct {
-	cmdCh    chan string
 	commands []string
 
 	closed bool
@@ -26,7 +25,6 @@ func newCommandBuffer() *commandBuffer {
 	mu := new(sync.Mutex)
 	return &commandBuffer{
 		commands: make([]string, 0, 1),
-		cmdCh:    make(chan string, 1),
 		mu:       mu,
 		cond:     sync.NewCond(mu),
 		macroQ:   newMacroQ(),
@@ -60,7 +58,6 @@ func (cbuf *commandBuffer) Close() {
 	defer cbuf.mu.Unlock()
 
 	cbuf.closed = true
-	close(cbuf.cmdCh)
 	cbuf.macroQ.Clear()
 	cbuf.cond.Broadcast()
 }
@@ -130,29 +127,7 @@ func (cbuf *commandBuffer) receive() (string, bool) {
 	return "", false
 }
 
-// recieve string command as command channel.
-// channel returns only one data. after that channel'behavior is unknown.
-// it is intended to use with select-timeout pattern.
-func (cbuf *commandBuffer) ReceiveCh() <-chan string {
-	cbuf.mu.Lock()
-	defer cbuf.mu.Unlock()
-	go func() {
-		for {
-			if cbuf.closed {
-				return
-			}
-
-			if cmd, ok := cbuf.macroQ.DequeCommand(); ok {
-				cbuf.cmdCh <- cmd
-				return
-			}
-
-			if cmd, ok := cbuf.receive(); ok {
-				cbuf.cmdCh <- cmd
-				return
-			}
-			cbuf.cond.Wait()
-		}
-	}()
-	return cbuf.cmdCh
+// canceling wait state.
+func (cbuf *commandBuffer) Cancel() {
+	cbuf.Send("")
 }

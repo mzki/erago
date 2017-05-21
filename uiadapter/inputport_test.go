@@ -205,3 +205,31 @@ func TestSkippingWait(t *testing.T) {
 		t.Fatalf("quiting port returns nil or %v", err)
 	}
 }
+
+func TestWaitWithTimeout(t *testing.T) {
+	port := newInputPort()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
+
+	{
+		tctx, tcancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
+		defer tcancel()
+		if err := port.WaitWithContext(tctx); err != context.DeadlineExceeded {
+			t.Fatal(err)
+		}
+	}
+
+	{
+		go func() {
+			time.Sleep(5 * time.Millisecond)
+			SendCommand(port, "")
+		}()
+
+		tctx, tcancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer tcancel()
+		if err := port.WaitWithContext(tctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
