@@ -28,6 +28,12 @@ input = era.inputRange(0, 10)
 input = era.inputSelect(0, 1)
 era.wait()
 
+local time_exceeded
+local TIMEOUT = 1000000
+time_exceeded = era.twait(TIMEOUT)
+input, time_exceeded = era.tinput(TIMEOUT)
+input, time_exceeded = era.tinputNum(TIMEOUT)
+
 era.setColor(0x00ffff)
 era.getColor()
 era.resetColor()

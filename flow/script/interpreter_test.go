@@ -25,6 +25,7 @@ const scriptDir = "testing"
 
 func newConfig() Config {
 	c := NewConfig("./")
+	c.ShowGoStackTrace = true
 	c.LoadDir = scriptDir
 	return c
 }
