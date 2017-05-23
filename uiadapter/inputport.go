@@ -192,6 +192,7 @@ func (port *inputPort) waitWithContext(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		port.cbuf.Cancel()
+		<-errCh // wait for ending goroutine.
 		return ctx.Err()
 	case err := <-errCh:
 		return err
@@ -233,6 +234,7 @@ func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
 	select {
 	case <-ctx.Done():
 		port.cbuf.Cancel()
+		<-cmdCh // wait for ending goroutine.
 		return "", ctx.Err()
 	case cmd := <-cmdCh:
 		return cmd.Cmd, cmd.Err
