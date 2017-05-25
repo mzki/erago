@@ -80,6 +80,7 @@ func (ip *Interpreter) init() {
 		{bit32ModuleName, bit32Loader},
 		{loggerModuleName, loggerLoader},
 		{timeModuleName, timeLoader},
+		{builtinCSVModuleName, builtinCSVLoader},
 	} {
 		L.PreloadModule(mod.Name, mod.Loader)
 	}

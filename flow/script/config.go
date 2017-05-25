@@ -66,7 +66,7 @@ func (conf Config) register(L *lua.LState) {
 func scriptPath(L *lua.LState, p string) string {
 	lv := L.CheckTable(lua.RegistryIndex).RawGetString(registryBaseDirKey)
 	basedir := lua.LVAsString(lv)
-	joined := filepath.Join(basedir, p)
+	joined := filepath.Clean(filepath.Join(basedir, p))
 	if !strings.HasPrefix(joined, basedir) {
 		// TODO: joined references unexpected directory, should panic?
 		joined = filepath.Join(basedir, filepath.Base(p))

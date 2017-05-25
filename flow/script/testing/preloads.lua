@@ -34,6 +34,16 @@ _ = now_t.second
 _ = time.format(now)
 _ = time.tostring(1*time.SECOND + 1*time.MILLISECOND + 1 *time.NANOSECOND)
 
+-- csv module
+local csv = require "csv"
+csv.readFunc("csvdata.csv", function(i, records) 
+  if i == 1 then
+    assert(records[2] == "1")
+  else 
+    assert(records[2] == "2")
+  end
+end)
+
 -- constants
 _ = MAX_INTEGER 
 _ = MAX_NUMBER

@@ -79,6 +79,7 @@ var sortingOrder = []string{
 	"XXXParam",
 	"Builtin Module: bit32",
 	"Builtin Module: time",
+	"Builtin Module: csv",
 	"Builtin Module: log",
 	"Constant Value",
 }
