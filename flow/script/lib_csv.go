@@ -38,7 +38,7 @@ var builtinCSVExports = map[string]lua.LGFunction{
 //     local str2 = record[2] -- ２列目の文字列
 //   end)
 func builtinCSVReadFunc(L *lua.LState) int {
-	file := scriptPath(L, L.CheckString(1))
+	file := checkFilePath(L, 1)
 	luaP := lua.P{
 		Fn:      L.CheckFunction(2),
 		NRet:    0,

@@ -1108,8 +1108,7 @@ func singleTextLayout(L *lua.LState) int {
 // for example, if src is "image/file.png" then
 // the image is loaded from "ELA/image/file.png".
 func singleImageLayout(L *lua.LState) int {
-	src := L.CheckString(1)
-	src_path := scriptPath(L, src)
+	src_path := checkFilePath(L, 1)
 	img := attr.NewSingleImage(src_path)
 	L.Push(newUserData(L, img))
 	return 1

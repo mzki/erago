@@ -1,6 +1,7 @@
 package script
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -50,26 +51,43 @@ func (c Config) loadPattern() string {
 }
 
 const (
-	registryBaseDirKey     = "_base_directory"
-	registryDebugEnableKey = "_debug_enable"
+	registryBaseDirKey     = "_BASE_DIRECTORY"
+	registryDebugEnableKey = "_DEBUG_ENABLE"
 )
 
 func (conf Config) register(L *lua.LState) {
 	reg := L.CheckTable(lua.RegistryIndex)
-	reg.RawSetString(registryDebugEnableKey, lua.LBool(conf.ShowGoStackTrace))
-	reg.RawSetString(registryBaseDirKey, lua.LString(conf.path.Join(conf.LoadDir)))
+	for _, set := range []struct {
+		key string
+		val lua.LValue
+	}{
+		{registryDebugEnableKey, lua.LBool(conf.ShowGoStackTrace)},
+		{registryBaseDirKey, lua.LString(conf.path.Join(conf.LoadDir))},
+	} {
+		reg.RawSetString(set.key, set.val)
+		L.SetGlobal(set.key, set.val)
+	}
+}
+
+func checkFilePath(L *lua.LState, i int) string {
+	path, err := scriptPath(L, L.CheckString(i))
+	if err != nil {
+		L.ArgError(i, err.Error())
+	}
+	return path
 }
 
 // return path of p under script base directory.
 // for example, base dir is "/dir" and p is "sub/file" then
 // return "/dir/sub/file".
-func scriptPath(L *lua.LState, p string) string {
+// if resulted path indicates above base directory, e.g. including  "../",
+// it will return error.
+func scriptPath(L *lua.LState, p string) (string, error) {
 	lv := L.CheckTable(lua.RegistryIndex).RawGetString(registryBaseDirKey)
 	basedir := lua.LVAsString(lv)
 	joined := filepath.Clean(filepath.Join(basedir, p))
 	if !strings.HasPrefix(joined, basedir) {
-		// TODO: joined references unexpected directory, should panic?
-		joined = filepath.Join(basedir, filepath.Base(p))
+		return joined, fmt.Errorf("given path %s must be under %s", p, basedir)
 	}
-	return joined
+	return joined, nil
 }

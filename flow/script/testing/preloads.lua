@@ -45,10 +45,13 @@ csv.readFunc("csvdata.csv", function(i, records)
 end)
 
 -- constants
-_ = MAX_INTEGER 
-_ = MAX_NUMBER
-_ = PRINTC_WIDTH
-_ = TEXTBAR_WIDTH
-_ = TEXTBAR_FG
-_ = TEXTBAR_BG
-_ = TEXTLINE_SYMBOL
+assert(MAX_INTEGER)
+assert(MAX_NUMBER)
+assert(PRINTC_WIDTH)
+assert(TEXTBAR_WIDTH)
+assert(TEXTBAR_FG)
+assert(TEXTBAR_BG)
+assert(TEXTLINE_SYMBOL)
+
+assert(_BASE_DIRECTORY)
+assert(_DEBUG_ENABLE)
