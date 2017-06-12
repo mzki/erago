@@ -133,6 +133,7 @@ func runWindow(s screen.Screen, t *theme.Theme, appConf *Config) error {
 	w, err := s.NewWindow(&screen.NewWindowOptions{
 		Width:  appConf.Width,
 		Height: appConf.Height,
+		Title:  "erago ver0.10", // TODO: use constant version
 	})
 	if err != nil {
 		return fmt.Errorf("NewWindow FAIL: %v", err)
