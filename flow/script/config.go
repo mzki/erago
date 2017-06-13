@@ -6,48 +6,27 @@ import (
 	"strings"
 
 	"github.com/yuin/gopher-lua"
-
-	"local/erago/util"
 )
 
 // ScriptConfig holds Script parameters.
 type Config struct {
-	path util.PathManager
+	LoadDir     string
+	LoadPattern string
 
-	LoadDir     string `toml:"load_dir"`
-	LoadPattern string `toml:"load_pattern"`
-
-	CallStackSize    int  `toml:"call_stack_size"`
-	RegistrySize     int  `toml:"registry_size"`
-	ShowGoStackTrace bool `toml:"debug"`
+	CallStackSize       int
+	RegistrySize        int
+	IncludeGoStackTrace bool
 }
 
 var (
-	defaultScriptDir     = "ELA"
-	defaultScriptPattern = "init.lua"
-
-	defaultCallStackSize = lua.CallStackSize
-	defaultRegistrySize  = lua.RegistrySize
+	// default paramters for script VM.
+	LoadPattern   = "init.lua"
+	CallStackSize = lua.CallStackSize
+	RegistrySize  = lua.RegistrySize
 )
 
-func NewConfig(basedir string) Config {
-	return Config{
-		path:             util.NewPathManager(basedir),
-		LoadDir:          defaultScriptDir,
-		LoadPattern:      defaultScriptPattern,
-		CallStackSize:    defaultCallStackSize,
-		RegistrySize:     defaultRegistrySize,
-		ShowGoStackTrace: false,
-	}
-}
-
-// set base directory. All of Expoerted Field is prefixed by base dir.
-func (c *Config) SetBaseDir(basedir string) {
-	c.path = util.NewPathManager(basedir)
-}
-
 func (c Config) loadPattern() string {
-	return c.path.Join(c.LoadDir, c.LoadPattern)
+	return filepath.Join(c.LoadDir, c.LoadPattern)
 }
 
 const (
@@ -61,14 +40,15 @@ func (conf Config) register(L *lua.LState) {
 		key string
 		val lua.LValue
 	}{
-		{registryDebugEnableKey, lua.LBool(conf.ShowGoStackTrace)},
-		{registryBaseDirKey, lua.LString(conf.path.Join(conf.LoadDir))},
+		{registryDebugEnableKey, lua.LBool(conf.IncludeGoStackTrace)},
+		{registryBaseDirKey, lua.LString(conf.LoadDir)},
 	} {
 		reg.RawSetString(set.key, set.val)
 		L.SetGlobal(set.key, set.val)
 	}
 }
 
+// check filepath at argument i.
 func checkFilePath(L *lua.LState, i int) string {
 	path, err := scriptPath(L, L.CheckString(i))
 	if err != nil {

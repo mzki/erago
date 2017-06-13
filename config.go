@@ -28,6 +28,7 @@ const (
 	DefaultSaveFileDir     = "sav"
 	DefaultCSVDir          = "CSV"
 	DefaultCSVCharaPattern = "Chara/Chara*"
+	DefaultScriptDir       = "ELA"
 )
 
 // construct default Config
@@ -38,7 +39,13 @@ func NewConfig(baseDir string) Config {
 		StateConfig: state.Config{
 			SaveFileDir: filepath.Join(baseDir, DefaultSaveFileDir),
 		},
-		ScriptConfig: script.NewConfig(baseDir),
+		ScriptConfig: script.Config{
+			LoadDir:             filepath.Join(baseDir, DefaultScriptDir),
+			LoadPattern:         script.LoadPattern,
+			CallStackSize:       script.CallStackSize,
+			RegistrySize:        script.RegistrySize,
+			IncludeGoStackTrace: true,
+		},
 		CSVConfig: csv.Config{
 			Dir:          filepath.Join(baseDir, DefaultCSVDir),
 			CharaPattern: DefaultCSVCharaPattern,
@@ -50,5 +57,4 @@ func NewConfig(baseDir string) Config {
 // StateConfig, CSVConfig and ScriptConfig.
 func (conf *Config) SetBaseDir(baseDir string) {
 	conf.BaseDir = baseDir
-	conf.ScriptConfig.SetBaseDir(baseDir)
 }

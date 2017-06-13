@@ -31,7 +31,7 @@ func NewInterpreter(s *state.GameState, g GameController, config Config) *Interp
 	vm := lua.NewState(lua.Options{
 		CallStackSize:       config.CallStackSize,
 		RegistrySize:        config.RegistrySize,
-		IncludeGoStackTrace: config.ShowGoStackTrace,
+		IncludeGoStackTrace: config.IncludeGoStackTrace,
 		SkipOpenLibs:        true,
 	})
 
@@ -128,8 +128,7 @@ func (ip Interpreter) DoFile(file string) error {
 
 // return Path of Under Script Dir
 func (ip Interpreter) PathOf(file string) string {
-	clean_path := filepath.Clean(file)
-	return ip.config.path.Join(ip.config.LoadDir, clean_path)
+	return filepath.Join(ip.config.LoadDir, file)
 }
 
 // load all files matched to config pattern.

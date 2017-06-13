@@ -24,10 +24,13 @@ func TestMain(m *testing.M) {
 const scriptDir = "testing"
 
 func newConfig() Config {
-	c := NewConfig("./")
-	c.ShowGoStackTrace = true
-	c.LoadDir = scriptDir
-	return c
+	return Config{
+		LoadDir:             scriptDir,
+		LoadPattern:         LoadPattern,
+		CallStackSize:       CallStackSize,
+		RegistrySize:        RegistrySize,
+		IncludeGoStackTrace: true,
+	}
 }
 
 func newInterpreter() *Interpreter {
