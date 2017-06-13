@@ -2,6 +2,7 @@ package stub
 
 import (
 	"path"
+	"path/filepath"
 	"runtime"
 
 	"local/erago/state"
@@ -27,7 +28,10 @@ var csvDB *csv.CsvManager
 func GetCSV() (*csv.CsvManager, error) {
 	if csvDB == nil {
 		csvDB = &csv.CsvManager{}
-		err := csvDB.Initialize(csv.NewConfig(GetCurrentDir()))
+		err := csvDB.Initialize(csv.Config{
+			Dir:          filepath.Join(GetCurrentDir(), "CSV"),
+			CharaPattern: "Chara/Chara*",
+		})
 		return csvDB, err
 	}
 	return csvDB, nil

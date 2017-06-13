@@ -111,10 +111,7 @@ type CsvManager struct {
 
 // return empty CsvManager same as &CsvManager{} .
 func NewCsvManager() *CsvManager {
-	return &CsvManager{
-		CharaMap: make(map[int64]*Character), // to prevent nil reference
-		aliasMap: make(map[string]string),    // to prevent nil reference
-	}
+	return &CsvManager{}
 }
 
 // get index using group name: BASE, ABL ... , and param name: 体力　... ,
@@ -207,8 +204,6 @@ func newStrMapByVSpecs(vspecs variableSpecs) map[string][]string {
 	return str_map
 }
 
-var ()
-
 // initialize by reading csv files.
 func (cm *CsvManager) Initialize(config Config) (err error) {
 	// initialize reading-buffer
@@ -221,6 +216,10 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 		cm.readStringBuffer = nil
 	}()
 
+	// to prevent nil reference.
+	cm.CharaMap = make(map[int64]*Character)
+	cm.aliasMap = make(map[string]string)
+
 	cm.config = config
 
 	// load GameBase, Replace and Alias.
@@ -228,14 +227,14 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 		errs := util.NewMultiErr()
 		var err error
 
-		if aliasFile := config.loadPathOf(aliasFileName); FileExists(aliasFile) {
+		if aliasFile := config.filepath(aliasFileName); FileExists(aliasFile) {
 			cm.aliasMap, err = readAliases(aliasFile)
 			errs.Add(err)
 		}
 
-		// cm.GameBase, err = newGameBase(config.loadPathOf(gameGaseFileName))
+		// cm.GameBase, err = newGameBase(config.filepath(gameGaseFileName))
 		// errs.Add(err)
-		// cm.Replace, err = newReplace(config.loadPathOf(replaceFileName))
+		// cm.Replace, err = newReplace(config.filepath(replaceFileName))
 		// errs.Add(err)
 		if err = errs.Err(); err != nil {
 			return err
@@ -245,7 +244,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 	// load user specific variables.
 	{
 		var all_vspecs variableSpecs
-		var vspec_path = config.loadPathOf(variableSpecFile)
+		var vspec_path = config.filepath(variableSpecFile)
 		if FileExists(vspec_path) {
 			if vs, err := readVariableSpecs(vspec_path); err != nil {
 				return err
@@ -262,7 +261,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 	// load builtin exceptional variables
 	{
 		names, prices, err := readItemAndPrice(
-			config.loadPathOf(BuiltinItemName+".csv"),
+			config.filepath(BuiltinItemName+".csv"),
 			cm.readIntBuffer,
 			cm.readStringBuffer,
 		)
@@ -318,7 +317,7 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 		if !has {
 			// load new csv file
 			names, err := readNames(
-				cm.config.loadPathOf(fname),
+				cm.config.filepath(fname),
 				cm.readIntBuffer,
 				cm.readStringBuffer,
 			)

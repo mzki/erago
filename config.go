@@ -1,6 +1,8 @@
 package erago
 
 import (
+	"path/filepath"
+
 	"local/erago/flow/scene"
 	"local/erago/flow/script"
 	"local/erago/state"
@@ -22,6 +24,11 @@ type Config struct {
 	ScriptConfig script.Config     `toml:"script"`
 }
 
+const (
+	DefaultCSVDir          = "CSV"
+	DefaultCSVCharaPattern = "Chara/Chara*"
+)
+
 // construct default Config
 func NewConfig(baseDir string) Config {
 	return Config{
@@ -29,7 +36,10 @@ func NewConfig(baseDir string) Config {
 		SceneConfig:  scene.NewSceneConfig(),
 		StateConfig:  state.NewConfig(baseDir),
 		ScriptConfig: script.NewConfig(baseDir),
-		CSVConfig:    csv.NewConfig(baseDir),
+		CSVConfig: csv.Config{
+			Dir:          filepath.Join(baseDir, DefaultCSVDir),
+			CharaPattern: DefaultCSVCharaPattern,
+		},
 	}
 }
 
@@ -38,6 +48,5 @@ func NewConfig(baseDir string) Config {
 func (conf *Config) SetBaseDir(baseDir string) {
 	conf.BaseDir = baseDir
 	conf.StateConfig.SetBaseDir(baseDir)
-	conf.CSVConfig.SetBaseDir(baseDir)
 	conf.ScriptConfig.SetBaseDir(baseDir)
 }

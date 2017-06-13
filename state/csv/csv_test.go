@@ -2,7 +2,10 @@ package csv
 
 import "testing"
 
-var validConfig = NewConfig("./../../stub/")
+var validConfig = Config{
+	Dir:              "../../stub/CSV/",
+	LoadCharaPattern: "Chara/Chara*",
+}
 
 func TestCsvInit(t *testing.T) {
 	config := validConfig
