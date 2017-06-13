@@ -23,11 +23,18 @@ var CSVDB *csv.CsvManager
 
 func initialize() error {
 	CSVDB = &csv.CsvManager{}
-	return CSVDB.Initialize(csv.NewConfig("./../stub/"))
+	return CSVDB.Initialize(csv.Config{
+		Dir:          "./../stub/CSV",
+		CharaPattern: "Chara/Chara*",
+	})
+}
+
+var stateConfig = Config{
+	SaveFileDir: "../stub/sav",
 }
 
 func TestNewGameState(t *testing.T) {
-	gamestate := NewGameState(CSVDB, NewConfig("./"))
+	gamestate := NewGameState(CSVDB, stateConfig)
 
 	base_vars, ok := gamestate.SystemData.GetInt("Number")
 	if !ok {
@@ -43,7 +50,7 @@ func TestNewGameState(t *testing.T) {
 }
 
 func TestMarshall(t *testing.T) {
-	gamestate := NewGameState(CSVDB, NewConfig("./"))
+	gamestate := NewGameState(CSVDB, stateConfig)
 
 	number, _ := gamestate.SystemData.GetInt("Number")
 	number.Set(0, 100)
@@ -67,7 +74,7 @@ func TestMarshall(t *testing.T) {
 }
 
 func TestNewCharacter(t *testing.T) {
-	gamestate := NewGameState(CSVDB, NewConfig("./"))
+	gamestate := NewGameState(CSVDB, stateConfig)
 	const CHARA_ID = 1 // it must exist
 
 	chara, err := gamestate.SystemData.Chara.AddID(CHARA_ID)

@@ -48,7 +48,9 @@ func GetGameState() (*state.GameState, error) {
 	}
 
 	if gameState == nil {
-		config := state.NewConfig(GetCurrentDir())
+		config := state.Config{
+			SaveFileDir: filepath.Join(GetCurrentDir(), "sav"),
+		}
 		gameState = state.NewGameState(csvm, config)
 	}
 	return gameState, nil

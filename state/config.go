@@ -1,31 +1,15 @@
 package state
 
 import (
-	"local/erago/util"
+	"path/filepath"
 )
 
-const defaultSaveFileDir = "sav"
-
-// Scene Config with csv Config
+// configuration for game state.
 type Config struct {
-	path        util.PathManager
-	SaveFileDir string `toml:"savefile_dir"`
-}
-
-// return new default config
-func NewConfig(basedir string) Config {
-	return Config{
-		path:        util.NewPathManager(basedir),
-		SaveFileDir: defaultSaveFileDir,
-	}
+	SaveFileDir string
 }
 
 // return save file path
 func (c Config) savePath(file string) string {
-	return c.path.Join(c.SaveFileDir, file)
-}
-
-// set base direcotry which is prefixed SaveFileDir.
-func (c *Config) SetBaseDir(baseDir string) {
-	c.path = util.NewPathManager(baseDir)
+	return filepath.Join(c.SaveFileDir, file)
 }

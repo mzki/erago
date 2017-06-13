@@ -25,6 +25,7 @@ type Config struct {
 }
 
 const (
+	DefaultSaveFileDir     = "sav"
 	DefaultCSVDir          = "CSV"
 	DefaultCSVCharaPattern = "Chara/Chara*"
 )
@@ -32,9 +33,11 @@ const (
 // construct default Config
 func NewConfig(baseDir string) Config {
 	return Config{
-		BaseDir:      baseDir,
-		SceneConfig:  scene.NewSceneConfig(),
-		StateConfig:  state.NewConfig(baseDir),
+		BaseDir:     baseDir,
+		SceneConfig: scene.NewSceneConfig(),
+		StateConfig: state.Config{
+			SaveFileDir: filepath.Join(baseDir, DefaultSaveFileDir),
+		},
 		ScriptConfig: script.NewConfig(baseDir),
 		CSVConfig: csv.Config{
 			Dir:          filepath.Join(baseDir, DefaultCSVDir),
@@ -47,6 +50,5 @@ func NewConfig(baseDir string) Config {
 // StateConfig, CSVConfig and ScriptConfig.
 func (conf *Config) SetBaseDir(baseDir string) {
 	conf.BaseDir = baseDir
-	conf.StateConfig.SetBaseDir(baseDir)
 	conf.ScriptConfig.SetBaseDir(baseDir)
 }
