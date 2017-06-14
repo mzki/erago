@@ -36,6 +36,7 @@ const (
 	// use for get or set scene name.
 	SceneNameTitle    = "title"
 	SceneNameNewGame  = "newgame"
+	SceneNameAutosave = "autosave"
 	SceneNameBase     = "base"
 	SceneNameShop     = "shop"
 	SceneNameTrain    = "train"
@@ -54,6 +55,7 @@ func newSceneHolder(sf *sceneFields) *sceneHolder {
 	shr.scenes = map[string]Scene{
 		SceneNameTitle:    newTitleScene(sf),
 		SceneNameNewGame:  newNewGameScene(sf),
+		SceneNameAutosave: newAutosaveScene(sf),
 		SceneNameBase:     newBaseScene(sf),
 		SceneNameShop:     newShopScene(sf),
 		SceneNameTrain:    newTrainScene(sf),
