@@ -13,11 +13,8 @@ import (
 const DefaultBaseDir = "./"
 
 // Config holds parameters associating with Game running.
-// It should be constructed by NewConfig, not Config{}, because
-// unexported fields exist.
+// It might be constructed by NewConfig, not Config{}.
 type Config struct {
-	BaseDir string `toml:"base_dir"` // Base directory for game.
-
 	SceneConfig  scene.Config  `toml:"scene"`
 	StateConfig  state.Config  `toml:"state"`
 	CSVConfig    csv.Config    `toml:"csv"`
@@ -31,11 +28,12 @@ const (
 	DefaultScriptDir       = "ELA"
 )
 
-// construct default Config
+// construct default Config with the base directory.
 func NewConfig(baseDir string) Config {
 	return Config{
-		BaseDir:     baseDir,
-		SceneConfig: scene.Config{CanAutoSave: true},
+		SceneConfig: scene.Config{
+			CanAutoSave: true,
+		},
 		StateConfig: state.Config{
 			SaveFileDir: filepath.Join(baseDir, DefaultSaveFileDir),
 		},
@@ -51,10 +49,4 @@ func NewConfig(baseDir string) Config {
 			CharaPattern: DefaultCSVCharaPattern,
 		},
 	}
-}
-
-// set base directory to config. changing base directory propagates all of its fields,
-// StateConfig, CSVConfig and ScriptConfig.
-func (conf *Config) SetBaseDir(baseDir string) {
-	conf.BaseDir = baseDir
 }

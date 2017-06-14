@@ -62,25 +62,19 @@ func NewConfig(baseDir string) *Config {
 	}
 }
 
-// update unexported fields. It should be called when
-// any exported fields are updated.
-func (c *Config) Update() {
-	c.Game.SetBaseDir(c.Game.BaseDir)
-}
-
 // if config file exists load it and return.
 // if not exists return default config and write it.
 func LoadConfigOrDefault(file string) (*Config, error) {
-	appConf := NewConfig(DefaultBaseDir)
 	if !util.FileExists(file) {
 		log.Infof("Config file (%v) does not exist. Use default config and write it to file.", file)
+		appConf := NewConfig(DefaultBaseDir)
 		return appConf, toml.EncodeFile(file, appConf) // write default config
 	}
 
+	appConf := &Config{}
 	if err := toml.DecodeFile(file, appConf); err != nil {
 		return nil, err
 	}
 	log.Infof("Config file (%v) is loaded successfully , use it.", file)
-	appConf.Update()
 	return appConf, nil
 }
