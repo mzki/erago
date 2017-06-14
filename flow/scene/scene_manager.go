@@ -23,7 +23,7 @@ type SceneManager struct {
 	currentScene Scene
 }
 
-func NewSceneManager(game flow.GameController, scr Scripter, state *state.GameState, config SceneConfig) *SceneManager {
+func NewSceneManager(game flow.GameController, scr Scripter, state *state.GameState, config Config) *SceneManager {
 	sf := &sceneFields{
 		callbacker: callBacker{scr, game},
 		game:       game,

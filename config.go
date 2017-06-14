@@ -18,10 +18,10 @@ const DefaultBaseDir = "./"
 type Config struct {
 	BaseDir string `toml:"base_dir"` // Base directory for game.
 
-	SceneConfig  scene.SceneConfig `toml:"scene"`
-	StateConfig  state.Config      `toml:"state"`
-	CSVConfig    csv.Config        `toml:"csv"`
-	ScriptConfig script.Config     `toml:"script"`
+	SceneConfig  scene.Config  `toml:"scene"`
+	StateConfig  state.Config  `toml:"state"`
+	CSVConfig    csv.Config    `toml:"csv"`
+	ScriptConfig script.Config `toml:"script"`
 }
 
 const (
@@ -35,7 +35,7 @@ const (
 func NewConfig(baseDir string) Config {
 	return Config{
 		BaseDir:     baseDir,
-		SceneConfig: scene.NewSceneConfig(),
+		SceneConfig: scene.Config{CanAutoSave: true},
 		StateConfig: state.Config{
 			SaveFileDir: filepath.Join(baseDir, DefaultSaveFileDir),
 		},

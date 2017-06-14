@@ -10,7 +10,7 @@ import (
 func buildSceneManager() *SceneManager {
 	controller := stub.NewFlowGameController()
 	scripter := stub.NewSceneScripter()
-	config := NewSceneConfig()
+	config := Config{CanAutoSave: true}
 	state, err := stub.GetGameState()
 	if err != nil {
 		panic(err)

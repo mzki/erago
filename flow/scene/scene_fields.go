@@ -14,7 +14,7 @@ type sceneFields struct {
 	callbacker callBacker
 	state      *state.GameState
 	scenes     *sceneHolder
-	conf       SceneConfig
+	conf       Config
 }
 
 // Get Field Methods.
@@ -22,7 +22,7 @@ func (sf sceneFields) Game() flow.GameController { return sf.game }
 func (sf sceneFields) Script() callBacker        { return sf.callbacker }
 func (sf sceneFields) Scenes() *sceneHolder      { return sf.scenes }
 func (sf sceneFields) State() *state.GameState   { return sf.state }
-func (sf sceneFields) Config() SceneConfig       { return sf.conf }
+func (sf sceneFields) Config() Config            { return sf.conf }
 
 // sceneHolder holds secne instances and next and prev scene.
 type sceneHolder struct {
