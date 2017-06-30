@@ -323,5 +323,5 @@ func (tes *turnEndScene) Next() (Scene, error) {
 	if next, err := tes.atStart(); next != nil || err != nil {
 		return next, err
 	}
-	return tes.Scenes().GetScene(SceneNameBase)
+	return tes.Scenes().GetScene(SceneNameAutosave)
 }
