@@ -83,7 +83,8 @@ func (sm *SceneManager) Run(ctx context.Context) (err error) {
 			// indicates force quit or normal termination.
 			return nil
 		default:
-			return fmt.Errorf("SceneManager.Run(): %v in %v", err, sm.currentScene.Name())
+			log.Debugf("SceneManager.Run(): %v in %v", err, sm.currentScene.Name())
+			return err // error context, example is uiadpter.ErrorPipelineClosed, is remained.
 		}
 
 		if next == nil {

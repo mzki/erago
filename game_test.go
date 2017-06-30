@@ -33,3 +33,21 @@ func TestGameMain(t *testing.T) {
 		t.Log(err)
 	}
 }
+
+func TestMainQuitExternally(t *testing.T) {
+	g := NewGame()
+	if err := g.Init(stub.NewGameUIStub(), NewConfig("./stub")); err != nil {
+		t.Fatal(err)
+	}
+	defer g.Quit()
+
+	// send quit signal to prevent never end of running game.
+	go func() {
+		time.Sleep(1 * time.Second)
+		g.Quit()
+	}()
+
+	if err := g.Main(); err != nil {
+		t.Errorf("must quit correctly, but error: %v", err)
+	}
+}
