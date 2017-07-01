@@ -15,6 +15,7 @@ import (
 
 var (
 	game        *erago.Game
+	mobileUI    *uiAdapter
 	initialized = false
 )
 
@@ -22,14 +23,15 @@ func Init(ui UI, baseDir string) error {
 	if initialized {
 		panic("game already initialized")
 	}
+	initialized = true
+
 	game = erago.NewGame()
 
-	mobileUI := newUIAdapter(ui)
+	mobileUI = newUIAdapter(ui)
 	if err := game.Init(uiadapter.SingleUI{mobileUI}, erago.NewConfig(baseDir)); err != nil {
 		return err
 	}
 	game.AddRequestObserver(mobileUI)
-	initialized = true
 	return nil
 }
 
@@ -61,6 +63,12 @@ func Main(appContext AppContext) {
 func Quit() {
 	if !initialized {
 		panic("Quit(): Init() must be called firstly")
+	}
+	initialized = false
+
+	if mobileUI != nil {
+		game.RemoveRequestObserver(mobileUI)
+		mobileUI = nil
 	}
 	if game != nil {
 		game.Quit()
