@@ -16,7 +16,10 @@ import (
 //
 // Game is entry point of the application.
 // It implements Sender interface to send user event from external.
-// But Sender is valid after Game.Init(), accsessing it causes panic before initializing.
+// Sender is valid after Game.Init(), so accsessing it causes panic before initializing.
+//
+// Game object is invalid after retruned from Game.Main() or calling Game.Quit().
+// To reuse it, you must call Game.Init() first, then call Main().
 type Game struct {
 	ipr   *script.Interpreter
 	scene *scene.SceneManager
@@ -120,6 +123,10 @@ func (g *Game) main() error {
 	go g.uiAdapter.RunFilter(ctx)
 	defer g.uiAdapter.Quit()
 
+	// finalize game flows to avoid reference cycle.
+	defer g.scene.Free()
+	defer g.ipr.Quit()
+
 	// run game flow.
 	g.ipr.SetContext(ctx)
 	err := g.scene.Run(ctx)
@@ -127,6 +134,15 @@ func (g *Game) main() error {
 		return nil
 	}
 	return err
+}
+
+// implements uiadapter.Sender interface.
+// quit game by external.
+func (g *Game) Quit() {
+	if g.uiAdapter == nil {
+		panic("Game: game is not initialized")
+	}
+	g.uiAdapter.Quit()
 }
 
 // implements uiadapter.Sender interface.
@@ -155,15 +171,4 @@ func (g *Game) RemoveRequestObserver(obs uiadapter.RequestObserver) {
 		return
 	}
 	panic("Game: game is not initialized")
-}
-
-// implements uiadapter.Sender interface.
-// quit game by external.
-func (g *Game) Quit() {
-	if g.uiAdapter == nil {
-		panic("Game: game is not initialized")
-	}
-	g.uiAdapter.Quit()
-	g.scene.Free()
-	g.ipr.Quit()
 }
