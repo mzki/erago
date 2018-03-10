@@ -3,8 +3,8 @@ package csv
 import "testing"
 
 var validConfig = Config{
-	Dir:              "../../stub/CSV/",
-	LoadCharaPattern: "Chara/Chara*",
+	Dir:          "../../stub/CSV/",
+	CharaPattern: "Chara/Chara*",
 }
 
 func TestCsvInit(t *testing.T) {

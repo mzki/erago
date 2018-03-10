@@ -78,7 +78,7 @@ func (port *inputPort) RemoveRequestObserver(o RequestObserver) {
 }
 
 //  It can not use concurrently.
-func (port inputPort) requestChanged(typ InputRequestType) {
+func (port *inputPort) requestChanged(typ InputRequestType) {
 	for _, obs := range port.requestObservers {
 		obs.OnRequestChanged(typ)
 	}

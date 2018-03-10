@@ -43,9 +43,6 @@ func mobileConfig(mobileDir string, conf *Config) (*app.Config, error) {
 		log.Infof("Error: LoadConfigFile(%s) FAIL: %v", confPath, err)
 		return nil, err
 	}
-	// in mobile, root directory is fixed.
-	appConf.Game.SetBaseDir(mobileDir)
-	appConf.Update()
 
 	// overwrite by mobile config.
 	appConf.FontSize = conf.fontSize

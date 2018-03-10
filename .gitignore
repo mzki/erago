@@ -15,7 +15,7 @@ main
 
 *.ttf
 
-ignore/
+_ignore/
 .git_old
 
 todo.md

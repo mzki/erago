@@ -184,21 +184,25 @@ func TestSkippingWait(t *testing.T) {
 		port.Quit() // safety for quiting.
 	}()
 
-	port.Wait() // got skip controll
+	port.Wait() // block until got skip controll
+
+	// below Wait() is returned immediately.
 
 	now_t := time.Now()
 	port.Wait()
-	if since_t := time.Since(now_t); since_t > 100*time.Microsecond {
+	if since_t := time.Since(now_t); since_t > 1*time.Millisecond {
 		t.Errorf("cannot skip wait: %v", since_t)
+	} else {
+		t.Log("first wait delta: ", since_t)
 	}
-	t.Log("first wait delta: ", time.Since(now_t))
 
 	now_t = time.Now()
 	port.Wait()
-	if since_t := time.Since(now_t); since_t > 100*time.Microsecond {
+	if since_t := time.Since(now_t); since_t > 1*time.Millisecond {
 		t.Errorf("cannot skip second wait: %v", since_t)
+	} else {
+		t.Log("second wait delta: ", since_t)
 	}
-	t.Log("second wait delta: ", time.Since(now_t))
 
 	_, err := port.Command()
 	if err != ErrorPipelineClosed {
