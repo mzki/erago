@@ -41,7 +41,7 @@ func (conf Config) register(L *lua.LState) {
 		val lua.LValue
 	}{
 		{registryDebugEnableKey, lua.LBool(conf.IncludeGoStackTrace)},
-		{registryBaseDirKey, lua.LString(conf.LoadDir)},
+		{registryBaseDirKey, lua.LString(filepath.Clean(conf.LoadDir))},
 	} {
 		reg.RawSetString(set.key, set.val)
 		L.SetGlobal(set.key, set.val)
@@ -67,7 +67,7 @@ func scriptPath(L *lua.LState, p string) (string, error) {
 	basedir := lua.LVAsString(lv)
 	joined := filepath.Clean(filepath.Join(basedir, p))
 	if !strings.HasPrefix(joined, basedir) {
-		return joined, fmt.Errorf("given path %s must be under %s", p, basedir)
+		return joined, fmt.Errorf("given path %s must be under %s, but you specifies %s", p, basedir, joined)
 	}
 	return joined, nil
 }
