@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"local/erago/flow"
 	"local/erago/state/csv"
 )
 
@@ -48,23 +47,23 @@ func (scene *titleScene) Next() (Scene, error) {
 
 	for !scenes.HasNext() {
 		game.NewPage()
-		game.SetAlignment(flow.AlignmentCenter)
+		game.SetAlignment(AlignmentCenter)
 
-		game.PrintLine(flow.DefaultLineSymbol)
+		game.PrintLine(DefaultLineSymbol)
 		game.PrintL(csvGameBase.Title)
 		game.PrintL(fmt.Sprintf("ver %v", csvGameBase.Version))
 		game.PrintL(csvGameBase.Author)
 		game.PrintL(csvGameBase.AdditionalInfo)
 
-		game.PrintLine(flow.DefaultLineSymbol)
-		game.PrintC("[0] 最初から始める", flow.DefaultPrintCWidth)
+		game.PrintLine(DefaultLineSymbol)
+		game.PrintC("[0] 最初から始める", DefaultPrintCWidth)
 		game.Print("\n\n")
-		game.PrintC("[1] 続きから始める", flow.DefaultPrintCWidth)
+		game.PrintC("[1] 続きから始める", DefaultPrintCWidth)
 		game.Print("\n\n")
-		game.PrintC("[9] 終了", flow.DefaultPrintCWidth)
+		game.PrintC("[9] 終了", DefaultPrintCWidth)
 		game.PrintL("")
 
-		game.SetAlignment(flow.AlignmentLeft)
+		game.SetAlignment(AlignmentLeft)
 
 		input, err := game.CommandNumberSelect(context.Background(), 0, 1, 9)
 		if err != nil {
@@ -91,7 +90,7 @@ func (scene *titleScene) Next() (Scene, error) {
 			}
 
 		case 9:
-			return nil, flow.ErrorQuit
+			return nil, ErrorQuit
 		}
 	}
 	return scenes.Next(), nil
@@ -240,8 +239,8 @@ func (sc shopScene) Next() (Scene, error) {
 		}
 		if !called {
 			sc.ShowItems(DefaultShowItemFormat)
-			game.PrintLine(flow.DefaultLineSymbol)
-			game.PrintC("[-1] 戻る", flow.DefaultPrintCWidth)
+			game.PrintLine(DefaultLineSymbol)
+			game.PrintC("[-1] 戻る", DefaultPrintCWidth)
 			game.PrintL("")
 		}
 
@@ -296,7 +295,7 @@ func (sc shopScene) ShowItems(fmtStr string) {
 	}
 
 	game := sc.Game()
-	nColumn := game.MaxRuneWidth() / flow.DefaultPrintCWidth
+	nColumn := game.MaxRuneWidth() / DefaultPrintCWidth
 	cc := 0 // current column
 	for i, item := range itemNames[:maxLen] {
 		if len(item) == 0 {
@@ -307,7 +306,7 @@ func (sc shopScene) ShowItems(fmtStr string) {
 		}
 
 		text := fmt.Sprintf(fmtStr, i, item, itemPrices[i])
-		game.PrintC(text, flow.DefaultPrintCWidth)
+		game.PrintC(text, DefaultPrintCWidth)
 		cc += 1
 		if cc == nColumn {
 			cc = 0

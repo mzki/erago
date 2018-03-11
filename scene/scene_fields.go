@@ -3,14 +3,13 @@ package scene
 import (
 	"fmt"
 
-	"local/erago/flow"
 	"local/erago/state"
 )
 
 // common members of scene.
 type sceneFields struct {
 	// packed struct
-	game       flow.GameController
+	game       GameController
 	callbacker callBacker
 	state      *state.GameState
 	scenes     *sceneHolder
@@ -18,11 +17,11 @@ type sceneFields struct {
 }
 
 // Get Field Methods.
-func (sf sceneFields) Game() flow.GameController { return sf.game }
-func (sf sceneFields) Script() callBacker        { return sf.callbacker }
-func (sf sceneFields) Scenes() *sceneHolder      { return sf.scenes }
-func (sf sceneFields) State() *state.GameState   { return sf.state }
-func (sf sceneFields) Config() Config            { return sf.conf }
+func (sf sceneFields) Game() GameController    { return sf.game }
+func (sf sceneFields) Script() callBacker      { return sf.callbacker }
+func (sf sceneFields) Scenes() *sceneHolder    { return sf.scenes }
+func (sf sceneFields) State() *state.GameState { return sf.state }
+func (sf sceneFields) Config() Config          { return sf.conf }
 
 // sceneHolder holds secne instances and next and prev scene.
 type sceneHolder struct {

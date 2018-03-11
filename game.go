@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"runtime"
 
-	"local/erago/flow/scene"
-	"local/erago/flow/script"
+	"local/erago/infra/script"
+	"local/erago/scene"
 	"local/erago/state"
 	"local/erago/state/csv"
 	"local/erago/uiadapter"

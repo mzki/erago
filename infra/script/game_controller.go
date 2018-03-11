@@ -1,12 +1,12 @@
 package script
 
 import (
-	"local/erago/flow"
+	"local/erago/scene"
 )
 
 // game controller controlls game flow, input, output, ... etc.
 type GameController interface {
-	flow.GameController
+	scene.GameController
 
 	// scene controll
 	//

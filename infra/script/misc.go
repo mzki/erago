@@ -1,7 +1,7 @@
 package script
 
 import (
-	"local/erago/flow"
+	"local/erago/scene"
 	"math"
 
 	"github.com/yuin/gopher-lua"
@@ -50,9 +50,9 @@ func registerMisc(L *lua.LState) {
 	L.SetGlobal("MAX_INTEGER", lua.LNumber(MaxInteger))
 	L.SetGlobal("MAX_NUMBER", lua.LNumber(MaxNumber))
 
-	L.SetGlobal("PRINTC_WIDTH", lua.LNumber(flow.DefaultPrintCWidth))
-	L.SetGlobal("TEXTBAR_WIDTH", lua.LNumber(flow.DefaultTextBarWidth))
-	L.SetGlobal("TEXTBAR_FG", lua.LString(flow.DefaultTextBarFg))
-	L.SetGlobal("TEXTBAR_BG", lua.LString(flow.DefaultTextBarBg))
-	L.SetGlobal("TEXTLINE_SYMBOL", lua.LString(flow.DefaultLineSymbol))
+	L.SetGlobal("PRINTC_WIDTH", lua.LNumber(scene.DefaultPrintCWidth))
+	L.SetGlobal("TEXTBAR_WIDTH", lua.LNumber(scene.DefaultTextBarWidth))
+	L.SetGlobal("TEXTBAR_FG", lua.LString(scene.DefaultTextBarFg))
+	L.SetGlobal("TEXTBAR_BG", lua.LString(scene.DefaultTextBarBg))
+	L.SetGlobal("TEXTLINE_SYMBOL", lua.LString(scene.DefaultLineSymbol))
 }

@@ -1,4 +1,4 @@
-package flow
+package scene
 
 const (
 	// default used symbol for PrintLine()

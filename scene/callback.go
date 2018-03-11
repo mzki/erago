@@ -1,11 +1,7 @@
 package scene
 
-import (
-	"local/erago/flow"
-)
-
 // Scripter handles calling script function in era module.
-// These functions can return spcial error defined in the package flow.
+// These functions can return spcial error defined in the package scene
 // In such case, scene flow will be changed by type of special error.
 type Scripter interface {
 	// oprations for era module.
@@ -34,7 +30,7 @@ const (
 
 type callBacker struct {
 	Scripter
-	game flow.GameController
+	game GameController
 }
 
 // Call script function if exists and return error of

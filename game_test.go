@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"local/erago/flow/scene"
+	"local/erago/scene"
 	"local/erago/stub"
 	"local/erago/uiadapter/event/input"
 )

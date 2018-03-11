@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"local/erago/flow"
+	"local/erago/scene"
 	"local/erago/stub"
 )
 
@@ -103,8 +103,8 @@ func TestInterpreterSpecialErrors(t *testing.T) {
 		FuncName string
 		Error    error
 	}{
-		{"testquit", flow.ErrorQuit},
-		{"testgoto", flow.ErrorSceneNext},
+		{"testquit", scene.ErrorQuit},
+		{"testgoto", scene.ErrorSceneNext},
 		{"testlongreturn", nil},
 	} {
 		if err := ip.EraCall(testcase.FuncName); err != testcase.Error {

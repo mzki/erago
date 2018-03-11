@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"local/erago/flow"
+	"local/erago/scene"
 )
 
 const (
@@ -39,9 +39,9 @@ func checkSpecialError(err error) error {
 	mes := err.Error()
 	switch {
 	case strings.Contains(mes, ScriptQuitMessage):
-		return flow.ErrorQuit
+		return scene.ErrorQuit
 	case strings.Contains(mes, ScriptGoToNextSceneMessage):
-		return flow.ErrorSceneNext
+		return scene.ErrorSceneNext
 	case strings.Contains(mes, ScriptLongReturnMessage):
 		return nil
 	case strings.Contains(mes, scriptCanceledMessage):

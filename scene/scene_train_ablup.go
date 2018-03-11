@@ -6,7 +6,6 @@ import (
 	"math"
 	"strconv"
 
-	"local/erago/flow"
 	"local/erago/state/csv"
 )
 
@@ -161,14 +160,14 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 }
 
 func (ts trainScene) showTrainCommands() {
-	entryColumn := ts.Game().MaxRuneWidth() / flow.DefaultPrintCWidth
+	entryColumn := ts.Game().MaxRuneWidth() / DefaultPrintCWidth
 	n := 0
 	for cmd_no, name := range ts.command_names {
 		if !ts.command_ables[cmd_no] {
 			continue
 		}
 
-		ts.Game().PrintC(fmt.Sprintf(ts.command_format, cmd_no, name), flow.DefaultPrintCWidth)
+		ts.Game().PrintC(fmt.Sprintf(ts.command_format, cmd_no, name), DefaultPrintCWidth)
 		n += 1
 		// insert return code to format line.
 		if n == entryColumn {

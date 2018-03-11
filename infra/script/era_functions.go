@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/yuin/gopher-lua"
+
 	attr "local/erago/attribute"
-	"local/erago/flow"
+	"local/erago/scene"
 	"local/erago/state"
 )
 
@@ -252,11 +253,11 @@ func (ft functor) setAlignment(L *lua.LState) int {
 	game := ft.game
 	switch align := L.CheckString(1); align {
 	case "left", "LEFT", "l", "L":
-		game.SetAlignment(flow.AlignmentLeft)
+		game.SetAlignment(scene.AlignmentLeft)
 	case "right", "RIGHT", "r", "R":
-		game.SetAlignment(flow.AlignmentRight)
+		game.SetAlignment(scene.AlignmentRight)
 	case "center", "CENTER", "c", "C":
-		game.SetAlignment(flow.AlignmentCenter)
+		game.SetAlignment(scene.AlignmentCenter)
 	default:
 		L.ArgError(1, "unknown alignment string: "+align)
 	}
@@ -274,14 +275,14 @@ func (ft functor) setAlignment(L *lua.LState) int {
 func (ft functor) getAlignment(L *lua.LState) int {
 	var alignStr string
 	switch ft.game.GetAlignment() {
-	case flow.AlignmentLeft:
+	case scene.AlignmentLeft:
 		alignStr = "left"
-	case flow.AlignmentCenter:
+	case scene.AlignmentCenter:
 		alignStr = "center"
-	case flow.AlignmentRight:
+	case scene.AlignmentRight:
 		alignStr = "right"
 	default:
-		L.RaiseError("flow.script.GetAlignment(): unkown alignment")
+		L.RaiseError("scene.script.GetAlignment(): unkown alignment")
 	}
 	L.Push(lua.LString(alignStr))
 	return 1
@@ -422,7 +423,7 @@ func (ft functor) vprintL(L *lua.LState) int {
 // 無視されることに注意してください。
 func (ft functor) printC(L *lua.LState) int {
 	text := checkAnyString(L, 1)
-	count := L.OptInt(2, flow.DefaultPrintCWidth) // TODO: using ft.Config.PrintCSize as default?
+	count := L.OptInt(2, scene.DefaultPrintCWidth) // TODO: using ft.Config.PrintCSize as default?
 	ft.game.PrintC(text, count)
 	return 0
 }
@@ -430,7 +431,7 @@ func (ft functor) printC(L *lua.LState) int {
 func (ft functor) vprintC(L *lua.LState) int {
 	vname := L.CheckString(1)
 	text := checkAnyString(L, 2)
-	count := L.OptInt(3, flow.DefaultPrintCWidth) // TODO: using ft.Config.PrintCSize as default?
+	count := L.OptInt(3, scene.DefaultPrintCWidth) // TODO: using ft.Config.PrintCSize as default?
 	if err := ft.game.VPrintC(vname, text, count); err != nil {
 		L.ArgError(1, "vprintc: "+err.Error())
 		return 0
@@ -470,7 +471,7 @@ func (ft functor) vprintW(L *lua.LState) int {
 // symbolを与えなかった場合には、デフォルトで"="を使用します。
 func (ft functor) printLine(L *lua.LState) int {
 	if L.GetTop() == 0 {
-		ft.game.PrintLine(flow.DefaultLineSymbol)
+		ft.game.PrintLine(scene.DefaultLineSymbol)
 		return 0
 	}
 	sym := L.CheckString(1)
@@ -481,7 +482,7 @@ func (ft functor) printLine(L *lua.LState) int {
 func (ft functor) vprintLine(L *lua.LState) int {
 	vname := L.CheckString(1)
 	if L.GetTop() == 1 {
-		if err := ft.game.VPrintLine(vname, flow.DefaultLineSymbol); err != nil {
+		if err := ft.game.VPrintLine(vname, scene.DefaultLineSymbol); err != nil {
 			L.ArgError(1, "vprintline: "+err.Error())
 		}
 		return 0
@@ -627,9 +628,9 @@ func checkBarParams(L *lua.LState, base_pos int) (ret struct {
 }) {
 	ret.now = L.CheckInt64(base_pos)
 	ret.max = L.CheckInt64(base_pos + 1)
-	ret.width = L.OptInt(base_pos+2, flow.DefaultTextBarWidth)
-	ret.fg = L.OptString(base_pos+3, flow.DefaultTextBarFg)
-	ret.bg = L.OptString(base_pos+4, flow.DefaultTextBarBg)
+	ret.width = L.OptInt(base_pos+2, scene.DefaultTextBarWidth)
+	ret.fg = L.OptString(base_pos+3, scene.DefaultTextBarFg)
+	ret.bg = L.OptString(base_pos+4, scene.DefaultTextBarBg)
 	return
 }
 
@@ -946,7 +947,7 @@ func (ft functor) saveScene(L *lua.LState) int {
 // しかし、戻るを選択した場合には、この関数の呼び出し元に戻ってきます。
 func (ft functor) loadScene(L *lua.LState) int {
 	err := ft.game.DoLoadGameScene()
-	if err == flow.ErrorSceneNext {
+	if err == scene.ErrorSceneNext {
 		L.Error(lua.LString(ScriptGoToNextSceneMessage), 0)
 		return 0
 	}

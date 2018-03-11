@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"local/erago/flow"
 	"local/erago/state"
 	"local/erago/state/csv"
 	"local/erago/util/log"
@@ -23,7 +22,7 @@ type SceneManager struct {
 	currentScene Scene
 }
 
-func NewSceneManager(game flow.GameController, scr Scripter, state *state.GameState, config Config) *SceneManager {
+func NewSceneManager(game GameController, scr Scripter, state *state.GameState, config Config) *SceneManager {
 	sf := &sceneFields{
 		callbacker: callBacker{scr, game},
 		game:       game,
@@ -73,13 +72,13 @@ func (sm *SceneManager) Run(ctx context.Context) (err error) {
 		switch err {
 		case nil:
 			// no error, do nothing.
-		case flow.ErrorSceneNext:
+		case ErrorSceneNext:
 			// indicates force moving to next scene.
 			next = sm.sf.Scenes().Next()
 			if next == nil {
 				return fmt.Errorf("SceneManager.Run(): got going to next scene, but next scene does not set")
 			}
-		case flow.ErrorQuit:
+		case ErrorQuit:
 			// indicates force quit or normal termination.
 			return nil
 		default:
@@ -105,7 +104,7 @@ func (sm SceneManager) DoSaveGameScene() error {
 }
 
 // Run flow of scene: LoadGame.
-// It sets next scene `loadend` and return flow.ErrorSceneNext if load success.
+// It sets next scene `loadend` and return ErrorSceneNext if load success.
 func (sm SceneManager) DoLoadGameScene() error {
 	next, err := newLoadGameScene(sm.sf).Next()
 	if err != nil {
@@ -113,7 +112,7 @@ func (sm SceneManager) DoLoadGameScene() error {
 	}
 	if next != nil {
 		sm.sf.scenes.SetNext(next)
-		return flow.ErrorSceneNext
+		return ErrorSceneNext
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"local/erago/flow"
 	"local/erago/state"
 	"local/erago/util/log"
 )
@@ -162,7 +161,7 @@ func (ld *loadEndScene) Next() (Scene, error) {
 
 func printSaveListsScene(sf *sceneFields) {
 	printSaveLists(sf)
-	sf.Game().PrintLine(flow.DefaultLineSymbol)
+	sf.Game().PrintLine(DefaultLineSymbol)
 	sf.Game().PrintL("[100] 戻る")
 }
 
