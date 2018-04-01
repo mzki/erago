@@ -36,7 +36,7 @@ func (lg loadGameScene) Next() (Scene, error) {
 
 // return next scene `loaded` if load success.
 func loadGameSceneProcess(sf *sceneFields) (Scene, error) {
-	game := sf.Game()
+	game := sf.IO()
 
 	game.PrintL("ロードするデータを選択してください")
 	printSaveListsScene(sf)
@@ -78,7 +78,7 @@ func (sg *saveGameScene) Next() (Scene, error) {
 		return next, err
 	}
 
-	game := sg.Game()
+	game := sg.IO()
 	// TODO: current layout is resereved and revert after save/load?
 	// game.ReserveLayout()
 	// defer game.SetPreviousLayout()
@@ -161,8 +161,8 @@ func (ld *loadEndScene) Next() (Scene, error) {
 
 func printSaveListsScene(sf *sceneFields) {
 	printSaveLists(sf)
-	sf.Game().PrintLine(DefaultLineSymbol)
-	sf.Game().PrintL("[100] 戻る")
+	sf.IO().PrintLine(DefaultLineSymbol)
+	sf.IO().PrintL("[100] 戻る")
 }
 
 const autoSaveNumber = 99
@@ -181,10 +181,10 @@ func printSaveLists(sf *sceneFields) {
 
 	list := buildHeaderLists(sf.State())
 	for i := 0; i < len(list)-1; i++ {
-		sf.Game().PrintL(buildSaveTitle(list, i, i))
+		sf.IO().PrintL(buildSaveTitle(list, i, i))
 	}
 	// auto save number
-	sf.Game().PrintL(buildSaveTitle(list, len(list)-1, autoSaveNumber))
+	sf.IO().PrintL(buildSaveTitle(list, len(list)-1, autoSaveNumber))
 }
 
 func buildHeaderLists(gstate *state.GameState) []*state.FileHeader {

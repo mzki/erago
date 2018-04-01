@@ -6,7 +6,7 @@ import (
 
 // game controller controlls game flow, input, output, ... etc.
 type GameController interface {
-	scene.GameController
+	scene.IOController
 
 	// scene controll
 	//

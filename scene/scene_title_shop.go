@@ -39,7 +39,7 @@ func (scene *titleScene) Next() (Scene, error) {
 		return next, err
 	}
 
-	game := scene.Game()
+	game := scene.IO()
 	game.SetSingleLayout(game.GetCurrentViewName())
 
 	scenes := scene.Scenes()
@@ -183,7 +183,7 @@ func (bs baseScene) Next() (Scene, error) {
 
 func (bs baseScene) inputLoop() error {
 	for {
-		input, err := bs.Game().CommandNumber()
+		input, err := bs.IO().CommandNumber()
 		if err != nil {
 			return err
 		}
@@ -231,7 +231,7 @@ func (sc shopScene) Next() (Scene, error) {
 	}
 
 	scenes := sc.Scenes()
-	game := sc.Game()
+	game := sc.IO()
 	for !scenes.HasNext() {
 		called, err := sc.Script().checkCall(ScrSystemShowShopMenu)
 		if err != nil {
@@ -256,7 +256,7 @@ func (sc shopScene) Next() (Scene, error) {
 func (sc shopScene) inputLoop() error {
 	for {
 		// get user input
-		input, err := sc.Game().CommandNumber()
+		input, err := sc.IO().CommandNumber()
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func (sc shopScene) ShowItems(fmtStr string) {
 		maxLen = itemSold.Len()
 	}
 
-	game := sc.Game()
+	game := sc.IO()
 	nColumn := game.MaxRuneWidth() / DefaultPrintCWidth
 	cc := 0 // current column
 	for i, item := range itemNames[:maxLen] {

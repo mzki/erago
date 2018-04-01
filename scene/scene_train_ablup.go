@@ -122,7 +122,7 @@ func (ts *trainScene) trainCycle() (Scene, error) {
 		}
 
 		// get user command
-		num, err := ts.Game().CommandNumber()
+		num, err := ts.IO().CommandNumber()
 		if err != nil {
 			return nil, err
 		}
@@ -160,24 +160,24 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 }
 
 func (ts trainScene) showTrainCommands() {
-	entryColumn := ts.Game().MaxRuneWidth() / DefaultPrintCWidth
+	entryColumn := ts.IO().MaxRuneWidth() / DefaultPrintCWidth
 	n := 0
 	for cmd_no, name := range ts.command_names {
 		if !ts.command_ables[cmd_no] {
 			continue
 		}
 
-		ts.Game().PrintC(fmt.Sprintf(ts.command_format, cmd_no, name), DefaultPrintCWidth)
+		ts.IO().PrintC(fmt.Sprintf(ts.command_format, cmd_no, name), DefaultPrintCWidth)
 		n += 1
 		// insert return code to format line.
 		if n == entryColumn {
 			n = 0
-			ts.Game().PrintL("")
+			ts.IO().PrintL("")
 		}
 	}
 	// not end by "\n", so add it.
 	if n != 0 {
-		ts.Game().PrintL("")
+		ts.IO().PrintL("")
 	}
 }
 
@@ -289,7 +289,7 @@ func (aus ablUpScene) Next() (Scene, error) {
 
 func (aus ablUpScene) inputLoop() error {
 	for {
-		input, err := aus.Game().CommandNumber()
+		input, err := aus.IO().CommandNumber()
 		if err != nil {
 			return err
 		}

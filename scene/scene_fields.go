@@ -9,7 +9,7 @@ import (
 // common members of scene.
 type sceneFields struct {
 	// packed struct
-	game       GameController
+	io         IOController
 	callbacker callBacker
 	state      *state.GameState
 	scenes     *sceneHolder
@@ -17,7 +17,7 @@ type sceneFields struct {
 }
 
 // Get Field Methods.
-func (sf sceneFields) Game() GameController    { return sf.game }
+func (sf sceneFields) IO() IOController        { return sf.io }
 func (sf sceneFields) Script() callBacker      { return sf.callbacker }
 func (sf sceneFields) Scenes() *sceneHolder    { return sf.scenes }
 func (sf sceneFields) State() *state.GameState { return sf.state }

@@ -22,10 +22,10 @@ type SceneManager struct {
 	currentScene Scene
 }
 
-func NewSceneManager(game GameController, scr Scripter, state *state.GameState, config Config) *SceneManager {
+func NewSceneManager(game IOController, scr Scripter, state *state.GameState, config Config) *SceneManager {
 	sf := &sceneFields{
 		callbacker: callBacker{scr, game},
-		game:       game,
+		io:         game,
 		conf:       config,
 		state:      state,
 	}
@@ -42,7 +42,7 @@ func NewSceneManager(game GameController, scr Scripter, state *state.GameState, 
 // Free referene cycle. It must be called
 // at end use of SceneManager for GC.
 func (sm *SceneManager) Free() {
-	sm.sf.game = nil
+	sm.sf.io = nil
 	sm.sf.callbacker = callBacker{}
 	sm.sf.state = nil
 	sm.sf.scenes = nil

@@ -14,9 +14,9 @@ const (
 	AlignmentRight  = attr.AlignmentRight
 )
 
-// game controller has interfaces for external layer,
+// io controller has interfaces for external io layer,
 // inputting, outputting and layouting etc.
-type GameController interface {
+type IOController interface {
 	InputPort
 	OutputPort
 	Layouter
