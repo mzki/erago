@@ -117,31 +117,31 @@ func (v *TabView) PrintLine(sym string) {
 	v.content.viewManager.currentView().PrintLine(sym)
 }
 
-func (v *TabView) SetColor(color uint32) {
+func (v *TabView) SetColor(color uint32) error {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
-	v.content.viewManager.currentView().SetColor(color)
+	return v.content.viewManager.currentView().SetColor(color)
 }
 
-func (v *TabView) GetColor() (color uint32) {
+func (v *TabView) GetColor() (color uint32, err error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
 	return v.content.viewManager.currentView().GetColor()
 }
 
-func (v *TabView) ResetColor() {
+func (v *TabView) ResetColor() error {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
-	v.content.viewManager.currentView().ResetColor()
+	return v.content.viewManager.currentView().ResetColor()
 }
 
-func (v *TabView) SetAlignment(a attr.Alignment) {
+func (v *TabView) SetAlignment(a attr.Alignment) error {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
-	v.content.viewManager.currentView().SetAlignment(a)
+	return v.content.viewManager.currentView().SetAlignment(a)
 }
 
-func (v *TabView) GetAlignment() attr.Alignment {
+func (v *TabView) GetAlignment() (attr.Alignment, error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
 	return v.content.viewManager.currentView().GetAlignment()
@@ -165,19 +165,19 @@ func (v *TabView) ClearLineAll() {
 	v.content.viewManager.currentView().ClearLineAll()
 }
 
-func (v *TabView) MaxRuneWidth() int {
+func (v *TabView) MaxRuneWidth() (int, error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
 	return v.content.viewManager.currentView().MaxRuneWidth()
 }
 
-func (v *TabView) CurrentRuneWidth() int {
+func (v *TabView) CurrentRuneWidth() (int, error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
 	return v.content.viewManager.currentView().CurrentRuneWidth()
 }
 
-func (v *TabView) LineCount() int {
+func (v *TabView) LineCount() (int, error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
 	return v.content.viewManager.currentView().LineCount()

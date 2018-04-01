@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/mobile/event/mouse"
 
+	attr "local/erago/attribute"
 	"local/erago/view/exp/text"
 )
 
@@ -211,37 +212,79 @@ func (v *TextView) String() string {
 // So send Mark event to eventQ.
 //
 
-func (v *TextView) Print(s string) {
+func (v *TextView) Print(s string) error {
 	v.Printer.Print(s)
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) PrintLabel(s string) {
+func (v *TextView) PrintLabel(s string) error {
 	v.Printer.PrintLabel(s)
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) PrintButton(caption string, command string) {
+func (v *TextView) PrintButton(caption string, command string) error {
 	v.Printer.PrintButton(caption, command)
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) PrintLine(sym string) {
+func (v *TextView) PrintLine(sym string) error {
 	v.Printer.PrintLine(sym)
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) NewPage() {
+func (v *TextView) NewPage() error {
 	v.Printer.NewPage()
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) ClearLine(nline int) {
+func (v *TextView) ClearLine(nline int) error {
 	v.Printer.ClearLine(nline)
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
 }
 
-func (v *TextView) ClearLineAll() {
+func (v *TextView) ClearLineAll() error {
 	v.Printer.ClearLineAll()
 	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
+}
+
+func (v *TextView) GetColor() (uint32, error) {
+	return v.Printer.GetColor(), nil
+}
+
+func (v *TextView) SetColor(c uint32) error {
+	v.Printer.SetColor(c)
+	return nil
+}
+
+func (v *TextView) ResetColor() error {
+	v.Printer.ResetColor()
+	return nil
+}
+
+func (v *TextView) GetAlignment() (attr.Alignment, error) {
+	return v.Printer.GetAlignment(), nil
+}
+
+func (v *TextView) SetAlignment(a attr.Alignment) error {
+	v.Printer.SetAlignment(a)
+	return nil
+}
+
+func (v *TextView) CurrentRuneWidth() (int, error) {
+	return v.Printer.CurrentRuneWidth(), nil
+}
+
+func (v *TextView) MaxRuneWidth() (int, error) {
+	return v.Printer.MaxRuneWidth(), nil
+}
+
+func (v *TextView) LineCount() (int, error) {
+	return v.Printer.LineCount(), nil
 }

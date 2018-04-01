@@ -274,7 +274,11 @@ func (ft functor) setAlignment(L *lua.LState) int {
 // 取得した値は、SetAlignment()に渡すことができます。
 func (ft functor) getAlignment(L *lua.LState) int {
 	var alignStr string
-	switch ft.game.GetAlignment() {
+	align, err := ft.game.GetAlignment()
+	if err != nil {
+		L.RaiseError("script.getAlignment(): %v", err)
+	}
+	switch align {
 	case scene.AlignmentLeft:
 		alignStr = "left"
 	case scene.AlignmentCenter:
@@ -282,7 +286,7 @@ func (ft functor) getAlignment(L *lua.LState) int {
 	case scene.AlignmentRight:
 		alignStr = "right"
 	default:
-		L.RaiseError("scene.script.GetAlignment(): unkown alignment")
+		L.RaiseError("script.getAlignment(): unkown alignment")
 	}
 	L.Push(lua.LString(alignStr))
 	return 1
@@ -318,7 +322,11 @@ func pushColor(L *lua.LState, color uint32) int {
 //
 // 現在のテキストカラーを返します。カラーは0xRRGGBBの形式で表されます。
 func (ft functor) getColor(L *lua.LState) int {
-	return pushColor(L, ft.game.GetColor())
+	color, err := ft.game.GetColor()
+	if err != nil {
+		L.RaiseError("script.getColor(): %v", err)
+	}
+	return pushColor(L, color)
 }
 
 // +gendoc "Era Module"
@@ -591,7 +599,11 @@ func (ft functor) vclearLine(L *lua.LState) int {
 // 例えば、maxStrWidth()が3ならば、半角文字1つと全角文字1つまでが
 // 最大の横幅に収まります。
 func (ft functor) maxStrWidth(L *lua.LState) int {
-	L.Push(lua.LNumber(ft.game.MaxRuneWidth()))
+	width, err := ft.game.MaxRuneWidth()
+	if err != nil {
+		L.RaiseError("script.maxStrWidth(): %v", err)
+	}
+	L.Push(lua.LNumber(width))
 	return 1
 }
 
@@ -604,7 +616,11 @@ func (ft functor) maxStrWidth(L *lua.LState) int {
 // 現在、編集中の行の文字幅を返します。
 // ここでは、半角1文字を1、全角1文字を2として数えます。
 func (ft functor) currentStrWidth(L *lua.LState) int {
-	L.Push(lua.LNumber(ft.game.MaxRuneWidth()))
+	width, err := ft.game.CurrentRuneWidth()
+	if err != nil {
+		L.RaiseError("script.currentStrWidth(): %v", err)
+	}
+	L.Push(lua.LNumber(width))
 	return 1
 }
 
@@ -615,7 +631,11 @@ func (ft functor) currentStrWidth(L *lua.LState) int {
 //
 // Viewの高さに収まる最大の行数を返します
 func (ft functor) lineCount(L *lua.LState) int {
-	L.Push(lua.LNumber(ft.game.LineCount()))
+	count, err := ft.game.LineCount()
+	if err != nil {
+		L.RaiseError("script.lineCount(): %v", err)
+	}
+	L.Push(lua.LNumber(count))
 	return 1
 }
 
@@ -669,7 +689,10 @@ func (ft functor) vprintBar(L *lua.LState) int {
 // 詳細はprintBar()を参照
 func (ft functor) textBar(L *lua.LState) int {
 	p := checkBarParams(L, 1)
-	res := ft.game.TextBar(p.now, p.max, p.width, p.fg, p.bg)
+	res, err := ft.game.TextBar(p.now, p.max, p.width, p.fg, p.bg)
+	if err != nil {
+		L.RaiseError("script.textBar(): %v", err)
+	}
 	L.Push(lua.LString(res))
 	return 1
 }

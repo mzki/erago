@@ -26,33 +26,48 @@ var buttonPattern = regexp.MustCompile(patternString)
 
 // Print text s or print button if text s represents button pattern.
 // Given text s must end "\n" or contain no "\n".
-func (p outputPort) parsePrint(s string) {
+func (p outputPort) parsePrint(s string) error {
 	loc := buttonPattern.FindStringSubmatchIndex(s)
 	if loc == nil {
-		p.UI.Print(s)
-		return
+		return p.UI.Print(s)
 	}
 
 	i, j := loc[0], loc[1]
 	cmd := s[loc[2]:loc[3]]
-	p.UI.Print(s[:i])
-	p.UI.PrintButton(s[i:j], cmd)
-	p.UI.Print(s[j:])
+
+	if i > 0 {
+		if err := p.UI.Print(s[:i]); err != nil {
+			return err
+		}
+	}
+
+	if err := p.UI.PrintButton(s[i:j], cmd); err != nil {
+		return err
+	}
+
+	if j < len(s) {
+		return p.UI.Print(s[j:])
+	}
+
+	return nil
 }
 
 // =======================
 // --- API for flow.Printer ---
 // =======================
 
-func (p outputPort) Print(s string) {
+func (p outputPort) Print(s string) error {
 	for len(s) > 0 {
 		i := 1 + strings.Index(s, "\n")
 		if i == 0 {
 			i = len(s)
 		}
-		p.parsePrint(s[:i])
+		if err := p.parsePrint(s[:i]); err != nil {
+			return err
+		}
 		s = s[i:]
 	}
+	return nil
 }
 
 func (p outputPort) withView(vname string, fn func()) error {
@@ -73,8 +88,8 @@ func (p outputPort) VPrint(vname, s string) error {
 	return err
 }
 
-func (p outputPort) PrintL(s string) {
-	p.Print(s + "\n")
+func (p outputPort) PrintL(s string) error {
+	return p.Print(s + "\n")
 }
 
 // print string + "\n" and parse button automatically
@@ -90,7 +105,7 @@ func (p outputPort) VPrintL(vname, s string) error {
 // But width of multibyte character is counted as 2, while that of single byte character is 1.
 // If the text expresses button pattern, the entire text is teasted as Button.
 // The text after "\n" is ignored.
-func (p outputPort) PrintC(s string, w int) {
+func (p outputPort) PrintC(s string, w int) error {
 	i := strings.Index(s, "\n")
 	if i < 0 {
 		i = len(s)
@@ -103,10 +118,9 @@ func (p outputPort) PrintC(s string, w int) {
 	}
 
 	if loc := buttonPattern.FindStringSubmatchIndex(s); loc != nil {
-		p.UI.PrintButton(s, s[loc[2]:loc[3]])
-		return
+		return p.UI.PrintButton(s, s[loc[2]:loc[3]])
 	}
-	p.UI.PrintLabel(s)
+	return p.UI.PrintLabel(s)
 }
 
 // print string.
@@ -119,8 +133,8 @@ func (p outputPort) VPrintC(vname, s string, width int) error {
 }
 
 // print text without parsing button pattern.
-func (p outputPort) PrintPlain(s string) {
-	p.UI.Print(s)
+func (p outputPort) PrintPlain(s string) error {
+	return p.UI.Print(s)
 }
 
 // print plain text. no parse button
@@ -179,8 +193,8 @@ func buildTextBar(now, max int64, w int, fg, bg string) string {
 // bar's symbol fg, and background symbol bg.
 // For example, now=3, max=10, w=5, fg='#', and bg='.' then
 // prints "[#..]".
-func (p outputPort) PrintBar(now, max int64, w int, fg, bg string) {
-	p.PrintLabel(buildTextBar(now, max, w, fg, bg))
+func (p outputPort) PrintBar(now, max int64, w int, fg, bg string) error {
+	return p.PrintLabel(buildTextBar(now, max, w, fg, bg))
 }
 
 func (p outputPort) VPrintBar(vname string, now, max int64, width int, fg, bg string) error {
@@ -192,8 +206,8 @@ func (p outputPort) VPrintBar(vname string, now, max int64, width int, fg, bg st
 
 // return text represented bar as string.
 // it is same as printed text by PrintBar().
-func (p outputPort) TextBar(now, max int64, w int, fg, bg string) string {
-	return buildTextBar(now, max, w, fg, bg)
+func (p outputPort) TextBar(now, max int64, w int, fg, bg string) (string, error) {
+	return buildTextBar(now, max, w, fg, bg), nil
 }
 
 func (p outputPort) VPrintLine(vname string, sym string) error {

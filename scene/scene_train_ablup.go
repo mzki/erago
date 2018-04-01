@@ -116,7 +116,9 @@ func (ts *trainScene) trainCycle() (Scene, error) {
 		}
 
 		// show train menus.
-		ts.showTrainCommands()
+		if err := ts.showTrainCommands(); err != nil {
+			return nil, err
+		}
 		if err := script.maybeCall(ScrTrainShowUserCmd); err != nil {
 			return nil, err
 		}
@@ -159,8 +161,13 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 	return err
 }
 
-func (ts trainScene) showTrainCommands() {
-	entryColumn := ts.IO().MaxRuneWidth() / DefaultPrintCWidth
+func (ts trainScene) showTrainCommands() error {
+	maxRuneWidth, err := ts.IO().MaxRuneWidth()
+	if err != nil {
+		return err
+	}
+	entryColumn := maxRuneWidth / DefaultPrintCWidth
+
 	n := 0
 	for cmd_no, name := range ts.command_names {
 		if !ts.command_ables[cmd_no] {
@@ -179,6 +186,7 @@ func (ts trainScene) showTrainCommands() {
 	if n != 0 {
 		ts.IO().PrintL("")
 	}
+	return nil
 }
 
 // do train which is given by command No.

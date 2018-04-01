@@ -15,47 +15,47 @@ type UI interface {
 type Printer interface {
 	// Print text to screen.
 	// It should implement moving to next line by "\n".
-	Print(s string)
+	Print(s string) error
 
 	// Print label text to screen.
 	// It should not be separated in wrapping text.
-	PrintLabel(s string)
+	PrintLabel(s string) error
 
 	// Print Clickable button text. it shows caption on screen and emits command
 	// when it is selected. It is no separatable in wrapping text.
-	PrintButton(caption, command string)
+	PrintButton(caption, command string) error
 
 	// Print Line using sym.
 	// given sym #, output line is: ############...
-	PrintLine(sym string)
+	PrintLine(sym string) error
 
 	// Set and Get Color using 0xRRGGBB for 24bit color
-	SetColor(color uint32)
-	GetColor() (color uint32)
-	ResetColor()
+	SetColor(color uint32) error
+	GetColor() (color uint32, err error)
+	ResetColor() error
 
 	// Set and Get Alignment
-	SetAlignment(attribute.Alignment)
-	GetAlignment() attribute.Alignment
+	SetAlignment(attribute.Alignment) error
+	GetAlignment() (attribute.Alignment, error)
 
 	// skip current lines to display none.
 	// TODO: is it needed?
-	NewPage()
+	NewPage() error
 
 	// Clear lines specified number.
-	ClearLine(nline int)
+	ClearLine(nline int) error
 
 	// Clear all lines containing historys.
-	ClearLineAll()
+	ClearLineAll() error
 
 	// max rune width to fill the view width.
-	MaxRuneWidth() int
+	MaxRuneWidth() (int, error)
 
 	// current rune width in the editting line.
-	CurrentRuneWidth() int
+	CurrentRuneWidth() (int, error)
 
 	// line count to fill the view heght.
-	LineCount() int
+	LineCount() (int, error)
 }
 
 // Layouting interface. it should be implemented to

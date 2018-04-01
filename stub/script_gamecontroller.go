@@ -7,7 +7,7 @@ import (
 // implemnts script.GameController
 type scriptGameController struct {
 	*state.GameState
-	*flowGameController
+	*sceneIOController
 }
 
 func NewScriptGameController() *scriptGameController {

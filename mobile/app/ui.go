@@ -71,7 +71,7 @@ func (p *cmdPresenter) CmdSelected() {
 
 // catch printing command button and store it to
 // show command list.
-func (p *cmdPresenter) PrintButton(caption, command string) {
+func (p *cmdPresenter) PrintButton(caption, command string) error {
 	p.cmdMu.Lock()
 	cmdSelected := p.cmdSelected
 	p.cmdMu.Unlock()
@@ -81,7 +81,7 @@ func (p *cmdPresenter) PrintButton(caption, command string) {
 		p.context.NotifyCommandRequestClose()
 	}
 	p.cmdSlice.cmds = append(p.cmdSlice.cmds, Cmd{command, caption})
-	p.Printer.PrintButton(caption, command)
+	return p.Printer.PrintButton(caption, command)
 }
 
 // implement uiadapter.InputRequestType

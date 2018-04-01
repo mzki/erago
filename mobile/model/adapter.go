@@ -35,45 +35,50 @@ func (a *uiAdapter) OnRequestChanged(req uiadapter.InputRequestType) {
 	}
 }
 
-func (a *uiAdapter) SetAlignment(align attribute.Alignment) {
+func (a *uiAdapter) SetAlignment(align attribute.Alignment) error {
 	// store value to view context
 	a.alignment = align
 	switch align {
 	case attribute.AlignmentLeft:
-		a.UI.SetAlignmentLeft()
+		return a.UI.SetAlignmentLeft()
 	case attribute.AlignmentCenter:
-		a.UI.SetAlignmentCenter()
+		return a.UI.SetAlignmentCenter()
 	case attribute.AlignmentRight:
-		a.UI.SetAlignmentRight()
+		return a.UI.SetAlignmentRight()
 	}
+	return nil
 }
 
-func (a *uiAdapter) GetAlignment() attribute.Alignment {
+func (a *uiAdapter) GetAlignment() (attribute.Alignment, error) {
 	// return uiAdapter context value which may not be synchronized
 	// to model.UI context.
-	return a.alignment
+	return a.alignment, nil
 }
 
-func (a *uiAdapter) SetColor(color uint32) {
-	a.UI.SetColor(int32(color))
+func (a *uiAdapter) SetColor(color uint32) error {
+	return a.UI.SetColor(int32(color))
 }
 
-func (a *uiAdapter) GetColor() uint32 {
-	return uint32(a.UI.GetColor())
+func (a *uiAdapter) GetColor() (uint32, error) {
+	c, err := a.UI.GetColor()
+	return uint32(c), err
 }
 
-func (a *uiAdapter) ClearLine(n int) {
-	a.UI.ClearLine(int32(n))
+func (a *uiAdapter) ClearLine(n int) error {
+	return a.UI.ClearLine(int32(n))
 }
 
-func (a *uiAdapter) CurrentRuneWidth() int {
-	return int(a.UI.CurrentLineWidth())
+func (a *uiAdapter) CurrentRuneWidth() (int, error) {
+	w, err := a.UI.CurrentLineWidth()
+	return int(w), err
 }
 
-func (a *uiAdapter) MaxRuneWidth() int {
-	return int(a.UI.MaxLineWidth())
+func (a *uiAdapter) MaxRuneWidth() (int, error) {
+	w, err := a.UI.MaxLineWidth()
+	return int(w), err
 }
 
-func (a *uiAdapter) LineCount() int {
-	return int(a.UI.LineCount())
+func (a *uiAdapter) LineCount() (int, error) {
+	c, err := a.UI.LineCount()
+	return int(c), err
 }

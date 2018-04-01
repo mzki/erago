@@ -257,62 +257,69 @@ func (mv *MultipleView) GetViewNames() []string {
 // do not need mutex locking since these do not change internal layout.
 //
 
-func (mv *MultipleView) Print(s string) {
+func (mv *MultipleView) Print(s string) error {
 	mv.viewManager.currentView().Print(s)
+	return nil
 }
 
-func (mv *MultipleView) PrintLabel(s string) {
+func (mv *MultipleView) PrintLabel(s string) error {
 	mv.viewManager.currentView().PrintLabel(s)
+	return nil
 }
 
-func (mv *MultipleView) PrintButton(caption string, command string) {
+func (mv *MultipleView) PrintButton(caption string, command string) error {
 	mv.viewManager.currentView().PrintButton(caption, command)
+	return nil
 }
 
-func (mv *MultipleView) PrintLine(sym string) {
+func (mv *MultipleView) PrintLine(sym string) error {
 	mv.viewManager.currentView().PrintLine(sym)
+	return nil
 }
 
-func (mv *MultipleView) SetColor(color uint32) {
-	mv.viewManager.currentView().SetColor(color)
+func (mv *MultipleView) SetColor(color uint32) error {
+	return mv.viewManager.currentView().SetColor(color)
 }
 
-func (mv *MultipleView) GetColor() (color uint32) {
+func (mv *MultipleView) GetColor() (color uint32, err error) {
 	return mv.viewManager.currentView().GetColor()
 }
 
-func (mv *MultipleView) ResetColor() {
-	mv.viewManager.currentView().ResetColor()
+func (mv *MultipleView) ResetColor() error {
+	return mv.viewManager.currentView().ResetColor()
 }
 
-func (mv *MultipleView) SetAlignment(a attr.Alignment) {
-	mv.viewManager.currentView().SetAlignment(a)
+func (mv *MultipleView) SetAlignment(a attr.Alignment) error {
+	return mv.viewManager.currentView().SetAlignment(a)
 }
 
-func (mv *MultipleView) GetAlignment() attr.Alignment {
+func (mv *MultipleView) GetAlignment() (attr.Alignment, error) {
 	return mv.viewManager.currentView().GetAlignment()
 }
 
-func (mv *MultipleView) NewPage() {
+func (mv *MultipleView) NewPage() error {
 	mv.viewManager.currentView().NewPage()
+	return nil
 }
 
-func (mv *MultipleView) ClearLine(nline int) {
+func (mv *MultipleView) ClearLine(nline int) error {
 	mv.viewManager.currentView().ClearLine(nline)
+	return nil
 }
 
-func (mv *MultipleView) ClearLineAll() {
+func (mv *MultipleView) ClearLineAll() error {
 	mv.viewManager.currentView().ClearLineAll()
+	return nil
 }
 
-func (mv *MultipleView) MaxRuneWidth() int {
+func (mv *MultipleView) MaxRuneWidth() (int, error) {
 	return mv.viewManager.currentView().MaxRuneWidth()
 }
 
-func (mv *MultipleView) CurrentRuneWidth() int {
+func (mv *MultipleView) CurrentRuneWidth() (int, error) {
 	return mv.viewManager.currentView().CurrentRuneWidth()
 }
 
-func (mv *MultipleView) LineCount() int {
+func (mv *MultipleView) LineCount() (int, error) {
 	return mv.viewManager.currentView().LineCount()
 }

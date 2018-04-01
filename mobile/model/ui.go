@@ -19,20 +19,20 @@ type UI interface {
 // Printer is interface for the printing content to
 // the view. Any functions of this are called asynchronously.
 type Printer interface {
-	Print(s string)
-	PrintLabel(s string)
-	PrintButton(caption, command string)
-	PrintLine(sym string)
-	SetColor(c int32)
-	GetColor() int32
-	ResetColor()
-	SetAlignmentLeft()
-	SetAlignmentCenter()
-	SetAlignmentRight()
-	NewPage()
-	ClearLine(nline int32)
-	ClearLineAll()
-	MaxLineWidth() int32
-	CurrentLineWidth() int32
-	LineCount() int32
+	Print(s string) error
+	PrintLabel(s string) error
+	PrintButton(caption, command string) error
+	PrintLine(sym string) error
+	SetColor(c int32) error
+	GetColor() (int32, error)
+	ResetColor() error
+	SetAlignmentLeft() error
+	SetAlignmentCenter() error
+	SetAlignmentRight() error
+	NewPage() error
+	ClearLine(nline int32) error
+	ClearLineAll() error
+	MaxLineWidth() (int32, error)
+	CurrentLineWidth() (int32, error)
+	LineCount() (int32, error)
 }

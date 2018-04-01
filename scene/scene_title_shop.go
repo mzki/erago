@@ -39,33 +39,33 @@ func (scene *titleScene) Next() (Scene, error) {
 		return next, err
 	}
 
-	game := scene.IO()
-	game.SetSingleLayout(game.GetCurrentViewName())
+	io := scene.IO()
+	io.SetSingleLayout(io.GetCurrentViewName())
 
 	scenes := scene.Scenes()
 	csvGameBase := scene.State().CSV.GameBase
 
 	for !scenes.HasNext() {
-		game.NewPage()
-		game.SetAlignment(AlignmentCenter)
+		io.NewPage()
+		io.SetAlignment(AlignmentCenter)
 
-		game.PrintLine(DefaultLineSymbol)
-		game.PrintL(csvGameBase.Title)
-		game.PrintL(fmt.Sprintf("ver %v", csvGameBase.Version))
-		game.PrintL(csvGameBase.Author)
-		game.PrintL(csvGameBase.AdditionalInfo)
+		io.PrintLine(DefaultLineSymbol)
+		io.PrintL(csvGameBase.Title)
+		io.PrintL(fmt.Sprintf("ver %v", csvGameBase.Version))
+		io.PrintL(csvGameBase.Author)
+		io.PrintL(csvGameBase.AdditionalInfo)
 
-		game.PrintLine(DefaultLineSymbol)
-		game.PrintC("[0] 最初から始める", DefaultPrintCWidth)
-		game.Print("\n\n")
-		game.PrintC("[1] 続きから始める", DefaultPrintCWidth)
-		game.Print("\n\n")
-		game.PrintC("[9] 終了", DefaultPrintCWidth)
-		game.PrintL("")
+		io.PrintLine(DefaultLineSymbol)
+		io.PrintC("[0] 最初から始める", DefaultPrintCWidth)
+		io.Print("\n\n")
+		io.PrintC("[1] 続きから始める", DefaultPrintCWidth)
+		io.Print("\n\n")
+		io.PrintC("[9] 終了", DefaultPrintCWidth)
+		io.PrintL("")
 
-		game.SetAlignment(AlignmentLeft)
+		io.SetAlignment(AlignmentLeft)
 
-		input, err := game.CommandNumberSelect(context.Background(), 0, 1, 9)
+		input, err := io.CommandNumberSelect(context.Background(), 0, 1, 9)
 		if err != nil {
 			return nil, err
 		}
@@ -231,17 +231,19 @@ func (sc shopScene) Next() (Scene, error) {
 	}
 
 	scenes := sc.Scenes()
-	game := sc.IO()
+	io := sc.IO()
 	for !scenes.HasNext() {
 		called, err := sc.Script().checkCall(ScrSystemShowShopMenu)
 		if err != nil {
 			return nil, err
 		}
 		if !called {
-			sc.ShowItems(DefaultShowItemFormat)
-			game.PrintLine(DefaultLineSymbol)
-			game.PrintC("[-1] 戻る", DefaultPrintCWidth)
-			game.PrintL("")
+			if err := sc.ShowItems(DefaultShowItemFormat); err != nil {
+				return nil, err
+			}
+			io.PrintLine(DefaultLineSymbol)
+			io.PrintC("[-1] 戻る", DefaultPrintCWidth)
+			io.PrintL("")
 		}
 
 		sc.userShop = called
@@ -278,7 +280,7 @@ func (sc shopScene) inputLoop() error {
 
 const DefaultShowItemFormat = "[%d] %s (%d圓)"
 
-func (sc shopScene) ShowItems(fmtStr string) {
+func (sc shopScene) ShowItems(fmtStr string) error {
 	if fmtStr == "" {
 		fmtStr = DefaultShowItemFormat
 	}
@@ -294,8 +296,13 @@ func (sc shopScene) ShowItems(fmtStr string) {
 		maxLen = itemSold.Len()
 	}
 
-	game := sc.IO()
-	nColumn := game.MaxRuneWidth() / DefaultPrintCWidth
+	io := sc.IO()
+	maxRuneWidth, err := io.MaxRuneWidth()
+	if err != nil {
+		return err
+	}
+	nColumn := maxRuneWidth / DefaultPrintCWidth
+
 	cc := 0 // current column
 	for i, item := range itemNames[:maxLen] {
 		if len(item) == 0 {
@@ -306,14 +313,15 @@ func (sc shopScene) ShowItems(fmtStr string) {
 		}
 
 		text := fmt.Sprintf(fmtStr, i, item, itemPrices[i])
-		game.PrintC(text, DefaultPrintCWidth)
+		io.PrintC(text, DefaultPrintCWidth)
 		cc += 1
 		if cc == nColumn {
 			cc = 0
-			game.PrintL("")
+			io.PrintL("")
 		}
 	}
 	if cc != 0 {
-		game.PrintL("")
+		io.PrintL("")
 	}
+	return nil
 }

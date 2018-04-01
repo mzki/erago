@@ -65,19 +65,19 @@ type InputPort interface {
 type OutputPort interface {
 	// print text with parsing button pattern.
 	// when text is matched to the pattern print text as button.
-	Print(text string)
-	PrintL(text string) // print the text added "\n" to end.
-	PrintC(text string, width int)
+	Print(text string) error
+	PrintL(text string) error // print the text added "\n" to end.
+	PrintC(text string, width int) error
 	PrintW(text string) error
-	PrintButton(caption, command string)
-	PrintPlain(text string)
-	PrintLine(sym string)
-	PrintBar(now, max int64, width int, fg, bg string)
-	TextBar(now, max int64, width int, fg, bg string) string
+	PrintButton(caption, command string) error
+	PrintPlain(text string) error
+	PrintLine(sym string) error
+	PrintBar(now, max int64, width int, fg, bg string) error
+	TextBar(now, max int64, width int, fg, bg string) (string, error)
 
-	NewPage()
-	ClearLine(nline int)
-	ClearLineAll()
+	NewPage() error
+	ClearLine(nline int) error
+	ClearLineAll() error
 
 	// Prefixed V functions perform same as not V-prefixed functions.
 	// But difference is that targeting for the view frame specified by name and
@@ -95,17 +95,17 @@ type OutputPort interface {
 	VClearLine(vname string, nline int) error
 	VClearLineAll(vname string) error
 
-	CurrentRuneWidth() int // rune width of currently editing line.
-	MaxRuneWidth() int     // max rune width for view width.
-	LineCount() int
+	CurrentRuneWidth() (int, error) // rune width of currently editing line.
+	MaxRuneWidth() (int, error)     // max rune width for view width.
+	LineCount() (int, error)
 
 	// output options
-	SetColor(color uint32)
-	GetColor() uint32
-	ResetColor()
+	SetColor(color uint32) error
+	GetColor() (uint32, error)
+	ResetColor() error
 
-	GetAlignment() attr.Alignment
-	SetAlignment(attr.Alignment)
+	GetAlignment() (attr.Alignment, error)
+	SetAlignment(attr.Alignment) error
 }
 
 // layouter layouts output screen.

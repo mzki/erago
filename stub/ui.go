@@ -3,7 +3,7 @@ package stub
 import (
 	"fmt"
 
-	"local/erago/attribute"
+	attr "local/erago/attribute"
 	"local/erago/uiadapter"
 )
 
@@ -13,26 +13,31 @@ func NewGameUIStub() uiadapter.UI {
 	return uiadapter.SingleUI{&gameUIStub{}}
 }
 
-func (ui gameUIStub) Print(s string) {
-	fmt.Print(s)
+func (ui gameUIStub) Print(s string) error {
+	_, err := fmt.Print(s)
+	return err
 }
-func (ui gameUIStub) PrintLabel(s string) {
-	fmt.Print(s)
+func (ui gameUIStub) PrintLabel(s string) error {
+	_, err := fmt.Print(s)
+	return err
 }
-func (ui gameUIStub) PrintButton(caption, cmd string) {
-	fmt.Printf("[%s] %s", cmd, caption)
+func (ui gameUIStub) PrintButton(caption, cmd string) error {
+	_, err := fmt.Printf("[%s] %s", cmd, caption)
+	return err
 }
-func (ui gameUIStub) PrintLine(sym string) {
-	fmt.Println(sym + sym + sym)
+
+func (ui gameUIStub) PrintLine(sym string) error {
+	_, err := fmt.Println(sym + sym + sym)
+	return err
 }
-func (ui gameUIStub) SetColor(color uint32)              {}
-func (ui gameUIStub) GetColor() uint32                   { return 0x000000 }
-func (ui gameUIStub) ResetColor()                        {}
-func (ui gameUIStub) SetAlignment(a attribute.Alignment) {}
-func (ui gameUIStub) GetAlignment() attribute.Alignment  { return attribute.AlignmentLeft }
-func (ui gameUIStub) NewPage()                           {}
-func (ui gameUIStub) ClearLine(nline int)                {}
-func (ui gameUIStub) ClearLineAll()                      {}
-func (ui gameUIStub) LineCount() int                     { return 0 }
-func (ui gameUIStub) CurrentRuneWidth() int              { return 0 }
-func (ui gameUIStub) MaxRuneWidth() int                  { return 0 }
+func (ui gameUIStub) SetColor(color uint32) error           { return nil }
+func (ui gameUIStub) GetColor() (uint32, error)             { return 0x000000, nil }
+func (ui gameUIStub) ResetColor() error                     { return nil }
+func (ui gameUIStub) SetAlignment(a attr.Alignment) error   { return nil }
+func (ui gameUIStub) GetAlignment() (attr.Alignment, error) { return attr.AlignmentLeft, nil }
+func (ui gameUIStub) NewPage() error                        { return nil }
+func (ui gameUIStub) ClearLine(nline int) error             { return nil }
+func (ui gameUIStub) ClearLineAll() error                   { return nil }
+func (ui gameUIStub) LineCount() (int, error)               { return 0, nil }
+func (ui gameUIStub) CurrentRuneWidth() (int, error)        { return 0, nil }
+func (ui gameUIStub) MaxRuneWidth() (int, error)            { return 0, nil }
