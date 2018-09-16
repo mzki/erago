@@ -1,5 +1,7 @@
 package state
 
+import "context"
+
 // Repository is a abstract data-store which
 // persists GameState to arbitrary storage.
 type Repository interface {
@@ -34,9 +36,9 @@ type Repository interface {
 	// context is canceled.
 	LoadShareData(ctx context.Context, state *GameState) error
 
-	// LoadMetaList obtains list of meta data associated to id list.
-	// If id list is empty or nil, the all of meta data for persisted
-	// GameState are returned.
+	// LoadMetaList returns list of meta data associated to id list.
+	// If id list is empty or nil, return empty list of meta data for persisted
+	// GameState.
 	// It also returns error if any id is not found or context is canceled.
-	LoadMetaList(ctx context.Context, ids ...[]int) ([]*FileHeader, error)
+	LoadMetaList(ctx context.Context, ids ...int) ([]*FileHeader, error)
 }

@@ -1,6 +1,7 @@
 package state
 
 import (
+	"context"
 	"local/erago/state/csv"
 )
 
@@ -14,6 +15,8 @@ type GameState struct {
 	*SaveInfo
 
 	config Config
+
+	repo Repository
 }
 
 // consturct gameState with CSV Manager and config.
@@ -25,6 +28,7 @@ func NewGameState(csvdb *csv.CsvManager, config Config) *GameState {
 		ShareData:  &shareData,
 		SaveInfo:   newSaveInfo(),
 		config:     config,
+		repo:       NewFileRepository(config),
 	}
 	return state
 }
@@ -36,42 +40,43 @@ func (state *GameState) Clear() {
 }
 
 // save game system state to save[No.].
-func (state GameState) SaveSystem(no int) error {
-	return saveSystemDataNo(no, state)
+func (state *GameState) SaveSystem(no int) error {
+	return state.repo.SaveSystemData(context.Background(), no, state)
 }
 
 // save game system state to save[No.] with comment.
-func (state GameState) SaveSystemWithComment(no int, comment string) error {
+func (state *GameState) SaveSystemWithComment(no int, comment string) error {
 	state.SaveComment = comment
-	return saveSystemDataNo(no, state)
+	return state.SaveSystem(no)
 }
 
 // load game system state from save[No.].
 func (state *GameState) LoadSystem(no int) error {
-	_, err := loadSystemDataNo(no, state)
-	return err
+	return state.repo.LoadSystemData(context.Background(), no, state)
 }
-
-const shareSaveFileName = "share.sav"
 
 // save shared data to "share.sav"
 func (state *GameState) SaveShare() error {
-	return saveShareData(shareSaveFileName, *state)
+	return state.repo.SaveShareData(context.Background(), state)
 }
 
 // load shared data from "share.sav"
 func (state *GameState) LoadShare() error {
-	return loadShareData(shareSaveFileName, state)
+	return state.repo.LoadShareData(context.Background(), state)
 }
 
 // load only header from save[No.].
 func (state *GameState) LoadHeader(no int) (*FileHeader, error) {
-	return loadHeaderNo(no, state)
+	metaList, err := state.repo.LoadMetaList(context.Background(), no)
+	if err != nil {
+		return nil, err
+	}
+	return metaList[0], err
 }
 
 // check whether does save[No.] exists?
 func (state *GameState) FileExists(no int) bool {
-	return ExistsSaveFileNo(no, state)
+	return state.repo.Exist(context.Background(), no)
 }
 
 // to prevent user modify but export field

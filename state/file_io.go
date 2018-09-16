@@ -2,6 +2,7 @@ package state
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -146,6 +147,8 @@ func readAndCheckHeaderByData(fp io.Reader, data *GameState) (*FileHeader, error
 const (
 	defaultSavePrefix = "save"
 	defaultSaveExt    = ".sav"
+
+	shareSaveFileName = "share" + defaultSaveExt
 )
 
 func defaultFileOf(No int) string {
@@ -173,6 +176,64 @@ func loadHeader(file string, data *GameState) (*FileHeader, error) {
 	defer fp.Close()
 
 	return readAndCheckHeaderByData(fp, data)
+}
+
+// implements local/erago/state.Repository
+type FileRepository struct {
+	config Config
+}
+
+func NewFileRepository(config Config) *FileRepository {
+	return &FileRepository{config}
+}
+
+func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
+	// context is not used.
+	path := repo.config.savePath(defaultFileOf(id))
+	return util.FileExists(path)
+}
+
+func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, state *GameState) error {
+	// context is not used.
+	path := repo.config.savePath(defaultFileOf(id))
+	return saveSystemData(path, *state)
+}
+
+func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, state *GameState) error {
+	// context is not used.
+	path := repo.config.savePath(defaultFileOf(id))
+	_, err := loadSystemData(path, state)
+	return err
+}
+
+func (repo *FileRepository) SaveShareData(ctx context.Context, state *GameState) error {
+	// context is not used.
+	path := repo.config.savePath(shareSaveFileName)
+	return saveShareData(path, *state)
+}
+
+func (repo *FileRepository) LoadShareData(ctx context.Context, state *GameState) error {
+	// context is not used.
+	path := repo.config.savePath(shareSaveFileName)
+	return loadShareData(path, state)
+}
+
+func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*FileHeader, error) {
+	// context is not used.
+
+	// fetch metalist
+	metalist := make([]*FileHeader, 0, len(ids))
+	for _, id := range ids {
+		path := repo.config.savePath(defaultFileOf(id))
+		header, err := loadHeader(path, &GameState{} /* TODO use config only */)
+		if err != nil {
+			return nil, fmt.Errorf("state: failed to fetch meta data for %s, err: %v", path, err)
+		}
+
+		metalist = append(metalist, header)
+	}
+
+	return metalist, nil
 }
 
 // save share data to file
