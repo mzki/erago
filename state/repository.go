@@ -40,5 +40,5 @@ type Repository interface {
 	// If id list is empty or nil, return empty list of meta data for persisted
 	// GameState.
 	// It also returns error if any id is not found or context is canceled.
-	LoadMetaList(ctx context.Context, ids ...int) ([]*FileHeader, error)
+	LoadMetaList(ctx context.Context, ids ...int) ([]*MetaData, error)
 }

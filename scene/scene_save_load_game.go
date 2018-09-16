@@ -168,7 +168,7 @@ func printSaveListsScene(sf *sceneFields) {
 const autoSaveNumber = 99
 
 func printSaveLists(sf *sceneFields) {
-	buildSaveTitle := func(list []*state.FileHeader, i, no int) string {
+	buildSaveTitle := func(list []*state.MetaData, i, no int) string {
 		save_title := fmt.Sprintf("[%2d] ", no)
 
 		if header := list[i]; header == nil {
@@ -187,8 +187,8 @@ func printSaveLists(sf *sceneFields) {
 	sf.IO().PrintL(buildSaveTitle(list, len(list)-1, autoSaveNumber))
 }
 
-func buildHeaderLists(gstate *state.GameState) []*state.FileHeader {
-	list := make([]*state.FileHeader, 21)
+func buildHeaderLists(gstate *state.GameState) []*state.MetaData {
+	list := make([]*state.MetaData, 21)
 
 	for i := 0; i < 20; i++ {
 		if gstate.FileExists(i) {

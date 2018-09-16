@@ -66,7 +66,7 @@ func (state *GameState) LoadShare() error {
 }
 
 // load only header from save[No.].
-func (state *GameState) LoadHeader(no int) (*FileHeader, error) {
+func (state *GameState) LoadHeader(no int) (*MetaData, error) {
 	metaList, err := state.repo.LoadMetaList(context.Background(), no)
 	if err != nil {
 		return nil, err
