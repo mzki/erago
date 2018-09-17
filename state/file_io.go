@@ -1,7 +1,9 @@
 package state
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -11,30 +13,6 @@ import (
 
 	"local/erago/util"
 )
-
-// write metadata which fields are setted by given data. return write error.
-func writeMetaDataFromState(fp io.Writer, data GameState) error {
-	metadata := &MetaData{
-		GameVersion: int32(data.CSV.GameBase.Version),
-		Identifier:  saveFileIdent,
-		Title:       data.SaveComment,
-	}
-	return metadata.write(fp)
-}
-
-// read metadata from fp and validate it. return read metadata and validation result.
-func readAndCheckMetaDataByState(fp io.Reader, data *GameState) (*MetaData, error) {
-	metadata := &MetaData{}
-	if err := metadata.read(fp); err != nil {
-		return nil, err
-	}
-	if err := metadata.validate(data.CSV); err != nil {
-		if err != ErrDifferentVersion { // TODO: notify error of different Version?
-			return nil, err
-		}
-	}
-	return metadata, nil
-}
 
 const (
 	defaultSavePrefix = "save"
@@ -52,31 +30,21 @@ func mkdirPath(path string) error {
 	return os.MkdirAll(filepath.Dir(path), 0755)
 }
 
-// load only metadata from file prefixed No and Default.
-func loadMetaDataNo(No int, data *GameState) (*MetaData, error) {
-	file := defaultFileOf(No)
-	return loadMetaData(file, data)
-}
-
-// Load only metadata by file name
-func loadMetaData(file string, data *GameState) (*MetaData, error) {
-	file = data.config.savePath(file)
-	fp, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer fp.Close()
-
-	return readAndCheckMetaDataByState(fp, data)
-}
-
 // implements local/erago/state.Repository
 type FileRepository struct {
-	config Config
+	config     Config
+	expectMeta MetaData
 }
 
-func NewFileRepository(config Config) *FileRepository {
-	return &FileRepository{config}
+func NewFileRepository(config Config, gameVersion int32) *FileRepository {
+	return &FileRepository{
+		config: config,
+		expectMeta: MetaData{
+			Identifier:  DefaultMetaIdent,
+			GameVersion: gameVersion,
+			Title:       "", // not used
+		},
+	}
 }
 
 func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
@@ -85,29 +53,89 @@ func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
 	return util.FileExists(path)
 }
 
+// save game system data to file.
 func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, state *GameState) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
-	return saveSystemData(path, *state)
+
+	if err := mkdirPath(path); err != nil {
+		return err
+	}
+	fp, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	// save metadata with comment
+	var metadata MetaData = repo.expectMeta // deep copy
+	metadata.Title = state.SaveInfo.SaveComment
+	if err := writeMetaDataTo(fp, &metadata); err != nil {
+		return err
+	}
+
+	// save system data
+	return serialize(fp, state.SystemData) // return encode ok?
 }
 
+// Load game system data from file.
 func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, state *GameState) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
-	_, err := loadSystemData(path, state)
-	return err
+
+	fp, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	metadata, err := readAndCheckMetaDataByState(fp, repo.expectMeta)
+	if err != nil {
+		return err
+	}
+
+	state.SaveInfo.LastLoadVer = metadata.GameVersion
+	state.SaveInfo.LastLoadComment = metadata.Title
+
+	return deserialize(fp, state.SystemData)
 }
 
+// save share data to file
 func (repo *FileRepository) SaveShareData(ctx context.Context, state *GameState) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
-	return saveShareData(path, *state)
+
+	if err := mkdirPath(path); err != nil {
+		return err
+	}
+	fp, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	var metadata MetaData = repo.expectMeta // deep copy
+	if err := writeMetaDataTo(fp, &metadata); err != nil {
+		return err
+	}
+	return serialize(fp, state.ShareData)
 }
 
+// load shared data from file
 func (repo *FileRepository) LoadShareData(ctx context.Context, state *GameState) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
-	return loadShareData(path, state)
+
+	fp, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	if _, err := readAndCheckMetaDataByState(fp, repo.expectMeta); err != nil {
+		return err
+	}
+	return deserialize(fp, state.ShareData)
 }
 
 func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*MetaData, error) {
@@ -117,7 +145,7 @@ func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*Me
 	metalist := make([]*MetaData, 0, len(ids))
 	for _, id := range ids {
 		path := repo.config.savePath(defaultFileOf(id))
-		header, err := loadMetaData(path, &GameState{} /* TODO use config only */)
+		header, err := loadMetaData(path, repo.expectMeta)
 		if err != nil {
 			return nil, fmt.Errorf("state: failed to fetch meta data for %s, err: %v", path, err)
 		}
@@ -128,87 +156,112 @@ func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*Me
 	return metalist, nil
 }
 
-// save share data to file
-func saveShareData(file string, data GameState) error {
-	file = data.config.savePath(file)
-	if err := mkdirPath(file); err != nil {
-		return err
-	}
-	fp, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-
-	if err := writeMetaDataFromState(fp, data); err != nil {
-		return err
-	}
-	return serialize(fp, data.ShareData)
-}
-
-// load shared data from file
-func loadShareData(file string, data *GameState) error {
-	file = data.config.savePath(file)
-	fp, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-
-	if _, err := readAndCheckMetaDataByState(fp, data); err != nil {
-		return err
-	}
-	return deserialize(fp, data.ShareData)
-}
-
-// save System data to file using No. and default file prefix.
-func saveSystemDataNo(No int, data GameState) error {
-	file := defaultFileOf(No)
-	return saveSystemData(file, data)
-}
-
-// load System data from file using No. and default file prefix.
-func loadSystemDataNo(No int, data *GameState) (*MetaData, error) {
-	file := defaultFileOf(No)
-	return loadSystemData(file, data)
-}
-
-// save game system data to file.
-func saveSystemData(file string, data GameState) error {
-	file = data.config.savePath(file)
-	if err := mkdirPath(file); err != nil {
-		return err
-	}
-	fp, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-
-	if err := writeMetaDataFromState(fp, data); err != nil {
-		return err
-	}
-	return serialize(fp, data.SystemData) // return encode ok?
-}
-
-// Load game system data from file.
-func loadSystemData(file string, data *GameState) (*MetaData, error) {
-	file = data.config.savePath(file)
-	fp, err := os.Open(file)
+// Load only metadata by file path
+func loadMetaData(path string, expectMeta MetaData) (*MetaData, error) {
+	fp, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer fp.Close()
 
-	metadata, err := readAndCheckMetaDataByState(fp, data)
-	if err != nil {
-		return metadata, err
+	return readAndCheckMetaDataByState(fp, expectMeta)
+}
+
+// read metadata from fp and validate it. return read metadata and validation result.
+func readAndCheckMetaDataByState(fp io.Reader, expectMeta MetaData) (*MetaData, error) {
+	metadata := &MetaData{}
+	if err := readMetaDataFrom(fp, metadata); err != nil {
+		return nil, err
+	}
+	if err := validateMetaData(metadata, expectMeta); err != nil {
+		if err != ErrDifferentVersion { // TODO: notify error of different Version?
+			return nil, err
+		}
+	}
+	return metadata, nil
+}
+
+// return error if invalid
+func validateMetaData(md *MetaData, expectMeta MetaData) error {
+	if md.Identifier != expectMeta.Identifier {
+		return ErrUnknownIdentifier
+	}
+	if md.GameVersion != expectMeta.GameVersion {
+		return ErrDifferentVersion
+	}
+	// Title is ignored for validation
+	return nil
+}
+
+// writeMetaDataTo writes metadata into io.Writer
+func writeMetaDataTo(w io.Writer, md *MetaData) error {
+	ewriter := util.NewErrWriter(w)
+	ewriter.Write([]byte(md.Identifier)) // fixed len 5B
+
+	if bver, err := int32ToBytes(md.GameVersion); err != nil {
+		return err
+	} else {
+		ewriter.Write(bver) // int32 4B
 	}
 
-	data.LastLoadVer = metadata.GameVersion
-	data.LastLoadComment = metadata.Title
+	// variable size, prefixing bite length
+	btitle := []byte(md.Title)
+	blen, err := int32ToBytes(int32(len(btitle)))
+	if err != nil {
+		return err
+	}
+	if len(blen) > MetaTitleLimit {
+		return ErrTitleTooLarge
+	}
 
-	return metadata, deserialize(fp, data.SystemData)
+	ewriter.Write(blen)
+	ewriter.Write(btitle)
+
+	return ewriter.Err()
+}
+
+// readMetaDataFrom reads metadata from io.Reader
+// handled errors are just io problems.
+// validation of md is other task.
+func readMetaDataFrom(r io.Reader, md *MetaData) error {
+	buf := make([]byte, MetaTitleLimit)
+	ereader := util.NewErrReader(r)
+
+	buf = buf[:DefaultMetaIdentLen] // 5bytes
+	ereader.Read(buf)
+	md.Identifier = string(buf)
+
+	buf = buf[:4] // 4bytes
+	ereader.Read(buf)
+	md.GameVersion, _ = bytesToInt32(buf)
+
+	buf = buf[:4] // 4bytes
+	ereader.Read(buf)
+	blen, _ := bytesToInt32(buf)
+	if MetaTitleLimit < blen {
+		blen = MetaTitleLimit
+	}
+
+	buf = buf[:blen] // variable size
+	ereader.Read(buf)
+	md.Title = string(buf)
+
+	return ereader.Err()
+}
+
+var binaryEndian = binary.LittleEndian
+
+func int32ToBytes(num int32) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binaryEndian, num)
+	return buf.Bytes(), err
+}
+
+func bytesToInt32(p []byte) (int32, error) {
+	var num int32
+	r := bytes.NewReader(p)
+	err := binary.Read(r, binaryEndian, &num)
+	return num, err
 }
 
 var (
@@ -223,9 +276,4 @@ func serialize(w io.Writer, data interface{}) error {
 func deserialize(r io.Reader, data interface{}) error {
 	dec := codec.NewDecoder(r, codecHandler)
 	return dec.Decode(data) // return encode ok?
-}
-
-func ExistsSaveFileNo(No int, state *GameState) bool {
-	path := state.config.savePath(defaultFileOf(No))
-	return util.FileExists(path)
 }

@@ -14,8 +14,6 @@ type GameState struct {
 
 	*SaveInfo
 
-	config Config
-
 	repo Repository
 }
 
@@ -27,8 +25,7 @@ func NewGameState(csvdb *csv.CsvManager, config Config) *GameState {
 		SystemData: newSystemData(csvdb),
 		ShareData:  &shareData,
 		SaveInfo:   newSaveInfo(),
-		config:     config,
-		repo:       NewFileRepository(config),
+		repo:       NewFileRepository(config, csvdb.GameBase.Version),
 	}
 	return state
 }
