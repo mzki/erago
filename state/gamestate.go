@@ -18,14 +18,14 @@ type GameState struct {
 }
 
 // consturct gameState with CSV Manager and config.
-func NewGameState(csvdb *csv.CsvManager, config Config) *GameState {
+func NewGameState(csvdb *csv.CsvManager, repo Repository) *GameState {
 	shareData := newUserVariablesShare(csvdb)
 	state := &GameState{
 		CSV:        csvdb,
 		SystemData: newSystemData(csvdb),
 		ShareData:  &shareData,
 		SaveInfo:   newSaveInfo(),
-		repo:       NewFileRepository(config, csvdb.GameBase.Version),
+		repo:       repo,
 	}
 	return state
 }

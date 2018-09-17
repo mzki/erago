@@ -3,9 +3,9 @@ package erago
 import (
 	"path/filepath"
 
+	"local/erago/infra/repo"
 	"local/erago/infra/script"
 	"local/erago/scene"
-	"local/erago/state"
 	"local/erago/state/csv"
 )
 
@@ -16,7 +16,7 @@ const DefaultBaseDir = "./"
 // It might be constructed by NewConfig, not Config{}.
 type Config struct {
 	SceneConfig  scene.Config  `toml:"scene"`
-	StateConfig  state.Config  `toml:"state"`
+	RepoConfig   repo.Config   `toml:"save"`
 	CSVConfig    csv.Config    `toml:"csv"`
 	ScriptConfig script.Config `toml:"script"`
 }
@@ -34,7 +34,7 @@ func NewConfig(baseDir string) Config {
 		SceneConfig: scene.Config{
 			CanAutoSave: true,
 		},
-		StateConfig: state.Config{
+		RepoConfig: repo.Config{
 			SaveFileDir: filepath.Join(baseDir, DefaultSaveFileDir),
 		},
 		ScriptConfig: script.Config{

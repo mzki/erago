@@ -18,8 +18,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Global state of CSV.
-var CSVDB *csv.CsvManager
+var (
+	// Global state of CSV.
+	CSVDB *csv.CsvManager
+
+	Repo Repository = &StubRepository{}
+)
 
 func initialize() error {
 	CSVDB = &csv.CsvManager{}
@@ -29,12 +33,8 @@ func initialize() error {
 	})
 }
 
-var stateConfig = Config{
-	SaveFileDir: "../stub/sav",
-}
-
 func TestNewGameState(t *testing.T) {
-	gamestate := NewGameState(CSVDB, stateConfig)
+	gamestate := NewGameState(CSVDB, Repo)
 
 	base_vars, ok := gamestate.SystemData.GetInt("Number")
 	if !ok {
@@ -49,32 +49,8 @@ func TestNewGameState(t *testing.T) {
 	// if base_vars.Len() != CSVDB.CharaMap[1].
 }
 
-func TestMarshall(t *testing.T) {
-	gamestate := NewGameState(CSVDB, stateConfig)
-
-	number, _ := gamestate.SystemData.GetInt("Number")
-	number.Set(0, 100)
-	if err := gamestate.SaveSystem(0); err != nil {
-		t.Fatal(err)
-	}
-
-	number.Set(0, -99)
-	system_pointer_before_load := gamestate.SystemData
-
-	if err := gamestate.LoadSystem(0); err != nil {
-		t.Fatal(err)
-	}
-
-	if number.Get(0) == -99 {
-		t.Error("load savefile but not reflecting values")
-	}
-	if system_pointer_before_load != gamestate.SystemData {
-		t.Error("object pointer is changed before and after unmarshall.")
-	}
-}
-
 func TestNewCharacter(t *testing.T) {
-	gamestate := NewGameState(CSVDB, stateConfig)
+	gamestate := NewGameState(CSVDB, Repo)
 	const CHARA_ID = 1 // it must exist
 
 	chara, err := gamestate.SystemData.Chara.AddID(CHARA_ID)

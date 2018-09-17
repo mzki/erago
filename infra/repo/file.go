@@ -1,4 +1,4 @@
-package state
+package repo
 
 import (
 	"bytes"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/ugorji/go/codec"
 
+	"local/erago/state"
+	"local/erago/state/csv"
 	"local/erago/util"
 )
 
@@ -33,15 +35,15 @@ func mkdirPath(path string) error {
 // implements local/erago/state.Repository
 type FileRepository struct {
 	config     Config
-	expectMeta MetaData
+	expectMeta state.MetaData
 }
 
-func NewFileRepository(config Config, gameVersion int32) *FileRepository {
+func NewFileRepository(csvdb *csv.CsvManager, config Config) *FileRepository {
 	return &FileRepository{
 		config: config,
-		expectMeta: MetaData{
-			Identifier:  DefaultMetaIdent,
-			GameVersion: gameVersion,
+		expectMeta: state.MetaData{
+			Identifier:  state.DefaultMetaIdent,
+			GameVersion: csvdb.GameBase.Version,
 			Title:       "", // not used
 		},
 	}
@@ -54,7 +56,7 @@ func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
 }
 
 // save game system data to file.
-func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, state *GameState) error {
+func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, gs *state.GameState) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
@@ -68,18 +70,18 @@ func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, state *G
 	defer fp.Close()
 
 	// save metadata with comment
-	var metadata MetaData = repo.expectMeta // deep copy
-	metadata.Title = state.SaveInfo.SaveComment
+	var metadata state.MetaData = repo.expectMeta // deep copy
+	metadata.Title = gs.SaveInfo.SaveComment
 	if err := writeMetaDataTo(fp, &metadata); err != nil {
 		return err
 	}
 
 	// save system data
-	return serialize(fp, state.SystemData) // return encode ok?
+	return serialize(fp, gs.SystemData) // return encode ok?
 }
 
 // Load game system data from file.
-func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, state *GameState) error {
+func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, gs *state.GameState) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
@@ -94,14 +96,14 @@ func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, state *G
 		return err
 	}
 
-	state.SaveInfo.LastLoadVer = metadata.GameVersion
-	state.SaveInfo.LastLoadComment = metadata.Title
+	gs.SaveInfo.LastLoadVer = metadata.GameVersion
+	gs.SaveInfo.LastLoadComment = metadata.Title
 
-	return deserialize(fp, state.SystemData)
+	return deserialize(fp, gs.SystemData)
 }
 
 // save share data to file
-func (repo *FileRepository) SaveShareData(ctx context.Context, state *GameState) error {
+func (repo *FileRepository) SaveShareData(ctx context.Context, gs *state.GameState) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
@@ -114,15 +116,15 @@ func (repo *FileRepository) SaveShareData(ctx context.Context, state *GameState)
 	}
 	defer fp.Close()
 
-	var metadata MetaData = repo.expectMeta // deep copy
+	var metadata state.MetaData = repo.expectMeta // deep copy
 	if err := writeMetaDataTo(fp, &metadata); err != nil {
 		return err
 	}
-	return serialize(fp, state.ShareData)
+	return serialize(fp, gs.ShareData)
 }
 
 // load shared data from file
-func (repo *FileRepository) LoadShareData(ctx context.Context, state *GameState) error {
+func (repo *FileRepository) LoadShareData(ctx context.Context, gs *state.GameState) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
@@ -135,19 +137,19 @@ func (repo *FileRepository) LoadShareData(ctx context.Context, state *GameState)
 	if _, err := readAndCheckMetaDataByState(fp, repo.expectMeta); err != nil {
 		return err
 	}
-	return deserialize(fp, state.ShareData)
+	return deserialize(fp, gs.ShareData)
 }
 
-func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*MetaData, error) {
+func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*state.MetaData, error) {
 	// context is not used.
 
 	// fetch metalist
-	metalist := make([]*MetaData, 0, len(ids))
+	metalist := make([]*state.MetaData, 0, len(ids))
 	for _, id := range ids {
 		path := repo.config.savePath(defaultFileOf(id))
 		header, err := loadMetaData(path, repo.expectMeta)
 		if err != nil {
-			return nil, fmt.Errorf("state: failed to fetch meta data for %s, err: %v", path, err)
+			return nil, fmt.Errorf("repo: failed to fetch meta data for %s, err: %v", path, err)
 		}
 
 		metalist = append(metalist, header)
@@ -157,7 +159,7 @@ func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*Me
 }
 
 // Load only metadata by file path
-func loadMetaData(path string, expectMeta MetaData) (*MetaData, error) {
+func loadMetaData(path string, expectMeta state.MetaData) (*state.MetaData, error) {
 	fp, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -168,13 +170,13 @@ func loadMetaData(path string, expectMeta MetaData) (*MetaData, error) {
 }
 
 // read metadata from fp and validate it. return read metadata and validation result.
-func readAndCheckMetaDataByState(fp io.Reader, expectMeta MetaData) (*MetaData, error) {
-	metadata := &MetaData{}
+func readAndCheckMetaDataByState(fp io.Reader, expectMeta state.MetaData) (*state.MetaData, error) {
+	metadata := &state.MetaData{}
 	if err := readMetaDataFrom(fp, metadata); err != nil {
 		return nil, err
 	}
 	if err := validateMetaData(metadata, expectMeta); err != nil {
-		if err != ErrDifferentVersion { // TODO: notify error of different Version?
+		if err != state.ErrDifferentVersion { // TODO: notify error of different Version?
 			return nil, err
 		}
 	}
@@ -182,19 +184,19 @@ func readAndCheckMetaDataByState(fp io.Reader, expectMeta MetaData) (*MetaData, 
 }
 
 // return error if invalid
-func validateMetaData(md *MetaData, expectMeta MetaData) error {
+func validateMetaData(md *state.MetaData, expectMeta state.MetaData) error {
 	if md.Identifier != expectMeta.Identifier {
-		return ErrUnknownIdentifier
+		return state.ErrUnknownIdentifier
 	}
 	if md.GameVersion != expectMeta.GameVersion {
-		return ErrDifferentVersion
+		return state.ErrDifferentVersion
 	}
 	// Title is ignored for validation
 	return nil
 }
 
 // writeMetaDataTo writes metadata into io.Writer
-func writeMetaDataTo(w io.Writer, md *MetaData) error {
+func writeMetaDataTo(w io.Writer, md *state.MetaData) error {
 	ewriter := util.NewErrWriter(w)
 	ewriter.Write([]byte(md.Identifier)) // fixed len 5B
 
@@ -210,8 +212,8 @@ func writeMetaDataTo(w io.Writer, md *MetaData) error {
 	if err != nil {
 		return err
 	}
-	if len(blen) > MetaTitleLimit {
-		return ErrTitleTooLarge
+	if len(blen) > state.MetaTitleLimit {
+		return state.ErrTitleTooLarge
 	}
 
 	ewriter.Write(blen)
@@ -223,11 +225,11 @@ func writeMetaDataTo(w io.Writer, md *MetaData) error {
 // readMetaDataFrom reads metadata from io.Reader
 // handled errors are just io problems.
 // validation of md is other task.
-func readMetaDataFrom(r io.Reader, md *MetaData) error {
-	buf := make([]byte, MetaTitleLimit)
+func readMetaDataFrom(r io.Reader, md *state.MetaData) error {
+	buf := make([]byte, state.MetaTitleLimit)
 	ereader := util.NewErrReader(r)
 
-	buf = buf[:DefaultMetaIdentLen] // 5bytes
+	buf = buf[:state.DefaultMetaIdentLen] // 5bytes
 	ereader.Read(buf)
 	md.Identifier = string(buf)
 
@@ -238,8 +240,8 @@ func readMetaDataFrom(r io.Reader, md *MetaData) error {
 	buf = buf[:4] // 4bytes
 	ereader.Read(buf)
 	blen, _ := bytesToInt32(buf)
-	if MetaTitleLimit < blen {
-		blen = MetaTitleLimit
+	if state.MetaTitleLimit < blen {
+		blen = state.MetaTitleLimit
 	}
 
 	buf = buf[:blen] // variable size

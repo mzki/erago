@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"local/erago/infra/repo"
 	"local/erago/state"
 	"local/erago/state/csv"
 )
@@ -48,10 +49,10 @@ func GetGameState() (*state.GameState, error) {
 	}
 
 	if gameState == nil {
-		config := state.Config{
+		config := repo.Config{
 			SaveFileDir: filepath.Join(GetCurrentDir(), "sav"),
 		}
-		gameState = state.NewGameState(csvm, config)
+		gameState = state.NewGameState(csvm, repo.NewFileRepository(csvm, config))
 	}
 	return gameState, nil
 }

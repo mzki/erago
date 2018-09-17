@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"local/erago/infra/repo"
 	"local/erago/infra/script"
 	"local/erago/scene"
 	"local/erago/state"
@@ -56,7 +57,7 @@ func (g *Game) Init(ui uiadapter.UI, config Config) error {
 	if err := csv_manager.Initialize(config.CSVConfig); err != nil {
 		return err
 	}
-	gamestate := state.NewGameState(csv_manager, config.StateConfig)
+	gamestate := state.NewGameState(csv_manager, repo.NewFileRepository(csv_manager, config.RepoConfig))
 
 	ui_controller := &struct { // must be pointer because its fields are changed later.
 		*uiadapter.UIAdapter
