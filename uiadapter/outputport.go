@@ -17,7 +17,9 @@ type outputPort struct {
 }
 
 func newOutputPort(ui UI) *outputPort {
-	return &outputPort{ui}
+	return &outputPort{
+		UI: ui,
+	}
 }
 
 const patternString = `\[\s*(\-?[0-9]+)\s*\][\s　]?[^\n]+`
@@ -58,12 +60,24 @@ func (p outputPort) parsePrint(s string) error {
 
 func (p outputPort) Print(s string) error {
 	for len(s) > 0 {
+		var syncRequest = true
+
 		i := 1 + strings.Index(s, "\n")
 		if i == 0 {
+			// "\n" is not found
 			i = len(s)
+			syncRequest = false
 		}
+
 		if err := p.parsePrint(s[:i]); err != nil {
 			return err
+		}
+
+		// synchronize output result if "\n" is appeared
+		if syncRequest {
+			if err := p.UI.Sync(); err != nil {
+				return err
+			}
 		}
 		s = s[i:]
 	}

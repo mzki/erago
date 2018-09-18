@@ -56,6 +56,10 @@ type Printer interface {
 
 	// line count to fill the view heght.
 	LineCount() (int, error)
+
+	// Sync flushes any pending output result, PrintXXX or ClearLine,
+	// at UI implementor. It can also use rate limitting for PrintXXX functions.
+	Sync() error
 }
 
 // Layouting interface. it should be implemented to

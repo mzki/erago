@@ -288,3 +288,8 @@ func (v *TextView) MaxRuneWidth() (int, error) {
 func (v *TextView) LineCount() (int, error) {
 	return v.Printer.LineCount(), nil
 }
+
+func (v *TextView) Sync() error {
+	v.sender.sync(v)
+	return nil
+}

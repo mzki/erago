@@ -41,3 +41,4 @@ func (ui gameUIStub) ClearLineAll() error                   { return nil }
 func (ui gameUIStub) LineCount() (int, error)               { return 0, nil }
 func (ui gameUIStub) CurrentRuneWidth() (int, error)        { return 0, nil }
 func (ui gameUIStub) MaxRuneWidth() (int, error)            { return 0, nil }
+func (ui gameUIStub) Sync() error                           { return nil }
