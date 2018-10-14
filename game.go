@@ -72,10 +72,8 @@ func (g *Game) Init(ui uiadapter.UI, config Config) error {
 	g.scene = scene.NewSceneManager(g.uiAdapter, g.ipr, gamestate, config.SceneConfig)
 	ui_controller.SceneManager = g.scene
 
-	// extract user scripts and register it.
-	if err := g.ipr.LoadSystem(); err != nil {
-		return err
-	}
+	// register some special scenes
+	g.scene.RegisterSceneFunc(sceneNameBooting, g.sceneBooting)
 
 	return nil
 }
@@ -116,6 +114,9 @@ func withRecoverRun(run func() error) (err error) {
 	return run()
 }
 
+// erago starts from boot scene
+const startSceneName = sceneNameBooting
+
 func (g *Game) main() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -130,7 +131,7 @@ func (g *Game) main() error {
 
 	// run game flow.
 	g.ipr.SetContext(ctx)
-	err := g.scene.Run(ctx)
+	err := g.scene.Run(ctx, startSceneName)
 	if err == uiadapter.ErrorPipelineClosed {
 		return nil
 	}

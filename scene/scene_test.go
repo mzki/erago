@@ -28,7 +28,7 @@ func TestSceneManager(t *testing.T) {
 	defer manager.Free()
 
 	ctx := context.Background()
-	if err := manager.Run(ctx); err == nil {
+	if err := manager.Run(ctx, SceneNameTitle); err == nil {
 		t.Error("must be error( not found next scene )")
 	} else {
 		t.Log("SceneManager.Run() returns:")
@@ -36,7 +36,7 @@ func TestSceneManager(t *testing.T) {
 	}
 
 	manager.UnRegisterScene(SceneNameTitle)
-	if err := manager.Run(ctx); err == nil {
+	if err := manager.Run(ctx, SceneNameTitle); err == nil {
 		t.Error("must be error( not found next scene )")
 	} else {
 		t.Log("SceneManager.Run() returns:")

@@ -8,7 +8,6 @@ import (
 	"golang.org/x/mobile/event/paint"
 
 	"local/erago"
-	attr "local/erago/attribute"
 	"local/erago/uiadapter"
 	"local/erago/uiadapter/event/input"
 )
@@ -125,11 +124,6 @@ func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) bool 
 
 func (p *EragoPresenter) init(Conf erago.Config) error {
 	ui := p.ui
-	ui.SetAlignment(attr.AlignmentRight)
-	ui.NewPage()
-	ui.Print("...紳士妄想中\n")
-	ui.SetAlignment(attr.AlignmentLeft)
-
 	return p.game.Init(ui, Conf)
 }
 

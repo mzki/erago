@@ -48,11 +48,11 @@ func (sm *SceneManager) Free() {
 	sm.sf.scenes = nil
 }
 
-// run scene transitions.
+// run scene transitions starting from start_scene.
 // it blocks until done, you can use go func() to avoid blocking main thread.
-func (sm *SceneManager) Run(ctx context.Context) (err error) {
+func (sm *SceneManager) Run(ctx context.Context, start_scene string) (err error) {
 	sceneHolder := sm.sf.Scenes()
-	sm.currentScene, err = sceneHolder.GetScene(SceneNameTitle)
+	sm.currentScene, err = sceneHolder.GetScene(start_scene)
 	if err != nil {
 		return
 	}
