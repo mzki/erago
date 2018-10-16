@@ -1,28 +1,28 @@
 // Package errutil provides utilty of errors.
-package util
+package errutil
 
 import (
 	"fmt"
 	"io"
 )
 
-// errWriter is wraper of Writer with internal Error.
+// Writer is wraper of io.Writer with internal Error.
 // if call Write(), error is remaindered in internal,
 // and trailing Write() is not executed.
-type errWriter struct {
+type Writer struct {
 	w   io.Writer
 	err error
 }
 
 // construct with io.Writer.
-func NewErrWriter(w io.Writer) *errWriter { return &errWriter{w: w} }
+func NewErrWriter(w io.Writer) *Writer { return &Writer{w: w} }
 
 // return internal error.
-func (ew errWriter) Err() error { return ew.err }
+func (ew Writer) Err() error { return ew.err }
 
 // Write binds error of Write() to internal.
 // if internal err is not nil, after write process is ignored
-func (ew *errWriter) Write(p []byte) (int, error) {
+func (ew *Writer) Write(p []byte) (int, error) {
 	if ew.Err() != nil {
 		return 0, nil // do nothing
 	}
@@ -31,17 +31,17 @@ func (ew *errWriter) Write(p []byte) (int, error) {
 	return b, nil
 }
 
-// errReader is wrapper of io.Reader with internal error.
-type errReader struct {
+// Reader is wrapper of io.Reader with internal error.
+type Reader struct {
 	r   io.Reader
 	err error
 }
 
-func NewErrReader(r io.Reader) *errReader { return &errReader{r: r} }
+func NewErrReader(r io.Reader) *Reader { return &Reader{r: r} }
 
-func (er errReader) Err() error { return er.err }
+func (er Reader) Err() error { return er.err }
 
-func (er *errReader) Read(p []byte) (int, error) {
+func (er *Reader) Read(p []byte) (int, error) {
 	if er.Err() != nil {
 		return 0, nil // do nothing
 	}
@@ -50,19 +50,20 @@ func (er *errReader) Read(p []byte) (int, error) {
 	return b, nil
 }
 
-// multiError has multipule errors in internal.
-type multiError struct {
+// MultiError has multipule errors in internal and
+// can show all of these
+type MultiError struct {
 	errs []error
 }
 
 // Constract with no argument.
-func NewMultiErr() *multiError {
-	return &multiError{errs: make([]error, 0, 4)}
+func NewMultiError() *MultiError {
+	return &MultiError{errs: make([]error, 0, 4)}
 }
 
 // Add given error into Internal.
 // if error is nil, no action for internal errors.
-func (me *multiError) Add(err error) {
+func (me *MultiError) Add(err error) {
 	if err == nil {
 		return
 	}
@@ -71,7 +72,7 @@ func (me *multiError) Add(err error) {
 
 // Err returns internal errors joined to one error.
 // if internal errors is nothing, return nil.
-func (me *multiError) Err() error {
+func (me *MultiError) Err() error {
 	if len(me.errs) == 0 {
 		return nil
 	}

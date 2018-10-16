@@ -14,6 +14,7 @@ import (
 	"local/erago/state"
 	"local/erago/state/csv"
 	"local/erago/util"
+	"local/erago/util/errutil"
 )
 
 const (
@@ -197,7 +198,7 @@ func validateMetaData(md *state.MetaData, expectMeta state.MetaData) error {
 
 // writeMetaDataTo writes metadata into io.Writer
 func writeMetaDataTo(w io.Writer, md *state.MetaData) error {
-	ewriter := util.NewErrWriter(w)
+	ewriter := errutil.NewErrWriter(w)
 	ewriter.Write([]byte(md.Identifier)) // fixed len 5B
 
 	if bver, err := int32ToBytes(md.GameVersion); err != nil {
@@ -227,7 +228,7 @@ func writeMetaDataTo(w io.Writer, md *state.MetaData) error {
 // validation of md is other task.
 func readMetaDataFrom(r io.Reader, md *state.MetaData) error {
 	buf := make([]byte, state.MetaTitleLimit)
-	ereader := util.NewErrReader(r)
+	ereader := errutil.NewErrReader(r)
 
 	buf = buf[:state.DefaultMetaIdentLen] // 5bytes
 	ereader.Read(buf)

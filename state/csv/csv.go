@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"local/erago/util"
+	"local/erago/util/errutil"
 )
 
 const (
@@ -224,7 +224,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 	// load GameBase, Replace and Alias.
 	{
-		errs := util.NewMultiErr()
+		errs := errutil.NewMultiError()
 		var err error
 
 		if aliasFile := config.filepath(aliasFileName); FileExists(aliasFile) {

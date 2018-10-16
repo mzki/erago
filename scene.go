@@ -3,7 +3,7 @@ package erago
 import (
 	attr "local/erago/attribute"
 	"local/erago/scene"
-	"local/erago/util"
+	"local/erago/util/errutil"
 )
 
 const (
@@ -16,7 +16,7 @@ func (game *Game) sceneBooting() (string, error) {
 	const LoadingMessage = "...紳士妄想中\n"
 
 	ui := game.uiAdapter
-	merr := util.NewMultiErr()
+	merr := errutil.NewMultiError()
 	merr.Add(ui.SetAlignment(attr.AlignmentRight))
 	merr.Add(ui.NewPage())
 	merr.Add(ui.Print(LoadingMessage))

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"local/erago/util"
+	"local/erago/util/errutil"
 )
 
 // variableSpec defines the spec of user defined varables.
@@ -95,7 +95,7 @@ func parseVariableSpec(record []string) (variableSpec, error) {
 	}
 
 	// parse each record
-	merr := util.NewMultiErr()
+	merr := errutil.NewMultiError()
 	scope, err := parseIdent(record[0], parseScopeMap)
 	merr.Add(err)
 	dtype, err := parseIdent(record[1], parseDTypeMap)
