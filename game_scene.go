@@ -6,6 +6,8 @@ import (
 	"local/erago/util/errutil"
 )
 
+// This files defines game scenes which does system level processure.
+
 const (
 	sceneNameBooting = "__booting"
 	// TODO save/load scene is here?

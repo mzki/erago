@@ -47,8 +47,7 @@ func (g *Game) Init(ui uiadapter.UI, config Config) error {
 	g.uiAdapter = uiadapter.New(ui)
 	g.sender = g.uiAdapter.GetInputPort()
 
-	emptyConf := Config{}
-	if emptyConf == config {
+	if emptyConf := (Config{}); emptyConf == config {
 		config = NewConfig(DefaultBaseDir)
 	}
 	g.config = config

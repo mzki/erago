@@ -47,7 +47,7 @@ func (common sceneCommon) Next() (Scene, error) {
 // It is used to get current scene's next in scene trainsition.
 // Returned string must be name of next scene, and
 // error controlls scene trainsition which is defined in
-// "erago/flow" package.
+// "erago/scene" package.
 type NextFunc func() (string, error)
 
 // it is used for defining user custom scene.
