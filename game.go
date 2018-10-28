@@ -57,6 +57,7 @@ func (g *Game) Init(ui uiadapter.UI, config Config) error {
 		return err
 	}
 	gamestate := state.NewGameState(csv_manager, repo.NewFileRepository(csv_manager, config.RepoConfig))
+	g.state = gamestate
 
 	ui_controller := &struct { // must be pointer because its fields are changed later.
 		*uiadapter.UIAdapter

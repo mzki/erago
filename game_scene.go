@@ -14,14 +14,13 @@ const (
 )
 
 func (game *Game) sceneBooting() (string, error) {
-	// TODO: read from CSV constant
-	const LoadingMessage = "...紳士妄想中\n"
+	var LoadingMessage = game.state.CSV.GameReplace.LoadingMessage
 
 	ui := game.uiAdapter
 	merr := errutil.NewMultiError()
 	merr.Add(ui.SetAlignment(attr.AlignmentRight))
 	merr.Add(ui.NewPage())
-	merr.Add(ui.Print(LoadingMessage))
+	merr.Add(ui.PrintL(LoadingMessage))
 	merr.Add(ui.SetAlignment(attr.AlignmentLeft))
 
 	if err := merr.Err(); err != nil {
