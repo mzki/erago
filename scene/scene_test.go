@@ -16,7 +16,7 @@ func buildSceneManager() *SceneManager {
 		panic(err)
 	}
 	m := NewSceneManager(controller, scripter, state, config)
-	m.RegisterScene(SceneNameTitle, func() (string, error) {
+	m.RegisterSceneFunc(SceneNameTitle, func() (string, error) {
 		controller.PrintL("this is test printL")
 		return "unkown scene name", nil
 	})
@@ -48,7 +48,14 @@ func TestSceneExists(t *testing.T) {
 	m := buildSceneManager()
 	defer m.Free()
 
+	// case exist
 	if has := m.SceneExists(SceneNameTitle); !has {
 		t.Errorf("SceneManager must have the scene %s, but does not", SceneNameTitle)
+	}
+
+	// case no exist
+	m.UnRegisterScene(SceneNameTitle)
+	if has := m.SceneExists(SceneNameTitle); has {
+		t.Errorf("After UnRegisterScene, SceneManager must NOT have the scene %s, but does", SceneNameTitle)
 	}
 }

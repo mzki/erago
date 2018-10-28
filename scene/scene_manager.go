@@ -148,18 +148,17 @@ func (sm SceneManager) SetNextSceneByName(scene_name string) error {
 	return sm.sf.scenes.SetNextByName(scene_name)
 }
 
-// register user-defined scene flow into scene trainsition
-// using scene name and next function.
-func (sm SceneManager) RegisterScene(name string, next_func NextFunc) {
-	new_scene := newExternalScene(name, next_func, sm.sf)
-	sm.sf.scenes.registerScene(new_scene)
+// register user-defined scene into scene trainsition
+func (sm SceneManager) RegisterScene(s Scene) {
+	sm.sf.scenes.registerScene(s)
 }
 
 // register user-defined scene flow into scene trainsition
 // using scene name and next function.
 // next function is converted scene.NextFunc internally.
 func (sm SceneManager) RegisterSceneFunc(name string, next_func func() (string, error)) {
-	sm.RegisterScene(name, NextFunc(next_func))
+	new_scene := newExternalScene(name, NextFunc(next_func), sm.sf)
+	sm.RegisterScene(new_scene)
 }
 
 // unregister Scene from scene trainsition.

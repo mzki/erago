@@ -22,10 +22,10 @@ func TestGameMain(t *testing.T) {
 		g.Send(input.NewEventQuit())
 	}()
 
-	g.scene.RegisterScene(scene.SceneNameTitle, scene.NextFunc(func() (string, error) {
+	g.scene.RegisterSceneFunc(scene.SceneNameTitle, func() (string, error) {
 		g.uiAdapter.Print("This is test scene first.\n")
 		return "unknown", nil
-	}))
+	})
 
 	if err := g.Main(); err == nil {
 		t.Error("must be error but no erorr")
