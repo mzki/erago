@@ -44,9 +44,9 @@ const (
 )
 
 const (
-	aliasFileName    = "_Alias.csv"
-	gameGaseFileName = "_GameBase.csv"
-	replaceFileName  = "_Replace.csv"
+	aliasFileName       = "_Alias.csv"
+	gameBaseFileName    = "_GameBase.csv"
+	gameReplaceFileName = "_GameReplace.csv"
 )
 
 // Constant is a constant data set defined by a csv file.
@@ -91,11 +91,11 @@ type CsvManager struct {
 	// are loaded from _{filename}.csv to configure
 	// some constant parameters.
 
-	// GameBase.csv
+	// _GameBase.csv
 	GameBase
 
 	// _Replace.csv
-	Replace
+	GameReplace
 
 	// alias for reading character defined csv, chara*.csv
 	aliasMap map[string]string
@@ -231,11 +231,16 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 			cm.aliasMap, err = readAliases(aliasFile)
 			errs.Add(err)
 		}
-
-		// cm.GameBase, err = newGameBase(config.filepath(gameGaseFileName))
-		// errs.Add(err)
-		// cm.Replace, err = newReplace(config.filepath(replaceFileName))
-		// errs.Add(err)
+		if file := config.filepath(gameBaseFileName); FileExists(file) {
+			base, err := newGameBase(file)
+			cm.GameBase = *base
+			errs.Add(err)
+		}
+		if file := config.filepath(gameReplaceFileName); FileExists(file) {
+			replace, err := newGameReplace(file)
+			cm.GameReplace = *replace
+			errs.Add(err)
+		}
 		if err = errs.Err(); err != nil {
 			return err
 		}

@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// DEPLECATED: no longer used
-type Replace struct {
+// Replacing a part of system scene flow.
+type GameReplace struct {
 	Currency    string
 	CurrencyPos string
 
@@ -25,8 +25,8 @@ type Replace struct {
 	PBandIndex int
 }
 
-func newReplace(file string) (*Replace, error) {
-	rp := &Replace{
+func newGameReplace(file string) (*GameReplace, error) {
+	rp := &GameReplace{
 		Currency:       "円",
 		CurrencyPos:    "後",
 		LoadingMessage: "Now Loading...",
@@ -49,7 +49,7 @@ func newReplace(file string) (*Replace, error) {
 			rp.CurrencyPos = record[1]
 		case "起動時簡略表示":
 			rp.LoadingMessage = record[1]
-		case "COM_ABLEの初期値":
+		case "COM_ABLE初期値":
 			var b bool
 			b, err = strconv.ParseBool(record[1])
 			rp.DefaultComAble = b
@@ -86,13 +86,14 @@ func levelsFrom(s string) ([]int64, error) {
 	return lvs, nil
 }
 
+// Base information for the Game
 type GameBase struct {
 	Code           string
 	Version        int32
 	Title          string
 	Author         string
 	Develop        string
-	DifferentVer   string
+	AllowDiffVer   bool
 	AdditionalInfo string
 }
 
@@ -105,7 +106,7 @@ func newGameBase(file string) (*GameBase, error) {
 	}
 
 	err := ReadFileFunc(file, func(record []string) error {
-		switch record[0] {
+		switch key := record[0]; key {
 		case "コード":
 			gb.Code = record[1]
 		case "バージョン":
@@ -118,12 +119,18 @@ func newGameBase(file string) (*GameBase, error) {
 			gb.Title = record[1]
 		case "作者":
 			gb.Author = record[1]
-		case "制作年":
+		case "製作年":
 			gb.Develop = record[1]
 		case "バージョン違い認める":
-			gb.DifferentVer = record[1]
+			if strings.Contains(record[1], "はい") {
+				gb.AllowDiffVer = true
+			} else {
+				gb.AllowDiffVer = false
+			}
 		case "追加情報":
 			gb.AdditionalInfo = record[1]
+		default:
+			return fmt.Errorf("unknown GameBase key: %s", key)
 		}
 		return nil
 	})
