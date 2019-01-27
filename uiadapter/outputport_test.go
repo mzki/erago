@@ -25,7 +25,7 @@ func TestButtonPattern(t *testing.T) {
 			t.Errorf("can not parse string: %s", caption)
 		}
 		if match[1] != cmd {
-			t.Errorf("can not parse cmd(%s) in %#v")
+			t.Errorf("can not parse cmd(%s) in %#v", cmd, caption)
 		}
 	}
 }

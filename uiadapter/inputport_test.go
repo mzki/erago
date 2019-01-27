@@ -217,9 +217,7 @@ func TestWaitWithTimeout(t *testing.T) {
 	go port.RunFilter(ctx)
 
 	{
-		tctx, tcancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
-		defer tcancel()
-		if err := port.WaitWithContext(tctx); err != context.DeadlineExceeded {
+		if err := port.WaitWithTimeout(ctx, 2*time.Millisecond); err != context.DeadlineExceeded {
 			t.Fatal(err)
 		}
 	}
@@ -230,9 +228,7 @@ func TestWaitWithTimeout(t *testing.T) {
 			SendCommand(port, "")
 		}()
 
-		tctx, tcancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer tcancel()
-		if err := port.WaitWithContext(tctx); err != nil {
+		if err := port.WaitWithTimeout(ctx, 10*time.Millisecond); err != nil {
 			t.Fatal(err)
 		}
 	}

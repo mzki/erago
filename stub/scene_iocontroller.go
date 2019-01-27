@@ -3,6 +3,7 @@ package stub
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"local/erago/uiadapter"
 )
@@ -20,19 +21,19 @@ func NewFlowGameController() *sceneIOController {
 func (ui sceneIOController) RawInput() (string, error) {
 	return "", nil
 }
-func (ui sceneIOController) RawInputWithContext(context.Context) (string, error) {
+func (ui sceneIOController) RawInputWithTimeout(context.Context, time.Duration) (string, error) {
 	return "", nil
 }
 func (ui sceneIOController) Command() (string, error) {
 	return "", nil
 }
-func (ui sceneIOController) CommandWithContext(context.Context) (string, error) {
+func (ui sceneIOController) CommandWithTimeout(context.Context, time.Duration) (string, error) {
 	return "", nil
 }
 func (ui sceneIOController) CommandNumber() (int, error) {
 	return 0, nil
 }
-func (ui sceneIOController) CommandNumberWithContext(context.Context) (int, error) {
+func (ui sceneIOController) CommandNumberWithTimeout(context.Context, time.Duration) (int, error) {
 	return 0, nil
 }
 func (ui sceneIOController) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
@@ -45,7 +46,7 @@ func (ui sceneIOController) CommandNumberSelect(ctx context.Context, ns ...int) 
 func (ui sceneIOController) Wait() error {
 	return nil
 }
-func (ui sceneIOController) WaitWithContext(context.Context) error {
+func (ui sceneIOController) WaitWithTimeout(context.Context, time.Duration) error {
 	return nil
 }
 

@@ -2,6 +2,7 @@ package scene
 
 import (
 	"context"
+	"time"
 
 	attr "local/erago/attribute"
 )
@@ -25,27 +26,31 @@ type IOController interface {
 // input interface.
 type InputPort interface {
 	// RawInput returns user input (i.e. key press) directly.
-	// shorthand for RawInputWithContext with context.Background.
+	// It waits until user input any key.
 	RawInput() (string, error)
 
-	// RawInput returns user input (i.e. key press) directly.
-	RawInputWithContext(context.Context) (string, error)
+	// RawInputWithTimeout returns user input (i.e. key press) directly.
+	// it can be canceled by canceling context.
+	// This function timeouts with given timeout duration, and returns error context.DeadlineExceeded.
+	RawInputWithTimeout(context.Context, time.Duration) (string, error)
 
 	// Command returns string command which is emitted with user confirming.
-	// shorthand for CommandWithContext with context.Background.
+	// It waits until user emit any command.
 	Command() (string, error)
 
 	// it returns string command which is emitted with user confirming.
 	// it can be canceled by canceling context.
-	CommandWithContext(context.Context) (string, error)
+	// This function timeouts with given timeout duration, and returns error context.DeadlineExceeded.
+	CommandWithTimeout(context.Context, time.Duration) (string, error)
 
 	// Same as Command but return number command.
-	// shorthand for CommandNumberWithContext with context.Background.
+	// It waits until user emit any number command.
 	CommandNumber() (int, error)
 
 	// return number command limiting in range [min:max]
 	// it can be canceled by canceling context.
-	CommandNumberWithContext(context.Context) (int, error)
+	// This function timeouts with given timeout duration, and returns error context.DeadlineExceeded.
+	CommandNumberWithTimeout(context.Context, time.Duration) (int, error)
 
 	// return number command limiting in range [min:max]
 	CommandNumberRange(ctx context.Context, min, max int) (int, error)
@@ -58,7 +63,9 @@ type InputPort interface {
 	Wait() error
 
 	// wait for any user confirming.
-	WaitWithContext(ctx context.Context) error
+	// it can be canceled by canceling context.
+	// This function timeouts with given timeout duration, and returns error context.DeadlineExceeded.
+	WaitWithTimeout(ctx context.Context, timeout time.Duration) error
 }
 
 // output interface.
