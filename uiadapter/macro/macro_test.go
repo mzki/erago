@@ -14,7 +14,7 @@ func TestParse(t *testing.T) {
 	expect := []string{"e", "100", "e", "10", "e", "e"}
 	for i, m := range macro.Tokens {
 		if expect[i] != m.Command {
-			t.Error("different parsed command; got: %v, expect: %v", m.Command, expect[i])
+			t.Errorf("different parsed command; got: %v, expect: %v", m.Command, expect[i])
 		}
 	}
 
@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 		TokenTypeNumber, TokenTypeSkipWait, TokenTypeSkipWait}
 	for i, tok := range macro.Tokens {
 		if expect_types[i] != tok.Type {
-			t.Error("different parsed command; got: %v, expect: %v", tok.Type, expect_types[i])
+			t.Errorf("different parsed command; got: %v, expect: %v", tok.Type, expect_types[i])
 		}
 	}
 }

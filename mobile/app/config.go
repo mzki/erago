@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	minFontSize = 15 // in dip.
+	minFontSize = 15.0 // in dip.
 )
 
 var configInstance = &Config{

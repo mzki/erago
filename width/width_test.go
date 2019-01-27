@@ -33,7 +33,7 @@ func TestRuneWidth(t *testing.T) {
 	} {
 		expect := runewidth.RuneWidth(r)
 		if got := RuneWidth(r); got != expect {
-			t.Errorf("width(%s) = %v, expect %v", r, got, expect)
+			t.Errorf("width(%q) = %v, expect %v", string(r), got, expect)
 		}
 	}
 }
