@@ -13,12 +13,14 @@ import (
 // outputport implemnts a part of flow.GameController.
 // It modifies and parses a text to output.
 type outputPort struct {
+	syncer *lineSyncer
 	UI
 }
 
-func newOutputPort(ui UI) *outputPort {
+func newOutputPort(ui UI, ls *lineSyncer) *outputPort {
 	return &outputPort{
-		UI: ui,
+		syncer: ls,
+		UI:     ui,
 	}
 }
 
@@ -59,27 +61,44 @@ func (p outputPort) parsePrint(s string) error {
 // =======================
 
 func (p outputPort) Print(s string) error {
-	for len(s) > 0 {
-		var syncRequest = true
+	return p.printInternal(true, s)
+}
 
+func (p outputPort) printInternal(parseButton bool, s string) error {
+	for len(s) > 0 {
+		var lineSyncRequest = true
+
+		// extract text for each line.
 		i := 1 + strings.Index(s, "\n")
 		if i == 0 {
 			// "\n" is not found
 			i = len(s)
-			syncRequest = false
+			lineSyncRequest = false
 		}
 
-		if err := p.parsePrint(s[:i]); err != nil {
+		// print
+		var err error = nil
+		if parseButton {
+			err = p.parsePrint(s[:i])
+		} else {
+			err = p.UI.Print(s[:i])
+		}
+		if err != nil {
 			return err
 		}
 
-		// synchronize output result if "\n" is appeared
-		if syncRequest {
-			if err := p.UI.Sync(); err != nil {
-				return err
-			}
-		}
+		// skip processed text
 		s = s[i:]
+
+		// synchronize output result either "\n" is appeared or not
+		if lineSyncRequest {
+			err = p.syncer.SyncLine()
+		} else {
+			err = p.syncer.SyncText()
+		}
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -131,10 +150,17 @@ func (p outputPort) PrintC(s string, w int) error {
 		s += strings.Repeat(" ", space)
 	}
 
+	var err error = nil
 	if loc := buttonPattern.FindStringSubmatchIndex(s); loc != nil {
-		return p.UI.PrintButton(s, s[loc[2]:loc[3]])
+		err = p.UI.PrintButton(s, s[loc[2]:loc[3]])
+	} else {
+		err = p.UI.PrintLabel(s)
 	}
-	return p.UI.PrintLabel(s)
+	if err != nil {
+		return err
+	}
+
+	return p.syncer.SyncText()
 }
 
 // print string.
@@ -148,7 +174,7 @@ func (p outputPort) VPrintC(vname, s string, width int) error {
 
 // print text without parsing button pattern.
 func (p outputPort) PrintPlain(s string) error {
-	return p.UI.Print(s)
+	return p.printInternal(false, s)
 }
 
 // print plain text. no parse button

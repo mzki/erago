@@ -8,6 +8,12 @@ import (
 	"local/erago/uiadapter/event/input"
 )
 
+type SyncerImpl struct{}
+
+func (s SyncerImpl) Sync() error { return nil }
+
+func newSyncer() *lineSyncer { return &lineSyncer{SyncerImpl{}} }
+
 func TestCommandBuffer(t *testing.T) {
 	c := newCommandBuffer()
 	c.Send("cmd")
@@ -21,7 +27,7 @@ func TestCommandBuffer(t *testing.T) {
 }
 
 func TestInputState(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	var current inputState = inputIdling{}
 	showState := func() {
 		t.Logf("current type is %v", current.Type())
@@ -73,7 +79,7 @@ func TestInputState(t *testing.T) {
 }
 
 func TestInputRecieve(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -104,7 +110,7 @@ func SendCommand(port *inputPort, cmd string) {
 }
 
 func TestInputWait(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go port.RunFilter(ctx)
@@ -128,7 +134,7 @@ func TestInputWait(t *testing.T) {
 }
 
 func TestInputMacro(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go port.RunFilter(ctx)
@@ -171,7 +177,7 @@ func TestInputMacro(t *testing.T) {
 }
 
 func TestSkippingWait(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go port.RunFilter(ctx)
@@ -211,7 +217,7 @@ func TestSkippingWait(t *testing.T) {
 }
 
 func TestWaitWithTimeout(t *testing.T) {
-	port := newInputPort()
+	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go port.RunFilter(ctx)
