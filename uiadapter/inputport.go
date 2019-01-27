@@ -4,16 +4,23 @@ import (
 	"context"
 	"strconv"
 	"sync"
+	"time"
 
 	"local/erago/uiadapter/event/input"
 	"local/erago/util/deque"
 )
+
+// Waiting functions without timeout feature, such as Wait(), Command() and so on,
+// use this timeout threshold which is enough for most cases.
+const DefaultMaxWaitDuration = 365 * (24 * time.Hour) // 1 year
 
 // inputport is interface of ui input.
 // it filters input.Event and send command to command buffer.
 // handling incoming event (user input) is responsible for ebuf,
 // and outgoing event (command) is responsible for cbuf.
 type inputPort struct {
+	syncer *lineSyncer
+
 	state      inputState
 	macroState inputState
 
@@ -27,8 +34,9 @@ type inputPort struct {
 	closed bool // the port is closed?
 }
 
-func newInputPort() *inputPort {
+func newInputPort(ls *lineSyncer) *inputPort {
 	return &inputPort{
+		syncer:     ls,
 		state:      inputIdling{},
 		macroState: macroNothing{},
 		ebuf:       deque.NewEventDeque(),
@@ -164,22 +172,35 @@ func (port *inputPort) Quit() {
 	port.ebuf.Send(input.NewEventQuit())
 }
 
+//
+// funcions for waiting user input.
+//
+
 // wait for any input. it will never return until getting any input.
 func (port *inputPort) Wait() error {
-	return port.WaitWithContext(context.Background())
+	return port.WaitWithTimeout(context.Background(), DefaultMaxWaitDuration)
 }
 
 // wait for any input with context. it can cancel by cancelation for context.
 // it returns error which is uiadapter.ErrorPipelineClosed,
 // context.DeadLineExceeded or context.Canceled.
-func (port *inputPort) WaitWithContext(ctx context.Context) error {
+func (port *inputPort) WaitWithTimeout(ctx context.Context, timeout time.Duration) error {
 	if port.isClosed() {
 		return ErrorPipelineClosed
 	}
+
+	// Synchronize to UI state before stating user input
+	if err := port.syncer.SyncWait(); err != nil {
+		return err
+	}
+
 	port.ebuf.Send(internalEventStartInput.New())
 	defer port.ebuf.SendFirst(internalEventStopInput.New())
 
-	return port.waitWithContext(ctx)
+	timeCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	return port.waitWithContext(timeCtx)
 }
 
 func (port *inputPort) waitWithContext(ctx context.Context) error {
@@ -201,20 +222,29 @@ func (port *inputPort) waitWithContext(ctx context.Context) error {
 
 // wait for string command.
 func (port *inputPort) Command() (string, error) {
-	return port.CommandWithContext(context.Background())
+	return port.CommandWithTimeout(context.Background(), DefaultMaxWaitDuration)
 }
 
 // wait for string command with context. it can cancel by cancelation for context.
 // it returns command string and error which is uiadapter.ErrorPipelineClosed,
 // context.DeadLineExceeded or context.Canceled.
-func (port *inputPort) CommandWithContext(ctx context.Context) (string, error) {
+func (port *inputPort) CommandWithTimeout(ctx context.Context, timeout time.Duration) (string, error) {
 	if port.isClosed() {
 		return "", ErrorPipelineClosed
 	}
+
+	// Synchronize to UI state before stating user input
+	if err := port.syncer.SyncWait(); err != nil {
+		return "", err
+	}
+
 	port.ebuf.Send(internalEventStartCommand.New())
 	defer port.ebuf.SendFirst(internalEventStopCommand.New())
 
-	return port.commandWithContext(ctx)
+	timeCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	return port.commandWithContext(timeCtx)
 }
 
 func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
@@ -243,13 +273,28 @@ func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
 
 // wait for integer command.
 func (port *inputPort) CommandNumber() (int, error) {
-	return port.CommandNumberWithContext(context.Background())
+	return port.CommandNumberWithTimeout(context.Background(), DefaultMaxWaitDuration)
 }
 
 // wait for integer command.
-func (port *inputPort) CommandNumberWithContext(ctx context.Context) (int, error) {
+func (port *inputPort) CommandNumberWithTimeout(ctx context.Context, timeout time.Duration) (int, error) {
+	if port.isClosed() {
+		return 0, ErrorPipelineClosed
+	}
+
+	// Synchronize to UI state before stating user input
+	if err := port.syncer.SyncWait(); err != nil {
+		return 0, err
+	}
+
+	port.ebuf.Send(internalEventStartCommand.New())
+	defer port.ebuf.SendFirst(internalEventStopCommand.New())
+
+	timeCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	for {
-		cmd, err := port.CommandWithContext(ctx)
+		cmd, err := port.commandWithContext(timeCtx)
 		if err != nil {
 			return 0, err
 		}
@@ -261,20 +306,30 @@ func (port *inputPort) CommandNumberWithContext(ctx context.Context) (int, error
 
 // wait for raw input without user confirming, hit enter key.
 func (port *inputPort) RawInput() (string, error) {
-	return port.RawInputWithContext(context.Background())
+	return port.RawInputWithTimeout(context.Background(), DefaultMaxWaitDuration)
 }
 
 // wait for raw input with timeout.
 // raw input does not need user confirming, hit enter key.
 // It returns command string and error which is uiadapter.ErrorPipelineClosed or
 // context.DeadLineExceeded.
-func (port *inputPort) RawInputWithContext(ctx context.Context) (string, error) {
+func (port *inputPort) RawInputWithTimeout(ctx context.Context, timeout time.Duration) (string, error) {
 	if port.isClosed() {
 		return "", ErrorPipelineClosed
 	}
+
+	// Synchronize to UI state before stating user input
+	if err := port.syncer.SyncWait(); err != nil {
+		return "", err
+	}
+
 	port.ebuf.Send(internalEventStartRawInput)
 	defer port.ebuf.SendFirst(internalEventStopRawInput)
-	return port.commandWithContext(ctx)
+
+	timeCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	return port.commandWithContext(timeCtx)
 }
 
 // TODO: below functions should be implemented in the user layer?
@@ -282,10 +337,10 @@ func (port *inputPort) RawInputWithContext(ctx context.Context) (string, error) 
 // wait for number command that matches given nums.
 func (port *inputPort) CommandNumberSelect(ctx context.Context, nums ...int) (int, error) {
 	if len(nums) == 0 {
-		return port.CommandNumberWithContext(ctx)
+		return port.CommandNumber()
 	}
 	for {
-		got, err := port.CommandNumberWithContext(ctx)
+		got, err := port.CommandNumber()
 		if err != nil {
 			return 0, err
 		}
@@ -300,10 +355,10 @@ func (port *inputPort) CommandNumberSelect(ctx context.Context, nums ...int) (in
 // wait for number command that mathes in range [min : max]
 func (port *inputPort) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
 	if min > max {
-		return port.CommandNumberWithContext(ctx)
+		return port.CommandNumber()
 	}
 	for {
-		got, err := port.CommandNumberWithContext(ctx)
+		got, err := port.CommandNumber()
 		if err != nil {
 			return 0, err
 		}

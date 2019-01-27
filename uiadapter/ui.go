@@ -13,6 +13,8 @@ type UI interface {
 // output interface.
 // note that these functions may be called asynchronously.
 type Printer interface {
+	Syncer // implements Syncer interface
+
 	// Print text to screen.
 	// It should implement moving to next line by "\n".
 	Print(s string) error
@@ -56,6 +58,13 @@ type Printer interface {
 
 	// line count to fill the view heght.
 	LineCount() (int, error)
+}
+
+// Syncer is a interface for synchronizing output and display state.
+type Syncer interface {
+	// Sync flushes any pending output result, PrintXXX or ClearLine,
+	// at UI implementor. It can also use rate limitting for PrintXXX functions.
+	Sync() error
 }
 
 // Layouting interface. it should be implemented to

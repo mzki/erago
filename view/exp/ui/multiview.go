@@ -323,3 +323,7 @@ func (mv *MultipleView) CurrentRuneWidth() (int, error) {
 func (mv *MultipleView) LineCount() (int, error) {
 	return mv.viewManager.currentView().LineCount()
 }
+
+func (mv *MultipleView) Sync() error {
+	return mv.viewManager.currentView().Sync()
+}

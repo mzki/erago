@@ -2,6 +2,7 @@ package ui
 
 import (
 	"sync"
+	"time"
 
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/exp/shiny/widget/node"
@@ -31,16 +32,34 @@ type EragoPresenter struct {
 	ui               uiadapter.UI
 	requestObservers []uiadapter.RequestObserver
 
+	syncTimer    *time.Timer
+	syncInterval time.Duration
+
 	mu           *sync.Mutex
 	inputRequest uiadapter.InputRequestType // under mutex
 }
+
+const defaultSyncInterval = 1 * time.Second / 120 // 120 op/sec
 
 //
 func NewEragoPresenter(eventQ screen.EventDeque) *EragoPresenter {
 	if eventQ == nil {
 		panic("nil argument is not allowed")
 	}
-	return &EragoPresenter{game: erago.NewGame(), eventQ: eventQ, mu: new(sync.Mutex)}
+	return &EragoPresenter{
+		game:         erago.NewGame(),
+		eventQ:       eventQ,
+		syncTimer:    time.NewTimer(defaultSyncInterval),
+		syncInterval: defaultSyncInterval,
+		mu:           new(sync.Mutex),
+	}
+}
+
+func (p *EragoPresenter) sync(n node.Node) {
+	select {
+	case <-p.syncTimer.C: // wait for synchronizing signal
+		p.syncTimer.Reset(p.syncInterval)
+	}
 }
 
 // add uiadapter.RequestObserver to notify inputRequest is changed.

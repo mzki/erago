@@ -701,12 +701,6 @@ func (ft functor) textBar(L *lua.LState) int {
 
 // check whether error is context.DeadlineExceeded.
 // if not Raise error and exit.
-func timeoutContext(L *lua.LState, i int) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), time.Duration(L.CheckInt64(i)))
-}
-
-// check whether error is context.DeadlineExceeded.
-// if not Raise error and exit.
 func checkTimeExceeded(L *lua.LState, err error) bool {
 	switch err {
 	case context.DeadlineExceeded:
@@ -737,9 +731,9 @@ func (ft functor) wait(L *lua.LState) int {
 // nanosec経過した場合にはtime_exceededがtrueになり、
 // ユーザからの入力があった場合にはtime_exceededがfalseになります。
 func (ft functor) twait(L *lua.LState) int {
-	ctx, cancel := timeoutContext(L, 1)
-	defer cancel()
-	err := ft.game.WaitWithContext(ctx)
+	timeout := time.Duration(L.CheckInt64(1))
+	// TODO use application context?
+	err := ft.game.WaitWithTimeout(context.Background(), timeout*time.Nanosecond)
 	exceeded := checkTimeExceeded(L, err)
 	L.Push(lua.LBool(exceeded))
 	return 1
@@ -769,9 +763,9 @@ func (ft functor) inputNum(L *lua.LState) int {
 // ユーザーからの数字の入力を時間制限付きで待ちます。
 // nanosec経過すると、time_exceededがtureになり、command_numberは0になります。
 func (ft functor) tinputNum(L *lua.LState) int {
-	ctx, cancel := timeoutContext(L, 1)
-	defer cancel()
-	num, err := ft.game.CommandNumberWithContext(ctx)
+	timeout := time.Duration(L.CheckInt64(1))
+	// TODO use application context?
+	num, err := ft.game.CommandNumberWithTimeout(context.Background(), timeout*time.Nanosecond)
 	exceeded := checkTimeExceeded(L, err)
 	L.Push(lua.LNumber(num))
 	L.Push(lua.LBool(exceeded))
@@ -840,9 +834,9 @@ func (ft functor) inputStr(L *lua.LState) int {
 // ユーザーからの入力が数字であったとしても、
 // "10"のように文字列として返ってきます。
 func (ft functor) tinputStr(L *lua.LState) int {
-	ctx, cancel := timeoutContext(L, 1)
-	defer cancel()
-	s, err := ft.game.CommandWithContext(ctx)
+	timeout := time.Duration(L.CheckInt64(1))
+	// TODO use application context?
+	s, err := ft.game.CommandWithTimeout(context.Background(), timeout*time.Nanosecond)
 	exceeded := checkTimeExceeded(L, err)
 	L.Push(lua.LString(s))
 	L.Push(lua.LBool(exceeded))
@@ -859,9 +853,9 @@ func (ft functor) rawInput(L *lua.LState) int {
 // +gendoc "Era Module"
 // * ch, exceeded = era.trawInput(nanosec)
 func (ft functor) trawInput(L *lua.LState) int {
-	ctx, cancel := timeoutContext(L, 1)
-	defer cancel()
-	s, err := ft.game.RawInputWithContext(ctx)
+	timeout := time.Duration(L.CheckInt64(1))
+	// TODO use application context?
+	s, err := ft.game.RawInputWithTimeout(context.Background(), timeout*time.Nanosecond)
 	exceeded := checkTimeExceeded(L, err)
 	L.Push(lua.LString(s))
 	L.Push(lua.LBool(exceeded))
