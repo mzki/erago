@@ -82,7 +82,3 @@ func (a *uiAdapter) LineCount() (int, error) {
 	c, err := a.UI.LineCount()
 	return int(c), err
 }
-
-func (a *uiAdapter) Sync() error {
-	return nil
-}

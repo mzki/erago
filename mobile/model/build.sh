@@ -1,5 +1,7 @@
 # build and copy to shared dir.
 
+set -e
+
 DST=/mnt/LM18share/
 PRODUCT="model.aar"
 

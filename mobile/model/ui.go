@@ -4,6 +4,10 @@ package model
 type UI interface {
 	Printer
 
+	// it is called when mobile.app requires synchronized output
+	// state to UI view.
+	Sync() error
+
 	// it is called when mobile.app requires inputting
 	// user's command.
 	OnCommandRequested()
