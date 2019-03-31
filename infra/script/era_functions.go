@@ -68,7 +68,8 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"newPage":         ft.newPage,
 		"clearLineAll":    ft.clearLineAll,
 		"clearLine":       ft.clearLine,
-		"maxStrWidth":     ft.maxStrWidth,
+		"windowStrWidth":  ft.windowStrWidth,
+		"windowLineCount": ft.windowLineCount,
 		"currentStrWidth": ft.currentStrWidth,
 		"lineCount":       ft.lineCount,
 		// "lastLineCount":
@@ -587,21 +588,36 @@ func (ft functor) vclearLine(L *lua.LState) int {
 }
 
 // +gendoc "Era Module"
-// * width = era.maxStrWidth()
+// * width = era.windowStrWidth()
 //
 // Return string width to fill the view's width.
 // Here, a single byte character is counted 1, a multibyte is 2.
-// For example, let maxStrWidth = 3, one single byte character
+// For example, let windowStrWidth = 3, one single byte character
 // and one multibyte character fill the view's width.
 //
 // Viewの横幅に収まる最大の文字幅を返します。
 // ここでは、半角1文字を1、全角1文字を2として数えます。
-// 例えば、maxStrWidth()が3ならば、半角文字1つと全角文字1つまでが
+// 例えば、windowStrWidth()が3ならば、半角文字1つと全角文字1つまでが
 // 最大の横幅に収まります。
-func (ft functor) maxStrWidth(L *lua.LState) int {
-	width, err := ft.game.MaxRuneWidth()
+func (ft functor) windowStrWidth(L *lua.LState) int {
+	width, err := ft.game.WindowRuneWidth()
 	if err != nil {
-		L.RaiseError("script.maxStrWidth(): %v", err)
+		L.RaiseError("script.windowStrWidth(): %v", err)
+	}
+	L.Push(lua.LNumber(width))
+	return 1
+}
+
+// +gendoc "Era Module"
+// * line_count = era.windowLineCount()
+//
+// return line count to fill the view's height.
+//
+// Viewの高さに収まる最大の行数を返します
+func (ft functor) windowLineCount(L *lua.LState) int {
+	width, err := ft.game.WindowLineCount()
+	if err != nil {
+		L.RaiseError("script.windowLineCount(): %v", err)
 	}
 	L.Push(lua.LNumber(width))
 	return 1
@@ -627,9 +643,10 @@ func (ft functor) currentStrWidth(L *lua.LState) int {
 // +gendoc "Era Module"
 // * count = era.lineCount()
 //
-// return line count to fill the view's height.
+// Return line count as it increases outputting new line.
 //
-// Viewの高さに収まる最大の行数を返します
+// これまでに改行した数を返します。
+// 明示的な改行（printlの使用や"\n"をprintする）が起こった数だけ、数値が増加します。
 func (ft functor) lineCount(L *lua.LState) int {
 	count, err := ft.game.LineCount()
 	if err != nil {

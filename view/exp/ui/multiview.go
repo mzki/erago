@@ -312,8 +312,12 @@ func (mv *MultipleView) ClearLineAll() error {
 	return nil
 }
 
-func (mv *MultipleView) MaxRuneWidth() (int, error) {
-	return mv.viewManager.currentView().MaxRuneWidth()
+func (mv *MultipleView) WindowRuneWidth() (int, error) {
+	return mv.viewManager.currentView().WindowRuneWidth()
+}
+
+func (mv *MultipleView) WindowLineCount() (int, error) {
+	return mv.viewManager.currentView().WindowLineCount()
 }
 
 func (mv *MultipleView) CurrentRuneWidth() (int, error) {

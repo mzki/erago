@@ -68,13 +68,18 @@ func (a *uiAdapter) ClearLine(n int) error {
 	return a.UI.ClearLine(int32(n))
 }
 
-func (a *uiAdapter) CurrentRuneWidth() (int, error) {
-	w, err := a.UI.CurrentLineWidth()
+func (a *uiAdapter) WindowRuneWidth() (int, error) {
+	w, err := a.UI.WindowLineWidth()
 	return int(w), err
 }
 
-func (a *uiAdapter) MaxRuneWidth() (int, error) {
-	w, err := a.UI.MaxLineWidth()
+func (a *uiAdapter) WindowLineCount() (int, error) {
+	c, err := a.UI.WindowLineCount()
+	return int(c), err
+}
+
+func (a *uiAdapter) CurrentRuneWidth() (int, error) {
+	w, err := a.UI.CurrentLineWidth()
 	return int(w), err
 }
 

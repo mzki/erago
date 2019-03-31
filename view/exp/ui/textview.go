@@ -281,12 +281,16 @@ func (v *TextView) CurrentRuneWidth() (int, error) {
 	return v.Printer.CurrentRuneWidth(), nil
 }
 
-func (v *TextView) MaxRuneWidth() (int, error) {
-	return v.Printer.MaxRuneWidth(), nil
+func (v *TextView) WindowRuneWidth() (int, error) {
+	return v.Printer.WindowRuneWidth(), nil
 }
 
 func (v *TextView) LineCount() (int, error) {
 	return v.Printer.LineCount(), nil
+}
+
+func (v *TextView) WindowLineCount() (int, error) {
+	return v.Printer.WindowLineCount(), nil
 }
 
 func (v *TextView) Sync() error {

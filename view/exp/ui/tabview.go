@@ -165,10 +165,16 @@ func (v *TabView) ClearLineAll() {
 	v.content.viewManager.currentView().ClearLineAll()
 }
 
-func (v *TabView) MaxRuneWidth() (int, error) {
+func (v *TabView) WindowRuneWidth() (int, error) {
 	v.layoutLocker.Lock()
 	defer v.layoutLocker.Unlock()
-	return v.content.viewManager.currentView().MaxRuneWidth()
+	return v.content.viewManager.currentView().WindowRuneWidth()
+}
+
+func (v *TabView) WindowLineCount() (int, error) {
+	v.layoutLocker.Lock()
+	defer v.layoutLocker.Unlock()
+	return v.content.viewManager.currentView().WindowLineCount()
 }
 
 func (v *TabView) CurrentRuneWidth() (int, error) {

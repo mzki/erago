@@ -110,16 +110,21 @@ func (p Printer) ClearLineAll() {
 }
 
 // implemnts erago/uiadapter/UI.
+func (p Printer) WindowRuneWidth() int {
+	return p.v.RuneWidth()
+}
+
+// implemnts erago/uiadapter/UI.
+func (p Printer) WindowLineCount() int {
+	return p.v.LineCount()
+}
+
+// implemnts erago/uiadapter/UI.
 func (p Printer) CurrentRuneWidth() int {
 	return p.e.CurrentRuneWidth()
 }
 
 // implemnts erago/uiadapter/UI.
-func (p Printer) MaxRuneWidth() int {
-	return p.v.RuneWidth()
-}
-
-// implemnts erago/uiadapter/UI.
 func (p Printer) LineCount() int {
-	return p.v.LineCount()
+	return p.e.NewLineCount()
 }

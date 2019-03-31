@@ -162,7 +162,7 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 }
 
 func (ts trainScene) showTrainCommands() error {
-	maxRuneWidth, err := ts.IO().MaxRuneWidth()
+	maxRuneWidth, err := ts.IO().WindowRuneWidth()
 	if err != nil {
 		return err
 	}

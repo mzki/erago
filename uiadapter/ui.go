@@ -50,13 +50,16 @@ type Printer interface {
 	// Clear all lines containing historys.
 	ClearLineAll() error
 
-	// max rune width to fill the view width.
-	MaxRuneWidth() (int, error)
+	// rune width to fill the window width.
+	WindowRuneWidth() (int, error)
+
+	// line count to fill the window height.
+	WindowLineCount() (int, error)
 
 	// current rune width in the editting line.
 	CurrentRuneWidth() (int, error)
 
-	// line count to fill the view heght.
+	// line count as it increases at outputting new line.
 	LineCount() (int, error)
 }
 

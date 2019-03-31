@@ -36,7 +36,8 @@ type Printer interface {
 	NewPage() error
 	ClearLine(nline int32) error
 	ClearLineAll() error
-	MaxLineWidth() (int32, error)
+	WindowLineWidth() (int32, error)
+	WindowLineCount() (int32, error)
 	CurrentLineWidth() (int32, error)
 	LineCount() (int32, error)
 }

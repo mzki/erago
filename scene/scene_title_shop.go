@@ -297,7 +297,7 @@ func (sc shopScene) ShowItems(fmtStr string) error {
 	}
 
 	io := sc.IO()
-	maxRuneWidth, err := io.MaxRuneWidth()
+	maxRuneWidth, err := io.WindowRuneWidth()
 	if err != nil {
 		return err
 	}

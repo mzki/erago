@@ -103,8 +103,9 @@ type OutputPort interface {
 	VClearLineAll(vname string) error
 
 	CurrentRuneWidth() (int, error) // rune width of currently editing line.
-	MaxRuneWidth() (int, error)     // max rune width for view width.
-	LineCount() (int, error)
+	LineCount() (int, error)        // line count as it increases outputting new line
+	WindowRuneWidth() (int, error)  // max rune width for view width.
+	WindowLineCount() (int, error)  // max line count for view height.
 
 	// output options
 	SetColor(color uint32) error

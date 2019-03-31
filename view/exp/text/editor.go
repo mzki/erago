@@ -50,6 +50,9 @@ type Editor struct {
 
 	// cache for index of last paragraph, line and box to append text.
 	lastP, lastL, lastB int32
+
+	// count for outputting new line
+	newLineCount int
 }
 
 // return Editor to edit frame content.
@@ -125,6 +128,13 @@ func (e *Editor) CurrentRuneWidth() int {
 	defer f.mu.Unlock()
 
 	return e.currentLine().RuneWidth(f)
+}
+
+// It returns count for outputting new line.
+// return 0 at initial state.
+func (e *Editor) NewLineCount() int {
+	// The frame is not changed so not need mutex lock.
+	return e.newLineCount
 }
 
 // get current editing paragraph.
@@ -300,6 +310,8 @@ func (e *Editor) appendParagraph() {
 	newB, _ := f.addBox(&textBox{})
 	newLL.firstB = newB
 	e.lastB = newB
+
+	e.newLineCount++
 
 	f.invalidateCaches()
 }
