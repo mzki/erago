@@ -268,7 +268,7 @@ func bytesToInt32(p []byte) (int32, error) {
 }
 
 var (
-	codecHandler = &codec.MsgpackHandle{RawToString: true}
+	codecHandler = &codec.MsgpackHandle{}
 )
 
 func serialize(w io.Writer, data interface{}) error {
