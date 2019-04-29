@@ -12,11 +12,21 @@ import (
 	"local/erago/util/log"
 )
 
+var (
+	version string = "dev"
+	commit  string = "none"
+)
+
+const Title = "erago"
+
 func main() {
 	// runtime.SetBlockProfileRate(1)
 	// go func() {
 	// 	log.Info(http.ListenAndServe("0.0.0.0:6060", nil))
 	// }()
+
+	fullTitle := Title + " " + version + "-" + commit
+	log.Info("-- " + fullTitle + " --")
 
 	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
 	if err != nil {
@@ -27,7 +37,7 @@ func main() {
 	mode, args := parseFlags(appConf)
 	switch mode {
 	case runMain:
-		app.Main(appConf)
+		app.Main(fullTitle, appConf)
 	case runTest:
 		app.Testing(appConf, args)
 	}

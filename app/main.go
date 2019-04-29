@@ -85,7 +85,7 @@ func setLogConfig(appConf *Config) (func(), error) {
 // entry point of main application. appconf nil is OK,
 // use default if it is.
 // its internal errors are handled by itself.
-func Main(appConf *Config) {
+func Main(title string, appConf *Config) {
 	if appConf == nil {
 		appConf = NewConfig(DefaultBaseDir)
 	}
@@ -105,10 +105,7 @@ func Main(appConf *Config) {
 		return
 	}
 
-	appMain(t, appConf)
-}
-
-func appMain(t *theme.Theme, appConf *Config) {
+	// main loop
 	driver.Main(func(s screen.Screen) {
 		// capture panic as error in this thread
 		defer func() {
@@ -120,7 +117,7 @@ func appMain(t *theme.Theme, appConf *Config) {
 		}()
 
 		// run UI handler.
-		if err := runWindow(s, t, appConf); err != nil {
+		if err := runWindow(title, s, t, appConf); err != nil {
 			log.Info("Error: app.runWindow(): ", err)
 		} else {
 			log.Info("...quiting correctly")
@@ -129,11 +126,11 @@ func appMain(t *theme.Theme, appConf *Config) {
 }
 
 // references golang.org/x/exp/shiny/widget/widget.go
-func runWindow(s screen.Screen, t *theme.Theme, appConf *Config) error {
+func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) error {
 	w, err := s.NewWindow(&screen.NewWindowOptions{
 		Width:  appConf.Width,
 		Height: appConf.Height,
-		Title:  "erago ver0.10", // TODO: use constant version
+		Title:  title,
 	})
 	if err != nil {
 		return fmt.Errorf("NewWindow FAIL: %v", err)

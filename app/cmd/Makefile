@@ -1,9 +1,18 @@
-SOURCENAME=main.go
-BINARYNAME_X11=erago_amd64
-BINARYNAME_WIN=erago_amd64.exe
+# build version
+VERSION          := $(shell git describe --tags --abbrev=0)
+VERSION_FOR_FILE := $(shell echo "$(VERSION)" | sed -e "s/\./_/g")
+COMMIT_HASH      := $(shell git rev-parse --short HEAD)
 
+# target and source
+SOURCENAME=main.go
+BINARYNAME_X11=erago_$(VERSION_FOR_FILE)_linux_amd64
+BINARYNAME_WIN=erago_$(VERSION_FOR_FILE)_windows_amd64.exe
+
+# build flags
 GOBUILD=go build
-GOOPTION=-ldflags="-s -w" -gcflags="-trimpath=$(GOPATH)" -asmflags="-trimpath=$(GOPATH)"
+GOOPTION=-ldflags="-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT_HASH)" \
+				 -gcflags="-trimpath=$(GOPATH)" \
+				 -asmflags="-trimpath=$(GOPATH)"
 
 X11ENV=GOOS=linux GOARCH=amd64 GOROOT_FINAL="GOROOT"
 WINENV=GOOS=windows GOARCH=386 GOROOT_FINAL="GOROOT"
