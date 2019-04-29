@@ -4,7 +4,7 @@ import (
 	"image"
 	"testing"
 
-	"local/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/theme"
 
 	"golang.org/x/exp/shiny/unit"
 	"golang.org/x/exp/shiny/widget"

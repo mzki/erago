@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/shiny/widget"
 	"golang.org/x/exp/shiny/widget/node"
 
-	attr "local/erago/attribute"
-	customT "local/erago/view/exp/theme"
+	attr "github.com/mzki/erago/attribute"
+	customT "github.com/mzki/erago/view/exp/theme"
 )
 
 // remove TextViews which names are appeared in only oldNames.

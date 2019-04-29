@@ -3,8 +3,8 @@ package ui
 import (
 	"strings"
 
-	attr "local/erago/attribute"
-	"local/erago/view/exp/text"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/view/exp/text"
 )
 
 // Printer is interface for text.Frame.

@@ -1,11 +1,11 @@
 package app
 
 import (
-	"local/erago"
-	"local/erago/infra/serialize/toml"
-	"local/erago/util"
-	"local/erago/util/log"
-	"local/erago/view/exp/theme"
+	"github.com/mzki/erago"
+	"github.com/mzki/erago/infra/serialize/toml"
+	"github.com/mzki/erago/util"
+	"github.com/mzki/erago/util/log"
+	"github.com/mzki/erago/view/exp/theme"
 )
 
 const (

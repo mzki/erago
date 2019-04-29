@@ -1,8 +1,8 @@
 package app
 
 import (
-	"local/erago"
-	"local/erago/util/log"
+	"github.com/mzki/erago"
+	"github.com/mzki/erago/util/log"
 )
 
 // Testing test given script files on appConf context.

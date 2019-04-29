@@ -1,7 +1,7 @@
 package uiadapter
 
 import (
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 // represents state of input handling.

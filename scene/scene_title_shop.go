@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state/csv"
 )
 
 // TITLE SCENE

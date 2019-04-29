@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/exp/shiny/widget/node"
 
-	"local/erago/view/exp/text"
-	"local/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/text"
+	"github.com/mzki/erago/view/exp/theme"
 )
 
 func buildTextView() *TextView {

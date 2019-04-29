@@ -6,7 +6,7 @@ import (
 	"math"
 	"strconv"
 
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state/csv"
 )
 
 // TRAIN SCENE

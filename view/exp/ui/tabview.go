@@ -14,7 +14,7 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
-	attr "local/erago/attribute"
+	attr "github.com/mzki/erago/attribute"
 )
 
 // TabView is a container widget which paints only current

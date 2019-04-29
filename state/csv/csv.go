@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"local/erago/util/errutil"
+	"github.com/mzki/erago/util/errutil"
 )
 
 const (

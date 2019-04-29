@@ -2,7 +2,7 @@ package script
 
 import (
 	"github.com/yuin/gopher-lua"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state/csv"
 )
 
 // +gendoc.set_section "Builtin Module: csv"

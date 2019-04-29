@@ -16,11 +16,11 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 
-	"local/erago/app"
-	"local/erago/util/deque"
-	"local/erago/util/log"
-	customTheme "local/erago/view/exp/theme"
-	"local/erago/view/exp/ui"
+	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/util/deque"
+	"github.com/mzki/erago/util/log"
+	customTheme "github.com/mzki/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/ui"
 )
 
 // AppContext is interface for

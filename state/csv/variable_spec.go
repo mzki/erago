@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"local/erago/util/errutil"
+	"github.com/mzki/erago/util/errutil"
 )
 
 // variableSpec defines the spec of user defined varables.

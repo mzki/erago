@@ -10,8 +10,8 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/mobile/event/mouse"
 
-	attr "local/erago/attribute"
-	"local/erago/view/exp/text"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/view/exp/text"
 )
 
 // View is interface of text.Frame and its Printer.

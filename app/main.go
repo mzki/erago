@@ -20,9 +20,9 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 
-	"local/erago/util/log"
-	customTheme "local/erago/view/exp/theme"
-	"local/erago/view/exp/ui"
+	"github.com/mzki/erago/util/log"
+	customTheme "github.com/mzki/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/ui"
 )
 
 // build new theme according to application configure.

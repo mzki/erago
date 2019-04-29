@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state/csv"
 )
 
 // Character has some parameters including csv character's parameters.

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 type SyncerImpl struct{}

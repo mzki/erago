@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/exp/shiny/widget/node"
 
-	attr "local/erago/attribute"
-	"local/erago/view/exp/text"
-	"local/erago/view/exp/theme"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/view/exp/text"
+	"github.com/mzki/erago/view/exp/theme"
 )
 
 func buildTabView() *TabView {

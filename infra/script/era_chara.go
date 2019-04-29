@@ -5,7 +5,7 @@ import (
 
 	"github.com/yuin/gopher-lua"
 
-	"local/erago/state"
+	"github.com/mzki/erago/state"
 )
 
 const (

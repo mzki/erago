@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"local/erago/scene"
+	"github.com/mzki/erago/scene"
 )
 
 const (

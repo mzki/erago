@@ -11,10 +11,10 @@ import (
 
 	"github.com/ugorji/go/codec"
 
-	"local/erago/state"
-	"local/erago/state/csv"
-	"local/erago/util"
-	"local/erago/util/errutil"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
+	"github.com/mzki/erago/util"
+	"github.com/mzki/erago/util/errutil"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/exp/shiny/widget/node"
 
-	"local/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/theme"
 )
 
 var wideScreenSize = image.Point{512, 256}

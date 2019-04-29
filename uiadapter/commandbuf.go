@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"local/erago/uiadapter/macro"
+	"github.com/mzki/erago/uiadapter/macro"
 )
 
 // Error notifying XXXBuffer is Closed.

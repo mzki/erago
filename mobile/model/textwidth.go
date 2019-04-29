@@ -1,7 +1,7 @@
 package model
 
 import (
-	"local/erago/width"
+	"github.com/mzki/erago/width"
 )
 
 // textwidth.go expose methods in package erago/width to mobile device.

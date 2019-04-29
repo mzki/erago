@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"local/erago/uiadapter"
+	"github.com/mzki/erago/uiadapter"
 )
 
 // implements scene.IOController

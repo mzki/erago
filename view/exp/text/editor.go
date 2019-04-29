@@ -6,8 +6,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	attr "local/erago/attribute"
-	"local/erago/width"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/width"
 )
 
 // Alignment of current line.

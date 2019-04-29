@@ -1,7 +1,7 @@
 package csv
 
 import (
-	"local/erago/util"
+	"github.com/mzki/erago/util"
 )
 
 // check whether file exists. It wraps util.FileExists()

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"local/erago/state"
-	"local/erago/util/log"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/util/log"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"local/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/theme"
 )
 
 func TestView(t *testing.T) {

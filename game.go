@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"runtime"
 
-	"local/erago/infra/repo"
-	"local/erago/infra/script"
-	"local/erago/scene"
-	"local/erago/state"
-	"local/erago/state/csv"
-	"local/erago/uiadapter"
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago/infra/repo"
+	"github.com/mzki/erago/infra/script"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
+	"github.com/mzki/erago/uiadapter"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 //

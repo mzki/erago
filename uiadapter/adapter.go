@@ -2,7 +2,7 @@
 package uiadapter
 
 import (
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 // UIAdapter converts input and output data in cannonical manner.

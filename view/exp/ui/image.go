@@ -13,8 +13,8 @@ import (
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/image/draw"
 
-	"local/erago/util/log"
-	limage "local/erago/view/exp/image"
+	"github.com/mzki/erago/util/log"
+	limage "github.com/mzki/erago/view/exp/image"
 )
 
 // ImageView is a leaf widget that paints image.Image.

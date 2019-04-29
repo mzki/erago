@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"local/erago/infra/repo"
-	"local/erago/state"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/infra/repo"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
 )
 
 // __FILE__

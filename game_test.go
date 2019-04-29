@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"local/erago/scene"
-	"local/erago/stub"
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/stub"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 func TestGameMain(t *testing.T) {

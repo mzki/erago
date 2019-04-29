@@ -1,8 +1,8 @@
 package model
 
 import (
-	"local/erago/attribute"
-	"local/erago/uiadapter"
+	"github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/uiadapter"
 )
 
 // adapter for erago.UI interface.

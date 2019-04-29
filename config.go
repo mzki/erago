@@ -3,10 +3,10 @@ package erago
 import (
 	"path/filepath"
 
-	"local/erago/infra/repo"
-	"local/erago/infra/script"
-	"local/erago/scene"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/infra/repo"
+	"github.com/mzki/erago/infra/script"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/state/csv"
 )
 
 // by default, use current dir of running main.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"local/erago/util/log"
+	"github.com/mzki/erago/util/log"
 )
 
 // encode data to Writer.

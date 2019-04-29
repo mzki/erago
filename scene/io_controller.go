@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	attr "local/erago/attribute"
+	attr "github.com/mzki/erago/attribute"
 )
 
 // for convenience, attribute.Alignment are redeclared here,

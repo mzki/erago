@@ -1,7 +1,7 @@
 package uiadapter
 
 import (
-	"local/erago/attribute"
+	"github.com/mzki/erago/attribute"
 )
 
 // Interfaces for the presentaion layer.

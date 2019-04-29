@@ -3,8 +3,8 @@ package script
 import (
 	"github.com/yuin/gopher-lua"
 
-	"local/erago/state"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
 )
 
 const (

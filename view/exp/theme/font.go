@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/image/font"
 
-	internalfont "local/erago/view/exp/theme/internal/font"
+	internalfont "github.com/mzki/erago/view/exp/theme/internal/font"
 )
 
 // It is same as Options in github.com/golang/freetype/truetype.go

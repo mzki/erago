@@ -3,8 +3,8 @@ package stub
 import (
 	"fmt"
 
-	attr "local/erago/attribute"
-	"local/erago/uiadapter"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/uiadapter"
 )
 
 type gameUIStub struct{}

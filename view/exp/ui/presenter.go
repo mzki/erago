@@ -8,9 +8,9 @@ import (
 	"golang.org/x/exp/shiny/widget/node"
 	"golang.org/x/mobile/event/paint"
 
-	"local/erago"
-	"local/erago/uiadapter"
-	"local/erago/uiadapter/event/input"
+	"github.com/mzki/erago"
+	"github.com/mzki/erago/uiadapter"
+	"github.com/mzki/erago/uiadapter/event/input"
 )
 
 //

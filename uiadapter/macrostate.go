@@ -1,8 +1,8 @@
 package uiadapter
 
 import (
-	"local/erago/uiadapter/event/input"
-	"local/erago/uiadapter/macro"
+	"github.com/mzki/erago/uiadapter/event/input"
+	"github.com/mzki/erago/uiadapter/macro"
 )
 
 type macroNothing struct {

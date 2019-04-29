@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"local/erago/uiadapter/event/input"
-	"local/erago/util/deque"
+	"github.com/mzki/erago/uiadapter/event/input"
+	"github.com/mzki/erago/util/deque"
 )
 
 // Waiting functions without timeout feature, such as Wait(), Command() and so on,

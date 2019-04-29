@@ -2,7 +2,7 @@ package script
 
 import (
 	"fmt"
-	"local/erago/state"
+	"github.com/mzki/erago/state"
 
 	"github.com/yuin/gopher-lua"
 )

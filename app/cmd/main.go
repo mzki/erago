@@ -8,8 +8,8 @@ import (
 	"os"
 	// "runtime"
 
-	"local/erago/app"
-	"local/erago/util/log"
+	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/util/log"
 )
 
 var (

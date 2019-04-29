@@ -2,7 +2,7 @@ package state
 
 import (
 	"context"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state/csv"
 )
 
 // game State holds all game parameters.

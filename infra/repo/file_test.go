@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"local/erago/state"
-	"local/erago/state/csv"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
 )
 
 // initialize and finalize before and after testing.

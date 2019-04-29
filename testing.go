@@ -3,7 +3,7 @@ package erago
 import (
 	"fmt"
 
-	"local/erago/stub"
+	"github.com/mzki/erago/stub"
 )
 
 // Run testing flow.

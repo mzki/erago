@@ -7,7 +7,7 @@ import (
 	"golang.org/x/exp/shiny/widget"
 	"golang.org/x/exp/shiny/widget/node"
 
-	attr "local/erago/attribute"
+	attr "github.com/mzki/erago/attribute"
 )
 
 var testLayoutData = attr.NewFlowVertical(

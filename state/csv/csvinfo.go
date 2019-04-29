@@ -2,7 +2,7 @@ package csv
 
 import (
 	"fmt"
-	"local/erago/util"
+	"github.com/mzki/erago/util"
 	"strconv"
 	"strings"
 )

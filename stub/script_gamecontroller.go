@@ -1,7 +1,7 @@
 package stub
 
 import (
-	"local/erago/state"
+	"github.com/mzki/erago/state"
 )
 
 // implemnts script.GameController

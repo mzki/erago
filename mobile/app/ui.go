@@ -3,8 +3,8 @@ package mobile
 import (
 	"sync"
 
-	"local/erago/uiadapter"
-	"local/erago/view/exp/ui"
+	"github.com/mzki/erago/uiadapter"
+	"github.com/mzki/erago/view/exp/ui"
 )
 
 type theUI struct {

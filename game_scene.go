@@ -1,9 +1,9 @@
 package erago
 
 import (
-	attr "local/erago/attribute"
-	"local/erago/scene"
-	"local/erago/util/errutil"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/util/errutil"
 )
 
 // This files defines game scenes which does system level processure.

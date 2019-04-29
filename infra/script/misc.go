@@ -1,7 +1,7 @@
 package script
 
 import (
-	"local/erago/scene"
+	"github.com/mzki/erago/scene"
 	"math"
 
 	"github.com/yuin/gopher-lua"

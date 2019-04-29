@@ -7,8 +7,8 @@ import (
 	"github.com/mattn/go-runewidth"
 	gfont "golang.org/x/image/font"
 
-	"local/erago/view/exp/theme"
-	gwidth "local/erago/width"
+	"github.com/mzki/erago/view/exp/theme"
+	gwidth "github.com/mzki/erago/width"
 )
 
 func TestWrite(t *testing.T) {

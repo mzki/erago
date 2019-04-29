@@ -6,9 +6,9 @@ import (
 
 	"github.com/yuin/gopher-lua"
 
-	attr "local/erago/attribute"
-	"local/erago/scene"
-	"local/erago/state"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/state"
 )
 
 const (

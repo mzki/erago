@@ -3,7 +3,7 @@ package scene
 import (
 	"fmt"
 
-	"local/erago/state"
+	"github.com/mzki/erago/state"
 )
 
 // common members of scene.

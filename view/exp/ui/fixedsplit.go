@@ -7,7 +7,7 @@ import (
 	"golang.org/x/exp/shiny/widget/node"
 	"golang.org/x/exp/shiny/widget/theme"
 
-	customT "local/erago/view/exp/theme"
+	customT "github.com/mzki/erago/view/exp/theme"
 )
 
 // Edge is four edges in square shape, upper, bottom, left, and right.

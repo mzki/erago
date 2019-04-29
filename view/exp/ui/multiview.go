@@ -11,8 +11,8 @@ import (
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/mobile/event/lifecycle"
 
-	attr "local/erago/attribute"
-	"local/erago/util/log"
+	attr "github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/util/log"
 )
 
 // MultipleView is abstruct of multiple views which has current view state.

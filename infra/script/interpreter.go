@@ -4,7 +4,7 @@ import (
 	"context"
 	"path/filepath"
 
-	"local/erago/state"
+	"github.com/mzki/erago/state"
 
 	"github.com/yuin/gopher-lua"
 )

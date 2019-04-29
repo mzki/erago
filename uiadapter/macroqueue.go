@@ -1,7 +1,7 @@
 package uiadapter
 
 import (
-	"local/erago/uiadapter/macro"
+	"github.com/mzki/erago/uiadapter/macro"
 )
 
 type macroQ struct {

@@ -7,9 +7,9 @@ import (
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/mobile/event/lifecycle"
 
-	"local/erago/uiadapter"
-	customT "local/erago/view/exp/theme"
-	"local/erago/view/exp/ui"
+	"github.com/mzki/erago/uiadapter"
+	customT "github.com/mzki/erago/view/exp/theme"
+	"github.com/mzki/erago/view/exp/ui"
 )
 
 // UI is mixture of widgets in ui package.

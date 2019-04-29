@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"local/erago/state"
-	"local/erago/state/csv"
-	"local/erago/util/log"
+	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/state/csv"
+	"github.com/mzki/erago/util/log"
 )
 
 // SceneManager is entry point of the scene flow transition.

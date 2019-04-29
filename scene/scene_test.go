@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"local/erago/stub"
+	"github.com/mzki/erago/stub"
 )
 
 func buildSceneManager() *SceneManager {

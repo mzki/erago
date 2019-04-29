@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"local/erago/scene"
-	"local/erago/stub"
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/stub"
 )
 
 var globalInterpreter *Interpreter
