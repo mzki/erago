@@ -1,31 +1,80 @@
-# README #
+# Erago
 
-erago is a platform for writing and playing a text-based simulation game, era (http://...).
-erago is written by a pure Go (http://golang.org). you can run erago at Windows, Linux, Mac and 
-also Mobile such as Android and IOS!
+Erago is a clone of the [Emuera](https://ja.osdn.net/projects/emuera/wiki/FrontPage), which is the platform 
+for creating and playing a text-based simulation game.
+Erago is written by pure [Go](http://golang.org) and you can run Erago on multi platforms, Windows, Linux and MacOS!
 
-### What is this repository for? ###
+Erago is a unofficial product. Please don't ask any issues about Erago to the maintainers of the original software.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## Motivation
 
-### How do I get set up? ###
+* To use powerful script language (relative to the original one) to develop more complex game.
+* To learn how to build Desktop application on Go. 
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+## Features 
 
-### Contribution guidelines ###
+**Erago is not compatibible with the original in some specification.**
 
-* Writing tests
-* Code review
-* Other guidelines
+* Use Lua5.1 as scripting language
+* Resizable window
+* Single binary and Cross platforms 
 
-### Who do I talk to? ###
+## Getting started
 
-* Repo owner or admin
-* Other community or team contact
+If you just play the Erago, you can download pre-build binaries from [Release page (not yet)](#).
+If you are developer or want to build manually, see next section.
+
+### Starting Game 
+
+To start Game, just runs the executable binary (click .exe file on Windows).
+
+## Build binary from source
+
+Requires `Go 1.12 >`.
+
+You can use `go get` to fetch the repository.
+
+```sh
+go get -u github.com/mzki/erago
+```
+
+Prepare dependencies for building.
+
+```sh
+cd $GOPATH/src/github.com/mzki/erago
+go mod download
+```
+
+Build binary.
+
+```sh
+cd $GOPATH/src/github.com/mzki/erago/app/cmd
+make linux # for windows use "windows" instead of "linux"
+```
+
+## For Mobile development
+
+**Supports Android only.**
+
+Because UI for Mobile and Desktop are optimized for each platform, 
+Erago for mobile supplies only Model-level library, containing the script runtime and IO ports, not containing any UI.
+Each mobile platform might implements UI with the Model library.
+
+### Build model library for mobile.
+
+To build Model-level library for mobile, `gomobile` and `Android NDK` are required.
+Once prepared the build environment, run below to build the Model library.
+
+```sh
+cd $GOPATH/src/github.com/mzki/erago/mobile/model
+bash build.sh
+```
+
+You can prepare the build environment using Docker and Dockerfile.
+See `erago/mobile/model/Dockerfile` .
+
+
+## License
+
+Erago is licensed under BSD 3-Clause license, the same as Go. See LICENSE file.
+
