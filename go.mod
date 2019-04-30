@@ -12,5 +12,6 @@ require (
 	golang.org/x/exp v0.0.0-20190426190305-956cc1757749
 	golang.org/x/image v0.0.0-20190424155947-59b11bec70c7
 	golang.org/x/mobile v0.0.0-20190415191353-3e0bab5405d6
+	golang.org/x/sys v0.0.0-20190312061237-fead79001313
 	golang.org/x/text v0.3.2
 )

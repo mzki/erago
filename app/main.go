@@ -10,7 +10,6 @@ import (
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/gesture"
 	"golang.org/x/exp/shiny/screen"
-	"golang.org/x/exp/shiny/unit"
 	"golang.org/x/exp/shiny/widget/node"
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/image/math/f64"
@@ -192,7 +191,7 @@ func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) e
 			paintPending = false
 
 		case size.Event:
-			if dpi := float64(e.PixelsPerPt) * unit.PointsPerInch; dpi != Theme.GetDPI() {
+			if dpi := DPI(e.PixelsPerPt); dpi != Theme.GetDPI() {
 				newT := new(theme.Theme)
 				if Theme != nil {
 					*newT = *Theme
