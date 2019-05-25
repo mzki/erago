@@ -27,7 +27,10 @@ package devicescale
 //   // On macOS, the direction of Y axis is inverted from GLFW monitors (#807).
 //   y = -y;
 //
-//   NSArray<NSScreen*>* screens = [NSScreen screens];
+//   // Modification from Original:
+//   //   Use old coding style here ( without type parameter) to pass cross build
+//   //   >> NSArray<NSScreen*>* screens = [NSScreen screens];
+//   NSArray* screens = [NSScreen screens];
 //   for (NSScreen* screen in screens) {
 //     if (NSPointInRect(NSMakePoint(x, y), [screen frame])) {
 //       return [screen backingScaleFactor];
