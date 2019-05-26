@@ -1,10 +1,11 @@
 package app
 
 import (
+	"errors"
+
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/infra/serialize/toml"
 	"github.com/mzki/erago/util"
-	"github.com/mzki/erago/util/log"
 	"github.com/mzki/erago/view/exp/theme"
 )
 
@@ -62,19 +63,25 @@ func NewConfig(baseDir string) *Config {
 	}
 }
 
+// ErrDefaultConfigGenerated implies that the specified config file is not found,
+// and intead of that default config is generated and used.
+var ErrDefaultConfigGenerated error = errors.New("default config generated")
+
 // if config file exists load it and return.
 // if not exists return default config and write it.
 func LoadConfigOrDefault(file string) (*Config, error) {
 	if !util.FileExists(file) {
-		log.Infof("Config file (%v) does not exist. Use default config and write it to file.", file)
 		appConf := NewConfig(DefaultBaseDir)
-		return appConf, toml.EncodeFile(file, appConf) // write default config
+		// write default config
+		if err := toml.EncodeFile(file, appConf); err != nil {
+			return nil, err
+		}
+		return appConf, ErrDefaultConfigGenerated
 	}
 
 	appConf := &Config{}
 	if err := toml.DecodeFile(file, appConf); err != nil {
 		return nil, err
 	}
-	log.Infof("Config file (%v) is loaded successfully , use it.", file)
 	return appConf, nil
 }

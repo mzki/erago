@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	// "net/http"
 	// _ "net/http/pprof"
-	"os"
 	// "runtime"
 
 	"github.com/mzki/erago/app"
-	"github.com/mzki/erago/util/log"
 )
 
 var (
@@ -25,21 +24,28 @@ func main() {
 	// 	log.Info(http.ListenAndServe("0.0.0.0:6060", nil))
 	// }()
 
-	fullTitle := Title + " " + version + "-" + commit
-	log.Info("-- " + fullTitle + " --")
-
 	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
-	if err != nil {
-		log.Info(err)
-		return
+	switch err {
+	case app.ErrDefaultConfigGenerated:
+		// TODO this message is shown at app.Main which starts logger?
+		fmt.Fprintf(os.Stderr, "Config file (%v) does not exist. Use default config and write it to file.", app.ConfigFile)
+		fallthrough
+	case nil:
+		// no errors. do nothing.
+	default:
+		// fatal error for loading config. quits
+		panic(err)
 	}
 
 	mode, args := parseFlags(appConf)
 	switch mode {
 	case runMain:
+		fullTitle := Title + " " + version + "-" + commit
 		app.Main(fullTitle, appConf)
 	case runTest:
 		app.Testing(appConf, args)
+	case runShowVersion:
+		fmt.Println(version)
 	}
 }
 
@@ -48,6 +54,7 @@ type runningMode int
 const (
 	runMain runningMode = iota
 	runTest
+	runShowVersion
 )
 
 func parseFlags(c *app.Config) (runningMode, []string) {
@@ -63,8 +70,14 @@ func parseFlags(c *app.Config) (runningMode, []string) {
 	flag.BoolVar(&testing, "test", testing, "run tests and quit. after given this flag,"+
 		" script files to test are required in the command-line arguments")
 
+	showVersion := false
+	flag.BoolVar(&showVersion, "version", showVersion, "show version info and quit.")
+
 	flag.Parse()
 
+	if showVersion {
+		return runShowVersion, nil
+	}
 	if testing {
 		return runTest, flag.Args()
 	}

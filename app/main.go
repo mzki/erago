@@ -58,16 +58,17 @@ func setLogConfig(appConf *Config) (func(), error) {
 	}
 
 	// set log distination
+	var dstString string
 	var writer io.WriteCloser
 	switch logfile := appConf.LogFile; logfile {
 	case LogFileStdOut, "":
-		log.Info("Output log to Stdout")
+		dstString = "Stdout"
 		writer = os.Stdout
 	case LogFileStdErr:
-		log.Info("Output log to Stderr")
+		dstString = "Stdout"
 		writer = os.Stderr
 	default:
-		log.Info("Output log to ", logfile)
+		dstString = logfile
 		fp, err := os.Create(logfile)
 		if err != nil {
 			return nil, err
@@ -75,6 +76,7 @@ func setLogConfig(appConf *Config) (func(), error) {
 		writer = fp
 	}
 	log.SetOutput(writer)
+	log.Infof("Output log to %s", dstString)
 
 	return func() {
 		writer.Close()
@@ -103,6 +105,8 @@ func Main(title string, appConf *Config) {
 		log.Info("Error: BuildTheme FAIL: ", err)
 		return
 	}
+
+	log.Infof("-- %s --\n", title)
 
 	// main loop
 	driver.Main(func(s screen.Screen) {
