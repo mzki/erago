@@ -7,6 +7,10 @@ ENV USER gopher
 ENV HOME /home/${USER}
 ENV SHELL /bin/bash
 
+# install archiver
+RUN apt-get install --no-install-recommends -y zip unzip \
+  && rm -rf /var/lib/apt/lists/*
+
 # add user 
 RUN echo "Adding ${USER} user and group" \
   && groupadd --system --gid 1000 ${USER} \

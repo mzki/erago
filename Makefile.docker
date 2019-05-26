@@ -1,0 +1,26 @@
+OUTPUTDIR := $(PWD)/build
+CROSS_BUILD_DIR := $(PWD)/app/cmd
+
+# --------------------------
+#  Build & Clean
+# --------------------------
+.PHONY: cross
+cross: 
+	@ mkdir -p $(OUTPUTDIR)
+	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile linux
+	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile windows
+	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile darwin
+	
+.PHONY: cross-clean
+cross-clean: 
+	@ $(RM) -r $(OUTPUTDIR)
+
+# --------------------------
+#  Archive
+# --------------------------
+# optional files to be archived 
+ARCHIVE_MISC := LICENSE README.md
+
+.PHONY: cross-archive
+cross-archive: $(OUTPUTDIR)
+	bash scripts/archive $(OUTPUTDIR) $(ARCHIVE_MISC)

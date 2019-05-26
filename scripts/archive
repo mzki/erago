@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+# require arguments
+OUTPUTDIR=$1
+ARCHIVE_MISC=${@:2:($#-1)}
+
+# setting for src 
+ARCHIVE_SRC_LINUX=`find ${OUTPUTDIR} -name "erago*_linux_*"   -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
+ARCHIVE_SRC_DARWIN=`find ${OUTPUTDIR} -name "erago*_darwin_*"  -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
+ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 | xargs basename`
+
+# setting for dst
+
+# we extract version from output of built binary.
+VERSION=`${OUTPUTDIR}/${ARCHIVE_SRC_LINUX} -version 2>/dev/null`
+ARCHIVE_DIR=${OUTPUTDIR}/archive/${VERSION}
+
+ARCHIVE_DST_LINUX=${ARCHIVE_DIR}/${ARCHIVE_SRC_LINUX}.tar.gz
+ARCHIVE_DST_DARWIN=${ARCHIVE_DIR}/${ARCHIVE_SRC_DARWIN}.tar.gz
+ARCHIVE_DST_WINDOWS=${ARCHIVE_DIR}/${ARCHIVE_SRC_WINDOWS//.exe/.zip}
+
+# -----------------------
+# do packing
+# -----------------------
+set -x
+mkdir -p ${ARCHIVE_DIR} 
+cp ${ARCHIVE_MISC} ${OUTPUTDIR}
+
+: "packing for linux..." && \
+  cd ${OUTPUTDIR} && \
+  tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC} 
+: "packing for darwin..." && \
+  cd ${OUTPUTDIR} && \
+  tar zcf ${ARCHIVE_DST_DARWIN} ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC}
+: "packing for windows..." && \
+  cd ${OUTPUTDIR} && \
+  zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 

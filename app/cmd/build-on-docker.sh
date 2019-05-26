@@ -1,4 +1,9 @@
 #!/bin/bash
+
+#
+# manual building with docker environment for cross compilation.
+# The automated build, e.g. CI/CD,  may not be used this file.
+#
 set -eu
 
 REPO_ROOT=$(dirname $(dirname ${PWD})) # 2 above directory
