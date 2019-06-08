@@ -513,6 +513,9 @@ func (ns Names) InRange(index int) bool {
 // NameIndex holds indexes corresponding to each Name defined in CSV.
 type NameIndex map[string]int
 
+// IndexNotFound is a value implying the index is not found.
+const IndexNotFound int = -1
+
 func newNameIndex(names Names) NameIndex {
 	name_idx := make(NameIndex, len(names))
 	for i, name := range names {
@@ -529,12 +532,12 @@ func (ni NameIndex) Has(name string) bool {
 	return ok
 }
 
-// return index of name. if not found return -1
+// return index of name. if not found return IndexNotFound
 func (ni NameIndex) GetIndex(name string) int {
 	if i, ok := ni[name]; ok {
 		return i
 	}
-	return -1
+	return IndexNotFound
 }
 
 func (ni NameIndex) set(name string, idx int) {

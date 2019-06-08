@@ -1,9 +1,18 @@
 package state
 
+import (
+	"github.com/mzki/erago/state/csv"
+)
+
+// IndexNotFound is a value implying index is not found.
+// Re-declare here so that csv package is not inported explicitly to
+// use this constant.
+const IndexNotFound = csv.IndexNotFound
+
 // name indexer is mapping string key to index.
 type NameIndexer interface {
 	// get index by querying string name
-	// if not found return -1
+	// if not found return csv.IndexNotFound
 	GetIndex(string) int
 }
 
@@ -12,7 +21,32 @@ type NameIndexer interface {
 type NoneNameIndexer struct{}
 
 func (n NoneNameIndexer) GetIndex(key string) int {
-	return -1
+	return IndexNotFound
+}
+
+// LimitedRangeNameIndexer limits the index range from original NameIndexer
+// to the specified range [from:to) and maps the specified range into 0-based range, [0:to-from).
+// It returns index -1 when the original NameIndexer returns out bounds of the specified range.
+type LimitedRangeNameIndexer struct {
+	from int
+	to   int
+
+	original NameIndexer
+}
+
+func (n LimitedRangeNameIndexer) GetIndex(key string) int {
+	i := n.original.GetIndex(key)
+	if i == IndexNotFound {
+		return i
+	}
+
+	// check bounds. assuming valid range for [from:to).
+	if i < n.from || i >= n.to {
+		return IndexNotFound
+	}
+
+	// [from:to) maps into [0:to-from) space
+	return i - n.from
 }
 
 // IntParam can be treated as []int64.
@@ -53,7 +87,7 @@ func (ip IntParam) GetIndex(key string) int {
 // using string key,
 func (ip IntParam) GetByStr(key string) (int64, bool) {
 	i := ip.GetIndex(key)
-	if i == -1 {
+	if i == IndexNotFound {
 		return -1, false
 	}
 	return ip.Values[i], true
@@ -63,7 +97,7 @@ func (ip IntParam) GetByStr(key string) (int64, bool) {
 // using string key,
 func (ip IntParam) SetByStr(key string, val int64) bool {
 	i := ip.GetIndex(key)
-	if i == -1 {
+	if i == IndexNotFound {
 		return false
 	}
 	ip.Values[i] = val
@@ -72,7 +106,11 @@ func (ip IntParam) SetByStr(key string, val int64) bool {
 
 // same as []int[from:to], but taking over nameIndexer.
 func (ip IntParam) Slice(from, to int) IntParam {
-	return NewIntParam(ip.Values[from:to], ip.nameIndexer)
+	return NewIntParam(ip.Values[from:to], LimitedRangeNameIndexer{
+		from:     from,
+		to:       to,
+		original: ip.nameIndexer,
+	})
 }
 
 // It fills by given value to all values contained in IntParam.
@@ -120,7 +158,7 @@ func (ip StrParam) GetIndex(key string) int {
 // using string key,
 func (ip StrParam) GetByStr(key string) (string, bool) {
 	i := ip.GetIndex(key)
-	if i == -1 {
+	if i == IndexNotFound {
 		return "", false
 	}
 	return ip.Values[i], true
@@ -130,7 +168,7 @@ func (ip StrParam) GetByStr(key string) (string, bool) {
 // using string key,
 func (ip StrParam) SetByStr(key string, val string) bool {
 	i := ip.GetIndex(key)
-	if i == -1 {
+	if i == IndexNotFound {
 		return false
 	}
 	ip.Values[i] = val
@@ -139,7 +177,11 @@ func (ip StrParam) SetByStr(key string, val string) bool {
 
 // same as []string[from:to], but taking over nameIndexer.
 func (ip StrParam) Slice(from, to int) StrParam {
-	return NewStrParam(ip.Values[from:to], ip.nameIndexer)
+	return NewStrParam(ip.Values[from:to], LimitedRangeNameIndexer{
+		from:     from,
+		to:       to,
+		original: ip.nameIndexer,
+	})
 }
 
 // It fills by given value to all values contained in IntParam.
