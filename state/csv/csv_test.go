@@ -75,6 +75,55 @@ func newCsvManagerInited() (*CsvManager, error) {
 	return csv, err
 }
 
+func TestBuiltinVariables(t *testing.T) {
+	cm, err := newCsvManagerInited()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	constMap := cm.Constants()
+	constNames := []string{
+		BuiltinTrainName,
+		BuiltinSourceName,
+		BuiltinExName,
+		// TODO BuiltinItemPriceName,; it's not string type, can't integrate Const map.
+	}
+	for _, name := range constNames {
+		if _, ok := constMap[name]; !ok {
+			t.Errorf("Missing Builtin Constant: %v", name)
+		}
+	}
+	if cm.ItemPrices == nil {
+		t.Errorf("Missing Builtin Constant: %v", BuiltinItemPriceName)
+	}
+
+	intMap := cm.BuildIntUserVars(ScopeSystem)
+	intNames := []string{
+		BuiltinItemName,
+		BuiltinItemSoldName,
+	}
+	for _, name := range intNames {
+		if _, ok := intMap[name]; !ok {
+			t.Errorf("Missing Builtin system value: %v", name)
+		}
+	}
+
+	charaMap := cm.BuildIntUserVars(ScopeChara)
+	charaNames := []string{
+		BuiltinParamName,
+		BuiltinJuelName,
+		BuiltinAblName,
+		BuiltinTalentName,
+		BuiltinMarkName,
+		BuiltinExpName,
+	}
+	for _, name := range charaNames {
+		if _, ok := charaMap[name]; !ok {
+			t.Errorf("Missing Builtin chara value: %v", name)
+		}
+	}
+}
+
 func BenchmarkNameIndexOf(b *testing.B) {
 	cm, err := newCsvManagerInited()
 	if err != nil {

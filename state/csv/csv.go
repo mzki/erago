@@ -274,8 +274,13 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 			return fmt.Errorf("csv: can not be initialized: %v", err)
 		}
 
+		// TODO Remove struct Field Item and ItemPrices?
 		cm.Item = Constant{Names: names, NameIndex: newNameIndex(names)}
 		cm.ItemPrices = prices
+
+		// Publish as Constant so that it is used in
+		// the same mannar as the other variables.
+		cm.constants[BuiltinItemName] = cm.Item
 	}
 
 	// fit variable size by Constant.Names one.
