@@ -100,7 +100,7 @@ func TestBuiltinVariables(t *testing.T) {
 	intMap := cm.BuildIntUserVars(ScopeSystem)
 	intNames := []string{
 		BuiltinItemName,
-		BuiltinItemSoldName,
+		BuiltinItemStockName,
 	}
 	for _, name := range intNames {
 		if _, ok := intMap[name]; !ok {

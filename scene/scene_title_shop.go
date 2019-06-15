@@ -287,13 +287,13 @@ func (sc shopScene) ShowItems(fmtStr string) error {
 	CSV := sc.State().CSV
 	itemNames := CSV.Item.Names
 	itemPrices := CSV.ItemPrices
-	itemSold, _ := sc.State().SystemData.GetInt(csv.BuiltinItemSoldName)
+	itemStocks, _ := sc.State().SystemData.GetInt(csv.BuiltinItemStockName)
 
 	// itemNames and ItemPrices must have same length.
 	// but ItemSold does not.
 	var maxLen = itemNames.Len()
-	if maxLen > itemSold.Len() {
-		maxLen = itemSold.Len()
+	if maxLen > itemStocks.Len() {
+		maxLen = itemStocks.Len()
 	}
 
 	io := sc.IO()
@@ -308,7 +308,7 @@ func (sc shopScene) ShowItems(fmtStr string) error {
 		if len(item) == 0 {
 			continue
 		}
-		if itemSold.Get(i) < 1 {
+		if itemStocks.Get(i) < 1 {
 			continue
 		}
 
