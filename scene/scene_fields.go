@@ -9,19 +9,21 @@ import (
 // common members of scene.
 type sceneFields struct {
 	// packed struct
-	io         IOController
-	callbacker callBacker
-	state      *state.GameState
-	scenes     *sceneHolder
-	conf       Config
+	io          IOController
+	callbacker  callBacker
+	state       *state.GameState
+	scenes      *sceneHolder
+	conf        Config
+	replaceText ConfigReplaceText
 }
 
 // Get Field Methods.
-func (sf sceneFields) IO() IOController        { return sf.io }
-func (sf sceneFields) Script() callBacker      { return sf.callbacker }
-func (sf sceneFields) Scenes() *sceneHolder    { return sf.scenes }
-func (sf sceneFields) State() *state.GameState { return sf.state }
-func (sf sceneFields) Config() Config          { return sf.conf }
+func (sf sceneFields) IO() IOController               { return sf.io }
+func (sf sceneFields) Script() callBacker             { return sf.callbacker }
+func (sf sceneFields) Scenes() *sceneHolder           { return sf.scenes }
+func (sf sceneFields) State() *state.GameState        { return sf.state }
+func (sf sceneFields) Config() Config                 { return sf.conf }
+func (sf sceneFields) ReplaceText() ConfigReplaceText { return sf.replaceText }
 
 // sceneHolder holds secne instances and next and prev scene.
 type sceneHolder struct {

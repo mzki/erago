@@ -24,10 +24,11 @@ type SceneManager struct {
 
 func NewSceneManager(game IOController, scr Scripter, state *state.GameState, config Config) *SceneManager {
 	sf := &sceneFields{
-		callbacker: callBacker{scr, game},
-		io:         game,
-		conf:       config,
-		state:      state,
+		callbacker:  callBacker{scr, game},
+		io:          game,
+		conf:        config,
+		state:       state,
+		replaceText: ConfigReplaceText{},
 	}
 
 	sh := newSceneHolder(sf)
@@ -139,6 +140,16 @@ func (sm SceneManager) DoTrainsScene(commands []int64) error {
 			break
 		}
 	}
+	return nil
+}
+
+// Set ConfigReplaceText to replace text in the builtin scene flow.
+// It is concurrency unsafe.
+func (sm *SceneManager) SetReplaceText(config ConfigReplaceText) error {
+	if err := config.Validate(); err != nil {
+		return fmt.Errorf("scene: invalid replace text. %v", err)
+	}
+	sm.sf.replaceText = config
 	return nil
 }
 
