@@ -25,22 +25,35 @@ type ConfigReplaceText struct {
 }
 
 const (
-	// Max length for replace text length. -5 means the length of command prefix "[NN] ".
-	MaxReplaceTextLen = DefaultPrintCWidth - 5
+	// Max length for replace text length used for plain text.
+	// Affects to LoadingMessage.
+	MaxReplacePlainTextLen = 32
+	// Max length for replace text length used for command. -5 means the length of command prefix "[NN] ".
+	// Affects to NewGame, LoadGame, QuitGame and ReturnMenu.
+	MaxReplaceCmdTextLen = DefaultPrintCWidth - 5
 )
 
 func (c *ConfigReplaceText) Validate() error {
+	// Palin text
 	for _, text := range []string{
 		c.LoadingMessage,
+	} {
+		if width.StringWidth(text) > MaxReplacePlainTextLen {
+			return fmt.Errorf("text length should be < %d for %q", MaxReplacePlainTextLen, text)
+		}
+	}
+	// Command text
+	for _, text := range []string{
 		c.NewGame,
 		c.LoadGame,
 		c.QuitGame,
 		c.ReturnMenu,
 	} {
-		if width.StringWidth(text) > MaxReplaceTextLen {
-			return fmt.Errorf("text length should be < %d for %q", MaxReplaceTextLen, text)
+		if width.StringWidth(text) > MaxReplaceCmdTextLen {
+			return fmt.Errorf("text length should be < %d for %q", MaxReplaceCmdTextLen, text)
 		}
 	}
+	// Format string
 	if err := validateMoneyFormat(c.MoneyFormat); err != nil {
 		return err
 	}
@@ -76,8 +89,8 @@ func validateMoneyFormat(format string) error {
 	}
 
 	// check text length with using 10 digits
-	if filled := fmt.Sprintf(format, 1234567890); width.StringWidth(filled) > MaxReplaceTextLen {
-		return fmt.Errorf("text length should be < %d for %q", MaxReplaceTextLen-10, format)
+	if filled := fmt.Sprintf(format, 1234567890); width.StringWidth(filled) > MaxReplaceCmdTextLen {
+		return fmt.Errorf("text length should be < %d for %q", MaxReplaceCmdTextLen-10, format)
 	}
 	return nil
 }

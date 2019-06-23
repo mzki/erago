@@ -15,48 +15,50 @@ func TestConfigReplaceTextEmptyValidate(t *testing.T) {
 
 func TestConfigReplaceTextPlainTextValidate(t *testing.T) {
 	replace := ConfigReplaceText{
-		LoadingMessage: strings.Repeat("a", MaxReplaceTextLen),
-		NewGame:        strings.Repeat("b", MaxReplaceTextLen),
-		LoadGame:       strings.Repeat("c", MaxReplaceTextLen),
-		QuitGame:       strings.Repeat("d", MaxReplaceTextLen),
-		ReturnMenu:     strings.Repeat("e", MaxReplaceTextLen),
+		LoadingMessage: strings.Repeat("a", MaxReplacePlainTextLen),
+		NewGame:        strings.Repeat("b", MaxReplaceCmdTextLen),
+		LoadGame:       strings.Repeat("c", MaxReplaceCmdTextLen),
+		QuitGame:       strings.Repeat("d", MaxReplaceCmdTextLen),
+		ReturnMenu:     strings.Repeat("e", MaxReplaceCmdTextLen),
 	}
 
 	if err := replace.Validate(); err != nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
 	}
 
 	// chech error case for each field separately because struct fields are not iteratable.
-	invalidLenText := strings.Repeat("a", MaxReplaceTextLen+1)
+	invalidLenText := strings.Repeat("a", MaxReplacePlainTextLen+1)
 	replace = ConfigReplaceText{
 		LoadingMessage: invalidLenText,
 	}
 	if err := replace.Validate(); err == nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
 	}
+
+	invalidLenCmdText := strings.Repeat("a", MaxReplaceCmdTextLen+1)
 	replace = ConfigReplaceText{
-		NewGame: invalidLenText,
+		NewGame: invalidLenCmdText,
 	}
 	if err := replace.Validate(); err == nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)
 	}
 	replace = ConfigReplaceText{
-		LoadGame: invalidLenText,
+		LoadGame: invalidLenCmdText,
 	}
 	if err := replace.Validate(); err == nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)
 	}
 	replace = ConfigReplaceText{
-		QuitGame: invalidLenText,
+		QuitGame: invalidLenCmdText,
 	}
 	if err := replace.Validate(); err == nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)
 	}
 	replace = ConfigReplaceText{
-		QuitGame: invalidLenText,
+		QuitGame: invalidLenCmdText,
 	}
 	if err := replace.Validate(); err == nil {
-		t.Errorf("the text length %d should be accepted", MaxReplaceTextLen)
+		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)
 	}
 }
 
@@ -71,8 +73,8 @@ func TestConfigReplaceTextMoneyFormatValidate(t *testing.T) {
 		"€12345",
 		"abcded12345",
 		"12345678",
-		"12345" + strings.Repeat("a", MaxReplaceTextLen-10),
-		strings.Repeat("a", MaxReplaceTextLen-10) + "12345",
+		"12345" + strings.Repeat("a", MaxReplaceCmdTextLen-10),
+		strings.Repeat("a", MaxReplaceCmdTextLen-10) + "12345",
 	}
 	for _, format := range correct_cases {
 		parsed, err := ParseMoneyFormat(format)
@@ -88,8 +90,8 @@ func TestConfigReplaceTextMoneyFormatValidate(t *testing.T) {
 	}
 
 	wrong_cases := []string{
-		strings.Repeat("a", MaxReplaceTextLen-9) + "12345",
-		"12345" + strings.Repeat("a", MaxReplaceTextLen-9),
+		strings.Repeat("a", MaxReplaceCmdTextLen-9) + "12345",
+		"12345" + strings.Repeat("a", MaxReplaceCmdTextLen-9),
 		"1234",
 		"1 2345",
 		"1234 5",

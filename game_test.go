@@ -7,7 +7,12 @@ import (
 	"github.com/mzki/erago/scene"
 	"github.com/mzki/erago/stub"
 	"github.com/mzki/erago/uiadapter/event/input"
+	"github.com/mzki/erago/util/log"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
 
 func TestGameMain(t *testing.T) {
 	g := NewGame()

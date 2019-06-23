@@ -44,6 +44,7 @@ func (scene *titleScene) Next() (Scene, error) {
 
 	scenes := scene.Scenes()
 	csvGameBase := scene.State().CSV.GameBase
+	replaceText := scene.ReplaceText()
 
 	for !scenes.HasNext() {
 		io.NewPage()
@@ -56,11 +57,11 @@ func (scene *titleScene) Next() (Scene, error) {
 		io.PrintL(csvGameBase.AdditionalInfo)
 
 		io.PrintLine(DefaultLineSymbol)
-		io.PrintC("[0] 最初から始める", DefaultPrintCWidth)
+		io.PrintC("[0] "+DefaultOrString("New Game", replaceText.NewGame), DefaultPrintCWidth)
 		io.Print("\n\n")
-		io.PrintC("[1] 続きから始める", DefaultPrintCWidth)
+		io.PrintC("[1] "+DefaultOrString("Load Game", replaceText.LoadGame), DefaultPrintCWidth)
 		io.Print("\n\n")
-		io.PrintC("[9] 終了", DefaultPrintCWidth)
+		io.PrintC("[9] "+DefaultOrString("Quit", replaceText.QuitGame), DefaultPrintCWidth)
 		io.PrintL("")
 
 		io.SetAlignment(AlignmentLeft)
@@ -232,17 +233,21 @@ func (sc shopScene) Next() (Scene, error) {
 
 	scenes := sc.Scenes()
 	io := sc.IO()
+	replaceText := sc.ReplaceText()
 	for !scenes.HasNext() {
 		called, err := sc.Script().checkCall(ScrSystemShowShopMenu)
 		if err != nil {
 			return nil, err
 		}
 		if !called {
-			if err := sc.ShowItems(DefaultShowItemFormat); err != nil {
+			if err := sc.ShowItems(DefaultOrString(
+				DefaultShowItemFormat,
+				"[%d] %s ("+replaceText.MoneyFormat+")"),
+			); err != nil {
 				return nil, err
 			}
 			io.PrintLine(DefaultLineSymbol)
-			io.PrintC("[-1] 戻る", DefaultPrintCWidth)
+			io.PrintC("[-1] "+DefaultOrString("Back", replaceText.ReturnMenu), DefaultPrintCWidth)
 			io.PrintL("")
 		}
 
@@ -278,7 +283,7 @@ func (sc shopScene) inputLoop() error {
 	}
 }
 
-const DefaultShowItemFormat = "[%d] %s (%d圓)"
+const DefaultShowItemFormat = "[%d] %s ($%d)"
 
 func (sc shopScene) ShowItems(fmtStr string) error {
 	if fmtStr == "" {
