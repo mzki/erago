@@ -44,9 +44,9 @@ const (
 )
 
 const (
-	aliasFileName       = "_Alias.csv"
-	gameBaseFileName    = "_GameBase.csv"
-	gameReplaceFileName = "_GameReplace.csv"
+	aliasFileName           = "_Alias.csv"
+	gameBaseFileName        = "_GameBase.csv"
+	numberConstantsFileName = "_NumberConstants.csv"
 )
 
 // Constant is a constant data set defined by a csv file.
@@ -95,7 +95,7 @@ type CsvManager struct {
 	GameBase
 
 	// _Replace.csv
-	GameReplace
+	NumberConstants
 
 	// alias for reading character defined csv, chara*.csv
 	aliasMap map[string]string
@@ -236,9 +236,10 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 			cm.GameBase = *base
 			errs.Add(err)
 		}
-		if file := config.filepath(gameReplaceFileName); FileExists(file) {
-			replace, err := newGameReplace(file)
-			cm.GameReplace = *replace
+		if file := config.filepath(numberConstantsFileName); FileExists(file) {
+			// TODO: DEPRECATED?: numberConstants can be placed at script layer and is adeque for the software architecure.
+			numbers, err := newNumberConstants(file)
+			cm.NumberConstants = *numbers
 			errs.Add(err)
 		}
 		if err = errs.Err(); err != nil {

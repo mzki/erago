@@ -7,64 +7,26 @@ import (
 	"strings"
 )
 
-// Replacing a part of system scene flow.
-type GameReplace struct {
-	Currency    string
-	CurrencyPos string
-
-	LoadingMessage string
-
-	DefaultComAble bool
-
-	SoldItemNum int
-
-	StainLvs []int64
+// Number constants excepted from CSV names.
+type NumberConstants struct {
 	ParamLvs []int64
 	ExpLvs   []int64
-
-	PBandIndex int
 }
 
-func newGameReplace(file string) (*GameReplace, error) {
-	rp := &GameReplace{
-		Currency:       "円",
-		CurrencyPos:    "後",
-		LoadingMessage: "Now Loading...",
-		DefaultComAble: true,
-		SoldItemNum:    100,
-		StainLvs:       []int64{0, 0, 2, 1, 4},
+func newNumberConstants(file string) (*NumberConstants, error) {
+	rp := &NumberConstants{
 		ParamLvs: []int64{0, 100, 500, 3000, 10000, 30000, 60000, 100000,
 			150000, 250000, 500000, 1000000, 5000000, 10000000},
 		ExpLvs: []int64{0, 1, 4, 20, 50, 200, 400,
 			700, 1000, 1500, 2000},
-		PBandIndex: 4,
 	}
 	err := ReadFileFunc(file, func(record []string) error {
-		i := 0
 		var err error = nil
 		switch record[0] {
-		case "お金の単位":
-			rp.Currency = record[1]
-		case "単位の位置":
-			rp.CurrencyPos = record[1]
-		case "起動時簡略表示":
-			rp.LoadingMessage = record[1]
-		case "COM_ABLE初期値":
-			var b bool
-			b, err = strconv.ParseBool(record[1])
-			rp.DefaultComAble = b
-		case "販売アイテム数":
-			i, err = strconv.Atoi(record[1])
-			rp.SoldItemNum = i
-		case "汚れの初期値":
-			rp.StainLvs, err = levelsFrom(record[1])
-		case "PALAMLVの初期値":
+		case "PALAMLVの初期値", "PARAMLV":
 			rp.ParamLvs, err = levelsFrom(record[1])
-		case "EXPLVの初期値":
+		case "EXPLVの初期値", "EXPLV":
 			rp.ExpLvs, err = levelsFrom(record[1])
-		case "PBANDの初期値":
-			i, err = strconv.Atoi(record[1])
-			rp.PBandIndex = i
 		default:
 			return fmt.Errorf("unknown record name %v", record)
 		}

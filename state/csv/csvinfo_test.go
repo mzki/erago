@@ -32,21 +32,11 @@ func TestNewGameBase(t *testing.T) {
 	}
 }
 
-var validGameReplacePath = "../../stub/CSV/_GameReplace.csv"
+var validNumberConstantsPath = "../../stub/CSV/" + numberConstantsFileName
 
-func TestNewGameReplace(t *testing.T) {
-	replace, err := newGameReplace(validGameReplacePath)
+func TestNewNumberConstants(t *testing.T) {
+	_, err := newNumberConstants(validNumberConstantsPath)
 	if err != nil {
-		t.Errorf("failed to load GameReplace from %v: err %v", validGameReplacePath, err)
-	}
-
-	if expect := "圓"; replace.Currency != expect {
-		t.Errorf("differenct Currency, expect: %v, got: %v", expect, replace.Currency)
-	}
-	if expect := "右"; replace.CurrencyPos != expect {
-		t.Errorf("differenct CurrencyPos, expect: %v, got: %v", expect, replace.CurrencyPos)
-	}
-	if expect := "紳士妄想中..."; replace.LoadingMessage != expect {
-		t.Errorf("differenct LoadingMessage, expect: %v, got: %v", expect, replace.LoadingMessage)
+		t.Errorf("failed to load NumberConstants from %v: err %v", validNumberConstantsPath, err)
 	}
 }
