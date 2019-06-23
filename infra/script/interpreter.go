@@ -2,11 +2,12 @@ package script
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 
 	"github.com/mzki/erago/state"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // Interpreter parse script files.
@@ -124,6 +125,54 @@ func (ip Interpreter) DoString(src string) error {
 func (ip Interpreter) DoFile(file string) error {
 	err := ip.vm.DoFile(file)
 	return checkSpecialError(err)
+}
+
+// do given script file on internal VM with sandbox environment.
+// Return data table queried by the dataKey.
+func (ip *Interpreter) LoadDataOnSandbox(file, dataKey string) (map[string]string, error) {
+	if len(file) == 0 {
+		return nil, fmt.Errorf("empty file name")
+	}
+	if len(dataKey) == 0 {
+		return nil, fmt.Errorf("empty data key")
+	}
+
+	vm := ip.vm
+	lfunc, err := vm.LoadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// do script on empty environment for only loading data.
+	// TODO use data load enviornment held by the interpreter rather
+	// than new empty environment?
+	emptyEnv := vm.NewTable()
+	vm.SetFEnv(lfunc, emptyEnv)
+	if err := vm.CallByParam(lua.P{
+		Fn:      lfunc,
+		NRet:    0,
+		Protect: true,
+	}); err != nil {
+		return nil, err
+	}
+
+	ldata := emptyEnv.RawGetString(dataKey)
+
+	var data = make(map[string]string)
+	ltbl, ok := ldata.(*lua.LTable)
+	if !ok {
+		// data not found
+		return data, nil
+	}
+
+	// coverts Ltable data into go map
+	ltbl.ForEach(func(key, value lua.LValue) {
+		if key.Type() != lua.LTString || value.Type() != lua.LTString {
+			return
+		}
+		data[lua.LVAsString(key)] = lua.LVAsString(value)
+	})
+	return data, nil
 }
 
 // return Path of Under Script Dir

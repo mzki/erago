@@ -67,6 +67,73 @@ func TestInterpreterDoFiles(t *testing.T) {
 
 }
 
+func TestInterpreterLoadDataOnSandbox(t *testing.T) {
+	ip := globalInterpreter
+
+	// exists
+	for _, file := range []string{
+		"data_on_sandbox.lua",
+	} {
+		const key = "DATA"
+		data, err := ip.LoadDataOnSandbox(filepath.Join(scriptDir, file), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if data == nil {
+			t.Fatalf("data name %s should exist but not on file %s", key, file)
+		}
+		for _, field := range []string{
+			"DATA1",
+			"data2",
+			"Data3",
+		} {
+			text, ok := data[field]
+			if !ok {
+				t.Errorf("%s: data name %s should contain key %s for string value", file, key, field)
+			}
+			if len(text) == 0 {
+				t.Errorf("%s: data name %s should contain valid string for key %s, got: %v", file, key, field, text)
+			}
+		}
+	}
+
+	// file eixsts but data key not exists
+	for _, file := range []string{
+		"data_on_sandbox.lua",
+	} {
+		const key = "__NO_DATA"
+		data, err := ip.LoadDataOnSandbox(filepath.Join(scriptDir, file), key)
+		if err != nil {
+			t.Errorf("%s: querying no exist data name %s should not error, but %v", file, key, err)
+		}
+		if len(data) != 0 {
+			t.Errorf("%s: no exist data name %s should empty but containing something: %#v", file, key, data)
+		}
+	}
+
+	// empty_key should error
+	for _, file := range []string{
+		"data_on_sandbox.lua",
+	} {
+		const key = ""
+		_, err := ip.LoadDataOnSandbox(filepath.Join(scriptDir, file), key)
+		if err == nil {
+			t.Errorf("empty key should not acceptable but no error!!!")
+		}
+	}
+
+	// file not eixsts
+	for _, file := range []string{
+		"__not_exists_data_on_sandbox.lua",
+	} {
+		const key = "DATA"
+		_, err := ip.LoadDataOnSandbox(filepath.Join(scriptDir, file), key)
+		if err == nil {
+			t.Errorf("file name isnt exists but no error!!!")
+		}
+	}
+}
+
 func TestInterpreterEraCall(t *testing.T) {
 	ip := globalInterpreter
 
