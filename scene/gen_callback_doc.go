@@ -11,43 +11,38 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/mzki/erago/scene"
+	"github.com/mzki/erago/util/errutil"
 )
 
 // This file generates list of callback funtions by
 // parsing ast of files in this package.
 //
-// Parsed constants are tagged by comment:
-//	// +callback :[scene_name]
+// First, user defines documentation tag for the callback function like:
 //
-// And each constants annotated by comment on same line:
-//  const Const = "callback_name" // +arg_name -> return_name
-//
-// Example:
-//
-//	// +callback :title
-//	const (
-//		Constant1 = "callback_name1"
-//		Constant2 = "callback_name2" // +number
-//		Constant3 = "callback_name3" // +number -> bool
-//
-// It genenrates callback list
-//
-//  [title]
-//	callback_name1()
-//	callback_name2(number)
-//	bool = callback_name3(number)
-//
-// TODO: new doc generator
 // // +scene :scenename
 // const (
-//	 // +function: ret = {{.FuncName}}(arg)
+//	 // +function: {{.FuncName}}(arg)
 //   // annotation text...
 //	 Constant1 = "callback_name1"
 //
-//	 // +function: ret = {{.FuncName}}(arg)
+//	 // +function: ret = {{.FuncName}}(number)
 //   // annotation text...
 //	 Constant2 = "callback_name2"
 // )
+//
+// It genenrates callback list as:
+//
+//  [scenename]
+//
+//	callback_name1(arg)
+//
+//     annotation text...
+//
+//	ret = callback_name2(number)
+//
+//     annotation text...
 
 type callbacks []funcDecl
 
@@ -69,7 +64,8 @@ func (decl funcDecl) Definition() string {
 
 func main() {
 	if err := ParseAST("./"); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
@@ -81,6 +77,12 @@ func ParseAST(dir string) error {
 	}
 
 	callbacks := parseCallBacksFromAST(pkgs["scene"]) // NOTE: use package name directly
+
+	err = checkNameConvention(callbacks)
+	if err != nil {
+		return err
+	}
+
 	err = writeAsPlainTxt("callback_list.txt", callbacks)
 	// err = writeAsJson("callback_list.json", callbacks)
 	return err
@@ -174,6 +176,53 @@ func parseCallbackDoc(comments *ast.CommentGroup) (funcDecl, error) {
 	}, nil
 }
 
+func checkNameConvention(callbacks_list map[string]callbacks) error {
+	multiErr := errutil.NewMultiError()
+
+	for sceneName, functions := range callbacks_list {
+
+		for _, f := range functions {
+			var nameElems = strings.Split(f.Name, scene.ScrSep)
+
+			if len(nameElems) < 2 {
+				multiErr.Add(fmt.Errorf("%s: %q must starts [scene-name]_[callback-type]", sceneName, f.Name))
+				continue // to next functions
+			}
+
+			// validate each elements
+			var errTxt string = ""
+
+			{
+				if !strings.HasPrefix(nameElems[0], sceneName) {
+					errTxt += fmt.Sprintf("%q should starts with %s; ", f.Name, sceneName)
+				}
+
+				var hasTyp = false
+				for _, typ := range []string{
+					scene.ScrEventPrefix,
+					scene.ScrScenePrefix,
+					scene.ScrReplacePrefix,
+					scene.ScrUserPrefix,
+				} {
+					if strings.HasPrefix(nameElems[1], typ) {
+						hasTyp = true
+					}
+				}
+				if !hasTyp {
+					errTxt += fmt.Sprintf("%q should contains any of callback type name at the 2nd place; ", f.Name)
+				}
+			}
+
+			if len(errTxt) > 0 {
+				multiErr.Add(fmt.Errorf("%s: %s", sceneName, errTxt))
+			}
+		}
+
+	}
+
+	return multiErr.Err()
+}
+
 const (
 	DocIndentSpace = 2
 )
@@ -190,9 +239,14 @@ func writeAsPlainTxt(file string, callbacks_list map[string]callbacks) error {
 These callback functions must be prefixed "era." in the script file.
 So callback function "event_title()" is defined "era.event_title()" in script file.
 
+The naming convention for the callback function name is like [scene-name]_[callback-type]_[funcion-name].
+e.g. title_event_start means, on the titile scene, start event is fired.
+
 以下のcallback関数は、era.XXXという形式で、スクリプトファイル内に定義します。
-例えば、"event_title()"という関数があったとき、スクリプト上では、"era.event_title()"と
+例えば、"title_event()"という関数があったとき、スクリプト上では、"era.title_event()"と
 いうように、定義します。
+callback関数は、命名規則 [scene-name]_[callback-type]_[funcion-name] に従います。
+例） title_event_start は、title シーンで、開始イベントが発生したことを示します。
 
 `)
 
@@ -217,14 +271,14 @@ So callback function "event_title()" is defined "era.event_title()" in script fi
 
 func makeDefaultCallback(scene_name string) callbacks {
 	scene_decl := funcDecl{
-		Template: "scene_" + scene_name + "()",
+		Template: scene_name + "_scene()",
 		Doc: strings.Split(` この関数は、もし定義されていれば、シーンの最も始めに呼ばれ、
  シーン全体の処理を置き換えます。
  この関数内では、必ず次のシーンを指定しなければならないことに注意してください。`, "\n"),
 	}
 
 	event_decl := funcDecl{
-		Template: "event_" + scene_name + "_start()",
+		Template: scene_name + "_event_start()",
 		Doc:      strings.Split(` この関数は、もし定義されていれば、シーンの始めに呼ばれます。`, "\n"),
 	}
 

@@ -19,8 +19,8 @@ type sceneCommon struct {
 func newSceneCommon(name string, sf *sceneFields) sceneCommon {
 	return sceneCommon{
 		sceneFields:  sf,
-		atStartScene: ScrScenePrefix + name,
-		atStartEvent: ScrEventPrefix + name + "_start",
+		atStartScene: name + ScrSep + ScrScenePrefix,
+		atStartEvent: name + ScrSep + ScrEventPrefix + ScrSep + "start",
 	}
 }
 

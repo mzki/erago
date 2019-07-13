@@ -10,22 +10,28 @@ type Scripter interface {
 	HasEraValue(string) bool
 }
 
+//go:generate go run gen_callback_doc.go
 const (
+	// separator for the script function name
+	ScrSep = "_"
+
 	// script event is optional function. It is OK to not exists.
 	// it is called at everywhere
-	ScrEventPrefix = "event_"
+	ScrEventPrefix = "event"
 
 	// script scene is replacement for entire flow in a scene.
 	// It requires setting to next scene in the script function.
-	ScrScenePrefix = "scene_"
+	ScrScenePrefix = "scene"
 
-	// script system is replacement for partial flow in a scene.
+	// script replace is replacement function for partial flow in a scene.
 	// If it is called, the partial flow of original scene
 	// does not through.
-	ScrSystemPrefix = "system_"
+	ScrReplacePrefix = "replace"
 
-	// otherwise, no prefix above, script functions must be called,
-	// so not found error is occured if no exists.
+	// script user is requirement function for implementing flow in a scene.
+	// The function of this type must exist and be called from a specific scene.
+	// Therefore, the game is aborted if definition is not found.
+	ScrUserPrefix = "user"
 )
 
 type callBacker struct {
