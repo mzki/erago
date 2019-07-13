@@ -18,6 +18,13 @@ func newTitleScene(sf *sceneFields) *titleScene {
 
 func (scene titleScene) Name() string { return SceneNameTitle }
 
+// NOTE: script function name is parsed by document generateor which can
+// accepts string literal only.
+// therefore, script function name can be defined only string literal without any operatorion.
+//
+// Naming convention is checked by the document generator.
+// Thus only proper function names are documented and published to the user.
+
 // +scene: title
 const (
 	// +callback: {{.Name}}()
@@ -26,12 +33,12 @@ const (
 	// If you want something to do after loading savefile, it should
 	// be done at loadend scene, not to use this callbask.
 	//
-	// titleシーンの"続きから..."を選択した後の、
+	// titleシーンの"LoadGame..."を選択した後の、
 	// セーブファイルを読み込む処理を、この関数によって置き換えます。
 	// セーブファイルを読み込んだ後に何らかの処理をしたい場合には、
 	// この関数を用いるべきではありません。代わりにloadendシーンで
 	// そのような処理を行うべきです。
-	ScrSystemTitleLoadGame = "system_title_loadgame"
+	ScrTitleReplaceLoadGame = "title_replace_loadgame"
 )
 
 func (scene *titleScene) Next() (Scene, error) {
@@ -75,7 +82,7 @@ func (scene *titleScene) Next() (Scene, error) {
 			return scenes.GetScene(SceneNameNewGame)
 
 		case 1:
-			if called, err := scene.Script().checkCall(ScrSystemTitleLoadGame); called {
+			if called, err := scene.Script().checkCall(ScrTitleReplaceLoadGame); called {
 				if err != nil {
 					return nil, err
 				}
@@ -116,7 +123,7 @@ const (
 	// +callback: {{.Name}}()
 	// newgameシーンで、保存される全てのデータを初期化した後に呼ばれます。
 	// ここで、新しくゲームを始める為に必要なデータを設定することを想定しています。
-	ScrEventNewGameInit = "event_newgame_init"
+	ScrNewGameEventInit = "newgame_event_init"
 )
 
 func (fs *newGameScene) Next() (Scene, error) {
@@ -124,7 +131,7 @@ func (fs *newGameScene) Next() (Scene, error) {
 		return next, err
 	}
 
-	if err := fs.Script().maybeCall(ScrEventNewGameInit); err != nil {
+	if err := fs.Script().maybeCall(ScrNewGameEventInit); err != nil {
 		return nil, err
 	}
 
@@ -150,7 +157,7 @@ func (bs baseScene) Name() string { return SceneNameBase }
 const (
 	// +callback: {{.Name}}()
 	// baseシーンにおける、行動の選択肢を表示します。
-	ScrShowBaseMenu = "show_base_menu"
+	ScrBaseUserShowMenu = "base_user_show_menu"
 
 	// +callback: handled = {{.Name}}(input_num)
 	// 行動の選択肢を表示した後、ユーザーからの入力番号を得て、
@@ -160,7 +167,7 @@ const (
 	// その場合、次のシーンの遷移先が決まっていれば、遷移します。
 	// 決まっていなければ、再び、選択肢の表示から繰り返します。
 	// 戻り値としてfalseを返した場合、ユーザーの入力待ちから繰り返します。
-	ScrBaseMenuSelected = "base_menu_selected"
+	ScrBaseUserMenuSelected = "base_user_menu_selected"
 )
 
 func (bs baseScene) Next() (Scene, error) {
@@ -171,7 +178,7 @@ func (bs baseScene) Next() (Scene, error) {
 	// loop for showing and selecting base menu
 	scenes := bs.Scenes()
 	for !scenes.HasNext() {
-		if err := bs.Script().cautionCall(ScrShowBaseMenu); err != nil {
+		if err := bs.Script().cautionCall(ScrBaseUserShowMenu); err != nil {
 			return nil, err
 		}
 		if err := bs.inputLoop(); err != nil {
@@ -187,7 +194,7 @@ func (bs baseScene) inputLoop() error {
 		if err != nil {
 			return err
 		}
-		handled, err := bs.Script().cautionCallBoolArgInt(ScrBaseMenuSelected, int64(input))
+		handled, err := bs.Script().cautionCallBoolArgInt(ScrBaseUserMenuSelected, int64(input))
 		if handled || err != nil {
 			return err
 		}
@@ -214,7 +221,7 @@ const (
 	// Itemの一覧を表示する処理を置き換える。
 	// もし定義されていなければ、CSVで定義されたItemを
 	// クリックできるボタンの形式で全て表示する。
-	ScrSystemShowShopMenu = "system_show_shop_menu"
+	ScrShopReplaceShowMenu = "shop_replace_show_menu"
 
 	// +callback: handled = {{.Name}}(input_num)
 	// 入力番号input_numと共に呼ばれ、それに対する処理を行う。
@@ -222,7 +229,7 @@ const (
 	// 返してください。その場合、次のシーンの遷移先が決まっていれば、
 	// 遷移します。決まっていなければ、再び、選択肢の表示から繰り返します。
 	// 戻り値としてfalseを返した場合、ユーザーの入力待ちから繰り返します。
-	ScrShopMenuSelected = "shop_menu_selected"
+	ScrShopUserMenuSelected = "shop_user_menu_selected"
 )
 
 func (sc shopScene) Next() (Scene, error) {
@@ -233,7 +240,7 @@ func (sc shopScene) Next() (Scene, error) {
 	scenes := sc.Scenes()
 	io := sc.IO()
 	for !scenes.HasNext() {
-		called, err := sc.Script().checkCall(ScrSystemShowShopMenu)
+		called, err := sc.Script().checkCall(ScrShopReplaceShowMenu)
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +271,7 @@ func (sc shopScene) inputLoop() error {
 		}
 
 		// handle user input in script.
-		handled, err := sc.Script().cautionCallBoolArgInt(ScrShopMenuSelected, int64(input))
+		handled, err := sc.Script().cautionCallBoolArgInt(ScrShopUserMenuSelected, int64(input))
 		if handled || err != nil {
 			return err
 		}

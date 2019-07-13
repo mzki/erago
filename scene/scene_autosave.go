@@ -19,7 +19,7 @@ const (
 	// この関数によって、その保存処理を置き換えることができます。
 	// もし、自動保存処理を行いたくない場合、この関数を定義し、
 	// その中で何も処理を行わないことで実現できます。
-	ScrSystemAutoSave = "system_autosave"
+	ScrAutoSaveReplace = "autosave_replace"
 )
 
 func (sc autosaveScene) Next() (Scene, error) {
@@ -32,7 +32,7 @@ func (sc autosaveScene) Next() (Scene, error) {
 	prev_is_not_load_end := prev != nil && prev.Name() != SceneNameLoadEnd
 
 	if prev_is_not_load_end && sc.Config().CanAutoSave {
-		called, err := sc.Script().checkCall(ScrSystemAutoSave)
+		called, err := sc.Script().checkCall(ScrAutoSaveReplace)
 		if err != nil {
 			return nil, err
 		}
