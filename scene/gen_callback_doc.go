@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/mzki/erago/scene"
@@ -78,12 +79,19 @@ func ParseAST(dir string) error {
 
 	callbacks := parseCallBacksFromAST(pkgs["scene"]) // NOTE: use package name directly
 
-	err = checkNameConvention(callbacks)
+	// create sorted key list to fix output order.
+	keys := make([]string, 0, len(callbacks))
+	for k, _ := range callbacks {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	err = checkNameConvention(callbacks, keys)
 	if err != nil {
 		return err
 	}
 
-	err = writeAsPlainTxt("callback_list.txt", callbacks)
+	err = writeAsPlainTxt("callback_list.txt", callbacks, keys)
 	// err = writeAsJson("callback_list.json", callbacks)
 	return err
 }
@@ -176,10 +184,14 @@ func parseCallbackDoc(comments *ast.CommentGroup) (funcDecl, error) {
 	}, nil
 }
 
-func checkNameConvention(callbacks_list map[string]callbacks) error {
+func checkNameConvention(callbacks_list map[string]callbacks, keys []string) error {
 	multiErr := errutil.NewMultiError()
 
-	for sceneName, functions := range callbacks_list {
+	for _, sceneName := range keys {
+		functions, ok := callbacks_list[sceneName]
+		if !ok {
+			continue
+		}
 
 		for _, f := range functions {
 			var nameElems = strings.Split(f.Name, scene.ScrSep)
@@ -227,7 +239,7 @@ const (
 	DocIndentSpace = 2
 )
 
-func writeAsPlainTxt(file string, callbacks_list map[string]callbacks) error {
+func writeAsPlainTxt(file string, callbacks_list map[string]callbacks, keys []string) error {
 	fp, err := os.Create(file)
 	if err != nil {
 		return err
@@ -252,7 +264,12 @@ callback関数は、命名規則 [scene-name]_[callback-type]_[funcion-name] に
 
 	indent := strings.Repeat(" ", DocIndentSpace)
 
-	for scene, functions := range callbacks_list {
+	for _, scene := range keys {
+		functions, ok := callbacks_list[scene]
+		if !ok {
+			continue
+		}
+
 		fmt.Fprintln(fp, "[scene: "+scene+"]\n")
 
 		functions = append(makeDefaultCallback(scene), functions...)
