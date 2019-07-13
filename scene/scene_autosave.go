@@ -12,6 +12,8 @@ func newAutosaveScene(sf *sceneFields) *autosaveScene {
 func (autosaveScene) Name() string { return SceneNameAutosave }
 
 // +scene: autosave
+// 自動保存シーンです。
+// 現在のゲームの状態を自動保存します。
 const (
 	// +callback: {{.Name}}()
 	// loadendシーン以外のシーンからbaseシーンへ遷移したとき、

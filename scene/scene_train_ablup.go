@@ -45,6 +45,8 @@ func (ts trainScene) Name() string { return SceneNameTrain }
 func (ts *trainScene) setCanDoTrain(ok bool) { ts.can_do_train = ok }
 
 // +scene: train
+// 調教のシーンです。
+// ここでは、調教コマンドの実行およびコマンドの結果の反映を行うことを想定しています。
 const (
 	// +callback: {{.Name}}()
 	// 調教対象のステータスの表示をこの関数で行います。
@@ -238,6 +240,8 @@ func newTrainEndScene(sf *sceneFields) *trainEndScene {
 func (scene trainEndScene) Name() string { return SceneNameTrainEnd }
 
 // +scene: trainend
+// 調教終了時の後処理シーンです。
+// 終了時のデータの後片付けなどを行うことを想定しています。
 const (
 // ScrSceneTrainEnd = "scene_trainend"
 // ScrEventTrainEnd = "event_trainend"
@@ -262,6 +266,8 @@ func newAblUpScene(sf *sceneFields) *ablUpScene {
 func (aus ablUpScene) Name() string { return SceneNameAblUp }
 
 // +scene: ablup
+// 能力上昇のシーンです。
+// Trainシーンの実行結果を、成長の結果として反映することを想定しています。
 const (
 	// +callback: {{.Name}}()
 	ScrAblUpUserShowJuel = "ablup_user_show_juel"
@@ -321,6 +327,8 @@ func newTurnEndScene(sf *sceneFields) *turnEndScene {
 func (tes turnEndScene) Name() string { return SceneNameTurnEnd }
 
 // +scene: turnend
+// 1ターンの終了シーンです。
+// ここでは、ゲームとしての１ターンが終了したときの処理を実施することを想定しています。
 const (
 // ScrSceneTurnEnd = "scene_turnend"
 // ScrEventTurnEnd = "event_turnend"

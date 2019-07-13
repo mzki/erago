@@ -23,6 +23,7 @@ import (
 // First, user defines documentation tag for the callback function like:
 //
 // // +scene :scenename
+// // documentation for scene...
 // const (
 //	 // +function: {{.FuncName}}(arg)
 //   // annotation text...
@@ -35,15 +36,34 @@ import (
 //
 // It genenrates callback list as:
 //
-//  [scenename]
+//  [scene: scenename]
+//
+//    documentation for scene...
 //
 //	callback_name1(arg)
 //
-//     annotation text...
+//    annotation text...
 //
 //	ret = callback_name2(number)
 //
-//     annotation text...
+//    annotation text...
+
+type sceneDeclMap map[string]*sceneDecl
+
+type sceneDecl struct {
+	Name string
+	Doc  []string
+
+	callbacks callbacks
+}
+
+func newSceneDecl(name string) *sceneDecl {
+	return &sceneDecl{
+		Name:      name,
+		Doc:       make([]string, 0, 4),
+		callbacks: make(callbacks, 0, 4),
+	}
+}
 
 type callbacks []funcDecl
 
@@ -98,8 +118,8 @@ func ParseAST(dir string) error {
 
 const SceneTag = "// +scene:"
 
-func parseCallBacksFromAST(pkg *ast.Package) map[string]callbacks {
-	callback_map := make(map[string]callbacks)
+func parseCallBacksFromAST(pkg *ast.Package) sceneDeclMap {
+	callback_map := make(sceneDeclMap)
 
 	for _, f := range pkg.Files {
 		ast.Inspect(f, func(n ast.Node) bool {
@@ -125,15 +145,26 @@ func parseCallBacksFromAST(pkg *ast.Package) map[string]callbacks {
 					// TODO: notify error with declaration line.
 				}
 				if _, has := callback_map[sceneName]; !has {
-					callback_map[sceneName] = make(callbacks, 0, 4)
+					callback_map[sceneName] = newSceneDecl(sceneName)
 				}
 
-				callback_map[sceneName] = addCallBacksFromSpecs(callback_map[sceneName], decl.Specs)
+				callback_map[sceneName].Doc = parseDoc(doc.List[1:])
+				callback_map[sceneName].callbacks = addCallBacksFromSpecs(callback_map[sceneName].callbacks, decl.Specs)
 			}
 			return true
 		})
 	}
 	return callback_map
+}
+
+func parseDoc(comments []*ast.Comment) []string {
+	doc := make([]string, 0, len(comments))
+	for _, com := range comments {
+		line := strings.TrimPrefix(com.Text, "//")
+		line = strings.TrimSpace(line)
+		doc = append(doc, line)
+	}
+	return doc
 }
 
 func addCallBacksFromSpecs(cs callbacks, specs []ast.Spec) callbacks {
@@ -173,25 +204,22 @@ func parseCallbackDoc(comments *ast.CommentGroup) (funcDecl, error) {
 	}
 
 	definition := strings.TrimSpace(strings.TrimPrefix(firstLine, CallbackFuncTag))
-	doc := make([]string, 0, 2)
-	for _, com := range comments.List[1:] {
-		line := strings.TrimPrefix(com.Text, "//")
-		doc = append(doc, line)
-	}
 	return funcDecl{
 		Template: definition,
-		Doc:      doc,
+		Doc:      parseDoc(comments.List[1:]),
 	}, nil
 }
 
-func checkNameConvention(callbacks_list map[string]callbacks, keys []string) error {
+func checkNameConvention(callbacks_list sceneDeclMap, keys []string) error {
 	multiErr := errutil.NewMultiError()
 
 	for _, sceneName := range keys {
-		functions, ok := callbacks_list[sceneName]
+		sceneDecl, ok := callbacks_list[sceneName]
 		if !ok {
 			continue
 		}
+
+		functions := sceneDecl.callbacks
 
 		for _, f := range functions {
 			var nameElems = strings.Split(f.Name, scene.ScrSep)
@@ -239,7 +267,7 @@ const (
 	DocIndentSpace = 2
 )
 
-func writeAsPlainTxt(file string, callbacks_list map[string]callbacks, keys []string) error {
+func writeAsPlainTxt(file string, callbacks_list sceneDeclMap, keys []string) error {
 	fp, err := os.Create(file)
 	if err != nil {
 		return err
@@ -265,13 +293,18 @@ callback関数は、命名規則 [scene-name]_[callback-type]_[funcion-name] に
 	indent := strings.Repeat(" ", DocIndentSpace)
 
 	for _, scene := range keys {
-		functions, ok := callbacks_list[scene]
+		sceneDecl, ok := callbacks_list[scene]
 		if !ok {
 			continue
 		}
 
 		fmt.Fprintln(fp, "[scene: "+scene+"]\n")
+		for _, line := range sceneDecl.Doc {
+			fmt.Fprintln(fp, indent+line)
+		}
+		fmt.Fprintln(fp, "")
 
+		functions := sceneDecl.callbacks
 		functions = append(makeDefaultCallback(scene), functions...)
 		for _, f := range functions {
 			fmt.Fprintln(fp, f.Definition())
@@ -289,14 +322,14 @@ callback関数は、命名規則 [scene-name]_[callback-type]_[funcion-name] に
 func makeDefaultCallback(scene_name string) callbacks {
 	scene_decl := funcDecl{
 		Template: scene_name + "_scene()",
-		Doc: strings.Split(` この関数は、もし定義されていれば、シーンの最も始めに呼ばれ、
- シーン全体の処理を置き換えます。
- この関数内では、必ず次のシーンを指定しなければならないことに注意してください。`, "\n"),
+		Doc: strings.Split(`この関数は、もし定義されていれば、シーンの最も始めに呼ばれ、
+シーン全体の処理を置き換えます。
+この関数内では、必ず次のシーンを指定しなければならないことに注意してください。`, "\n"),
 	}
 
 	event_decl := funcDecl{
 		Template: scene_name + "_event_start()",
-		Doc:      strings.Split(` この関数は、もし定義されていれば、シーンの始めに呼ばれます。`, "\n"),
+		Doc:      strings.Split(`この関数は、もし定義されていれば、シーンの始めに呼ばれます。`, "\n"),
 	}
 
 	return callbacks{scene_decl, event_decl}

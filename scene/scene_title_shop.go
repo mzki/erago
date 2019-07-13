@@ -26,6 +26,7 @@ func (scene titleScene) Name() string { return SceneNameTitle }
 // Thus only proper function names are documented and published to the user.
 
 // +scene: title
+// タイトル画面のシーンです。タイトルの表示およびゲームの開始準備を行います。
 const (
 	// +callback: {{.Name}}()
 	// It replaces builtin flow for loading existance savefile at title scene.
@@ -120,6 +121,8 @@ func newNewGameScene(sf *sceneFields) *newGameScene {
 func (s newGameScene) Name() string { return SceneNameNewGame }
 
 // +scene: newgame
+// 新規開始時の準備シーンです。
+// ここで、ゲーム開始時に必要なデータの準備を行うことを想定しています。
 const (
 	// +callback: {{.Name}}()
 	// newgameシーンで、保存される全てのデータを初期化した後に呼ばれます。
@@ -155,6 +158,8 @@ func newBaseScene(sf *sceneFields) *baseScene {
 func (bs baseScene) Name() string { return SceneNameBase }
 
 // +scene: base
+// プレイヤーの拠点での活動シーンです。
+// ここで、各種設定を行ったり、プレイヤーの行動を決定したりすることを想定しています
 const (
 	// +callback: {{.Name}}()
 	// baseシーンにおける、行動の選択肢を表示します。
@@ -217,6 +222,8 @@ func newShopScene(sf *sceneFields) *shopScene {
 func (sc shopScene) Name() string { return SceneNameShop }
 
 // +scene: shop
+// お店での売買を行うシーンです。
+// ここでItemの購入処理を行うことを想定しています。
 const (
 	// +callback: {{.Name}}()
 	// Itemの一覧を表示する処理を置き換える。
