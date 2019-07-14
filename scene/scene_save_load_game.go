@@ -38,7 +38,7 @@ func (lg *loadGameScene) Next() (Scene, error) {
 func loadGameSceneProcess(sf *sceneFields) (Scene, error) {
 	game := sf.IO()
 
-	game.PrintL("ロードするデータを選択してください")
+	game.PrintL(DefaultOrString("Select Load Data >>", sf.ReplaceText().SelectLoadData))
 	printSaveListsScene(sf)
 
 	for {
@@ -85,7 +85,7 @@ func (sg *saveGameScene) Next() (Scene, error) {
 	// game.SetSingleLayout()
 
 	for {
-		game.PrintL("セーブするデータを選択してください")
+		game.PrintL(DefaultOrString("Select Save Destination >>", sg.ReplaceText().SelectSaveData))
 		printSaveListsScene(sg.sceneFields)
 
 		input, err := game.CommandNumber()
@@ -99,9 +99,9 @@ func (sg *saveGameScene) Next() (Scene, error) {
 		case 0 <= input && input < 20:
 			gstate := sg.State()
 			if gstate.FileExists(input) {
-				game.PrintL("上書きしてもいい？")
-				game.PrintC("[0] はい", 10)
-				game.PrintC("[1] いいえ", 10)
+				game.PrintL(DefaultOrString("Overwrite?", sg.ReplaceText().ConfirmOverwrite))
+				game.PrintC("[0] Yes", 10)
+				game.PrintC("[1] No", 10)
 				game.PrintL("")
 				if yesno, err := game.CommandNumberSelect(context.Background(), 0, 1); err != nil {
 					return nil, err
@@ -162,7 +162,7 @@ func (ld *loadEndScene) Next() (Scene, error) {
 func printSaveListsScene(sf *sceneFields) {
 	printSaveLists(sf)
 	sf.IO().PrintLine(DefaultLineSymbol)
-	sf.IO().PrintL("[100] 戻る")
+	sf.IO().PrintL("[100] " + DefaultOrString("Back", sf.ReplaceText().ReturnMenu))
 }
 
 const autoSaveNumber = 99

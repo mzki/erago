@@ -16,12 +16,22 @@ type Config struct {
 // ConfigReplaceText holds strings for replace specific text in the bultin scenes.
 // empty string is treated as no replace (use builtin).
 type ConfigReplaceText struct {
+	// for boot
 	LoadingMessage string
-	NewGame        string
-	LoadGame       string
-	QuitGame       string
-	ReturnMenu     string
-	MoneyFormat    string
+
+	// for title
+	NewGame  string
+	LoadGame string
+	QuitGame string
+
+	// for shop
+	ReturnMenu  string
+	MoneyFormat string
+
+	// for save/load
+	SelectSaveData   string
+	SelectLoadData   string
+	ConfirmOverwrite string
 }
 
 const (
@@ -37,6 +47,9 @@ func (c *ConfigReplaceText) Validate() error {
 	// Palin text
 	for _, text := range []string{
 		c.LoadingMessage,
+		c.SelectSaveData,
+		c.SelectLoadData,
+		c.ConfirmOverwrite,
 	} {
 		if width.StringWidth(text) > MaxReplacePlainTextLen {
 			return fmt.Errorf("text length should be < %d for %q", MaxReplacePlainTextLen, text)

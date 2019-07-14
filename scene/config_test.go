@@ -15,11 +15,14 @@ func TestConfigReplaceTextEmptyValidate(t *testing.T) {
 
 func TestConfigReplaceTextPlainTextValidate(t *testing.T) {
 	replace := ConfigReplaceText{
-		LoadingMessage: strings.Repeat("a", MaxReplacePlainTextLen),
-		NewGame:        strings.Repeat("b", MaxReplaceCmdTextLen),
-		LoadGame:       strings.Repeat("c", MaxReplaceCmdTextLen),
-		QuitGame:       strings.Repeat("d", MaxReplaceCmdTextLen),
-		ReturnMenu:     strings.Repeat("e", MaxReplaceCmdTextLen),
+		LoadingMessage:   strings.Repeat("a", MaxReplacePlainTextLen),
+		NewGame:          strings.Repeat("b", MaxReplaceCmdTextLen),
+		LoadGame:         strings.Repeat("c", MaxReplaceCmdTextLen),
+		QuitGame:         strings.Repeat("d", MaxReplaceCmdTextLen),
+		ReturnMenu:       strings.Repeat("e", MaxReplaceCmdTextLen),
+		SelectSaveData:   strings.Repeat("f", MaxReplacePlainTextLen),
+		SelectLoadData:   strings.Repeat("g", MaxReplacePlainTextLen),
+		ConfirmOverwrite: strings.Repeat("h", MaxReplacePlainTextLen),
 	}
 
 	if err := replace.Validate(); err != nil {
@@ -27,6 +30,8 @@ func TestConfigReplaceTextPlainTextValidate(t *testing.T) {
 	}
 
 	// chech error case for each field separately because struct fields are not iteratable.
+
+	// plain text
 	invalidLenText := strings.Repeat("a", MaxReplacePlainTextLen+1)
 	replace = ConfigReplaceText{
 		LoadingMessage: invalidLenText,
@@ -34,7 +39,26 @@ func TestConfigReplaceTextPlainTextValidate(t *testing.T) {
 	if err := replace.Validate(); err == nil {
 		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
 	}
+	replace = ConfigReplaceText{
+		SelectSaveData: invalidLenText,
+	}
+	if err := replace.Validate(); err == nil {
+		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
+	}
+	replace = ConfigReplaceText{
+		SelectLoadData: invalidLenText,
+	}
+	if err := replace.Validate(); err == nil {
+		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
+	}
+	replace = ConfigReplaceText{
+		ConfirmOverwrite: invalidLenText,
+	}
+	if err := replace.Validate(); err == nil {
+		t.Errorf("the text length %d should be accepted", MaxReplacePlainTextLen)
+	}
 
+	// cmd text
 	invalidLenCmdText := strings.Repeat("a", MaxReplaceCmdTextLen+1)
 	replace = ConfigReplaceText{
 		NewGame: invalidLenCmdText,
@@ -55,7 +79,7 @@ func TestConfigReplaceTextPlainTextValidate(t *testing.T) {
 		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)
 	}
 	replace = ConfigReplaceText{
-		QuitGame: invalidLenCmdText,
+		ReturnMenu: invalidLenCmdText,
 	}
 	if err := replace.Validate(); err == nil {
 		t.Errorf("the text length %d should be accepted", MaxReplaceCmdTextLen)

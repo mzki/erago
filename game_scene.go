@@ -16,12 +16,15 @@ const (
 	replaceTextFileName = "__builtin_replace.lua"
 	replaceTextDataKey  = "ERA_BUILTIN_SCENE_REPLACE_TEXT"
 
-	replaceTextLoadingMessage = "LoadingMessage"
-	replaceTextNewGame        = "NewGame"
-	replaceTextLoadGame       = "LoadGame"
-	replaceTextQuitGame       = "QuitGame"
-	replaceTextReturnMenu     = "ReturnMenu"
-	replaceTextMoneyFormat    = "MoneyFormat"
+	replaceTextLoadingMessage   = "LoadingMessage"
+	replaceTextNewGame          = "NewGame"
+	replaceTextLoadGame         = "LoadGame"
+	replaceTextQuitGame         = "QuitGame"
+	replaceTextReturnMenu       = "ReturnMenu"
+	replaceTextMoneyFormat      = "MoneyFormat"
+	replaceTextSelectSaveData   = "SelectSaveData"
+	replaceTextSelectLoadData   = "SelectLoadData"
+	replaceTextConfirmOverwrite = "ConfirmOverwirte"
 
 	defaultLoadingMessage = "Now Loading..."
 )
@@ -52,6 +55,9 @@ func (game *Game) sceneBooting() (string, error) {
 	replaceText.QuitGame = replaceData[replaceTextQuitGame]
 	replaceText.ReturnMenu = replaceData[replaceTextReturnMenu]
 	replaceText.MoneyFormat = replaceData[replaceTextMoneyFormat]
+	replaceText.SelectSaveData = replaceData[replaceTextSelectSaveData]
+	replaceText.SelectLoadData = replaceData[replaceTextSelectLoadData]
+	replaceText.ConfirmOverwrite = replaceData[replaceTextSelectLoadData]
 
 	if err := replaceText.Validate(); err != nil {
 		log.Debugf("%s: Invalid replace text: %v", sceneNameBooting, err)
