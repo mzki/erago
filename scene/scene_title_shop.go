@@ -254,10 +254,11 @@ func (sc shopScene) Next() (Scene, error) {
 			return nil, err
 		}
 		if !called {
-			if err := sc.ShowItems(DefaultOrString(
-				DefaultShowItemFormat,
-				"[%d] %s ("+replaceText.MoneyFormat+")"),
-			); err != nil {
+			var itemFormat string = DefaultShowItemFormat
+			if moneyFormat := replaceText.MoneyFormat; len(moneyFormat) > 0 {
+				itemFormat = "[%d] %s (" + replaceText.MoneyFormat + ")"
+			}
+			if err := sc.ShowItems(itemFormat); err != nil {
 				return nil, err
 			}
 			io.PrintLine(DefaultLineSymbol)
