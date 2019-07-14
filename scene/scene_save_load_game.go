@@ -25,9 +25,9 @@ func newLoadGameScene(sf *sceneFields) *loadGameScene {
 	return &loadGameScene{newSceneCommon(SceneNameLoadGame, sf)}
 }
 
-func (lg loadGameScene) Name() string { return SceneNameLoadGame }
+func (lg *loadGameScene) Name() string { return SceneNameLoadGame }
 
-func (lg loadGameScene) Next() (Scene, error) {
+func (lg *loadGameScene) Next() (Scene, error) {
 	if next, err := lg.atStart(); next != nil || err != nil {
 		return next, err
 	}
@@ -71,7 +71,7 @@ func newSaveGameScene(sf *sceneFields) *saveGameScene {
 	return &saveGameScene{newSceneCommon(SceneNameSaveGame, sf)}
 }
 
-func (sg saveGameScene) Name() string { return SceneNameSaveGame }
+func (sg *saveGameScene) Name() string { return SceneNameSaveGame }
 
 func (sg *saveGameScene) Next() (Scene, error) {
 	if next, err := sg.atStart(); next != nil || err != nil {
@@ -143,7 +143,7 @@ func newLoadEndScene(sf *sceneFields) *loadEndScene {
 	return &loadEndScene{newSceneCommon(SceneNameLoadEnd, sf)}
 }
 
-func (ld loadEndScene) Name() string { return SceneNameLoadEnd }
+func (ld *loadEndScene) Name() string { return SceneNameLoadEnd }
 
 // +callback :loadend
 const (

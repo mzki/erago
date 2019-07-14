@@ -16,7 +16,7 @@ func newTitleScene(sf *sceneFields) *titleScene {
 	return &titleScene{newSceneCommon(SceneNameTitle, sf)}
 }
 
-func (scene titleScene) Name() string { return SceneNameTitle }
+func (scene *titleScene) Name() string { return SceneNameTitle }
 
 // NOTE: script function name is parsed by document generateor which can
 // accepts string literal only.
@@ -105,7 +105,7 @@ func (scene *titleScene) Next() (Scene, error) {
 	return scenes.Next(), nil
 }
 
-func (tc titleScene) loadGame() (Scene, error) {
+func (tc *titleScene) loadGame() (Scene, error) {
 	return loadGameSceneProcess(tc.sceneFields)
 }
 
@@ -118,7 +118,7 @@ func newNewGameScene(sf *sceneFields) *newGameScene {
 	return &newGameScene{newSceneCommon(SceneNameNewGame, sf)}
 }
 
-func (s newGameScene) Name() string { return SceneNameNewGame }
+func (s *newGameScene) Name() string { return SceneNameNewGame }
 
 // +scene: newgame
 // 新規開始時の準備シーンです。
@@ -155,7 +155,7 @@ func newBaseScene(sf *sceneFields) *baseScene {
 	return &baseScene{newSceneCommon(SceneNameBase, sf)}
 }
 
-func (bs baseScene) Name() string { return SceneNameBase }
+func (bs *baseScene) Name() string { return SceneNameBase }
 
 // +scene: base
 // プレイヤーの拠点での活動シーンです。
@@ -176,7 +176,7 @@ const (
 	ScrBaseUserMenuSelected = "base_user_menu_selected"
 )
 
-func (bs baseScene) Next() (Scene, error) {
+func (bs *baseScene) Next() (Scene, error) {
 	if next, err := bs.atStart(); next != nil || err != nil {
 		return next, err
 	}
@@ -194,7 +194,7 @@ func (bs baseScene) Next() (Scene, error) {
 	return scenes.Next(), nil
 }
 
-func (bs baseScene) inputLoop() error {
+func (bs *baseScene) inputLoop() error {
 	for {
 		input, err := bs.IO().CommandNumber()
 		if err != nil {
@@ -219,7 +219,7 @@ func newShopScene(sf *sceneFields) *shopScene {
 	return &shopScene{sceneCommon: newSceneCommon(SceneNameShop, sf)}
 }
 
-func (sc shopScene) Name() string { return SceneNameShop }
+func (sc *shopScene) Name() string { return SceneNameShop }
 
 // +scene: shop
 // お店での売買を行うシーンです。
@@ -240,7 +240,7 @@ const (
 	ScrShopUserMenuSelected = "shop_user_menu_selected"
 )
 
-func (sc shopScene) Next() (Scene, error) {
+func (sc *shopScene) Next() (Scene, error) {
 	if next, err := sc.atStart(); next != nil || err != nil {
 		return next, err
 	}
@@ -275,7 +275,7 @@ func (sc shopScene) Next() (Scene, error) {
 	return scenes.Next(), nil
 }
 
-func (sc shopScene) inputLoop() error {
+func (sc *shopScene) inputLoop() error {
 	for {
 		// get user input
 		input, err := sc.IO().CommandNumber()

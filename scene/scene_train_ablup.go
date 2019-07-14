@@ -40,7 +40,7 @@ func newTrainScene(sf *sceneFields) *trainScene {
 	}
 }
 
-func (ts trainScene) Name() string { return SceneNameTrain }
+func (ts *trainScene) Name() string { return SceneNameTrain }
 
 func (ts *trainScene) setCanDoTrain(ok bool) { ts.can_do_train = ok }
 
@@ -163,7 +163,7 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 	return err
 }
 
-func (ts trainScene) showTrainCommands() error {
+func (ts *trainScene) showTrainCommands() error {
 	maxRuneWidth, err := ts.IO().WindowRuneWidth()
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func (ts trainScene) showTrainCommands() error {
 }
 
 // do train which is given by command No.
-func (ts trainScene) DoTrain(cmd_no int64) error {
+func (ts *trainScene) DoTrain(cmd_no int64) error {
 	if !ts.can_do_train {
 		return errorExternalDoTrainNotAllowed
 	}
@@ -221,7 +221,7 @@ func (ts trainScene) DoTrain(cmd_no int64) error {
 	return err
 }
 
-func (ts trainScene) isExecutable(cmd int) bool {
+func (ts *trainScene) isExecutable(cmd int) bool {
 	if 0 <= cmd && cmd < len(ts.command_ables) {
 		return ts.command_ables[cmd]
 	}
@@ -237,7 +237,7 @@ func newTrainEndScene(sf *sceneFields) *trainEndScene {
 	return &trainEndScene{newSceneCommon(SceneNameTrainEnd, sf)}
 }
 
-func (scene trainEndScene) Name() string { return SceneNameTrainEnd }
+func (scene *trainEndScene) Name() string { return SceneNameTrainEnd }
 
 // +scene: trainend
 // 調教終了時の後処理シーンです。
@@ -247,7 +247,7 @@ const (
 // ScrEventTrainEnd = "event_trainend"
 )
 
-func (scene trainEndScene) Next() (Scene, error) {
+func (scene *trainEndScene) Next() (Scene, error) {
 	if next, err := scene.atStart(); next != nil || err != nil {
 		return next, err
 	}
@@ -263,7 +263,7 @@ func newAblUpScene(sf *sceneFields) *ablUpScene {
 	return &ablUpScene{newSceneCommon(SceneNameAblUp, sf)}
 }
 
-func (aus ablUpScene) Name() string { return SceneNameAblUp }
+func (aus *ablUpScene) Name() string { return SceneNameAblUp }
 
 // +scene: ablup
 // 能力上昇のシーンです。
@@ -279,7 +279,7 @@ const (
 	ScrAblUpUserMenuSelected = "ablup_user_menu_selected" // +number -> bool
 )
 
-func (aus ablUpScene) Next() (Scene, error) {
+func (aus *ablUpScene) Next() (Scene, error) {
 	if next, err := aus.atStart(); next != nil || err != nil {
 		return next, err
 	}
@@ -301,7 +301,7 @@ func (aus ablUpScene) Next() (Scene, error) {
 	return aus.Scenes().Next(), nil
 }
 
-func (aus ablUpScene) inputLoop() error {
+func (aus *ablUpScene) inputLoop() error {
 	for {
 		input, err := aus.IO().CommandNumber()
 		if err != nil {
@@ -324,7 +324,7 @@ func newTurnEndScene(sf *sceneFields) *turnEndScene {
 	return &turnEndScene{newSceneCommon(SceneNameTurnEnd, sf)}
 }
 
-func (tes turnEndScene) Name() string { return SceneNameTurnEnd }
+func (tes *turnEndScene) Name() string { return SceneNameTurnEnd }
 
 // +scene: turnend
 // 1ターンの終了シーンです。

@@ -9,7 +9,7 @@ func newAutosaveScene(sf *sceneFields) *autosaveScene {
 	return &autosaveScene{newSceneCommon(SceneNameAutosave, sf)}
 }
 
-func (autosaveScene) Name() string { return SceneNameAutosave }
+func (*autosaveScene) Name() string { return SceneNameAutosave }
 
 // +scene: autosave
 // 自動保存シーンです。
@@ -24,7 +24,7 @@ const (
 	ScrAutoSaveReplace = "autosave_replace"
 )
 
-func (sc autosaveScene) Next() (Scene, error) {
+func (sc *autosaveScene) Next() (Scene, error) {
 	if next, err := sc.atStart(); next != nil || err != nil {
 		return next, err
 	}
