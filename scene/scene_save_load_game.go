@@ -12,8 +12,8 @@ import (
 const (
 	// Scene LoadGame and SaveGame are not registered in default scene transition.
 	// These are used by call SceneManager.RunXXXScene() from external.
-	SceneNameLoadGame = "load_game"
-	SceneNameSaveGame = "save_game"
+	SceneNameLoadGame = "loadgame"
+	SceneNameSaveGame = "savegame"
 )
 
 // * LOAD GAME SCENE
@@ -123,12 +123,20 @@ END_SAVE_GAME:
 	return next, nil
 }
 
-// +callback :save_game
-const ScrEventSaveInfo = "event_save_info"
+// +scene: savegame
+// savegame シーンは特殊なシーンです。
+// 他の組み込みシーンとは違い、直接遷移することはできません
+const (
+	// +callback: {{.Name}}()
+	// データが保存される直前に呼び出されます。
+	// ここで、セーブデータのコメントを書き換えることができます。
+	// デフォルトでは、 "2006/01/02 15:04:05" の形式で、現在時刻がコメントとして使用されます
+	ScrSaveGameEventBeforeSave = "savegame_event_before_save"
+)
 
 func saveGameSceneProcess(No int, sf *sceneFields) error {
 	sf.State().SaveComment = time.Now().Format("2006/01/02 15:04:05")
-	if err := sf.Script().maybeCall(ScrEventSaveInfo); err != nil {
+	if err := sf.Script().maybeCall(ScrSaveGameEventBeforeSave); err != nil {
 		return err
 	}
 	return sf.State().SaveSystem(No)
@@ -145,7 +153,7 @@ func newLoadEndScene(sf *sceneFields) *loadEndScene {
 
 func (ld *loadEndScene) Name() string { return SceneNameLoadEnd }
 
-// +callback :loadend
+// +scene: loadend
 const (
 // ScrSceneLoadEnd = "scene_loadend"
 // ScrEventLoadEnd = "event_loadend"
@@ -156,7 +164,11 @@ func (ld *loadEndScene) Next() (Scene, error) {
 		return next, err
 	}
 
-	return ld.scenes.GetScene(SceneNameBase)
+	if ss := ld.Scenes(); ss.HasNext() {
+		return ss.Next(), nil
+	} else {
+		return ss.GetScene(SceneNameBase)
+	}
 }
 
 func printSaveListsScene(sf *sceneFields) {
