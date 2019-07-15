@@ -251,7 +251,12 @@ func (scene *trainEndScene) Next() (Scene, error) {
 	if next, err := scene.atStart(); next != nil || err != nil {
 		return next, err
 	}
-	return scene.Scenes().GetScene(SceneNameTurnEnd)
+
+	if ss := scene.Scenes(); ss.HasNext() {
+		return ss.Next(), nil
+	} else {
+		return ss.GetScene(SceneNameAblUp)
+	}
 }
 
 // ABLUP SCENE
@@ -338,5 +343,10 @@ func (tes *turnEndScene) Next() (Scene, error) {
 	if next, err := tes.atStart(); next != nil || err != nil {
 		return next, err
 	}
-	return tes.Scenes().GetScene(SceneNameAutosave)
+
+	if ss := tes.Scenes(); ss.HasNext() {
+		return ss.Next(), nil
+	} else {
+		return ss.GetScene(SceneNameAutosave)
+	}
 }
