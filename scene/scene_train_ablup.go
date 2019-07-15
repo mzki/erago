@@ -21,6 +21,9 @@ type trainScene struct {
 	//
 	// it is used for controling of external execution of DoTrain().
 	can_do_train bool
+
+	// whether user shows other commands?
+	user_shown_other_commands bool
 }
 
 var errorExternalDoTrainNotAllowed = errors.New("It is allowed only in train scene")
@@ -56,11 +59,11 @@ const (
 	// 選択番号input_numに対応するコマンドが、現在実行可能であるかを
 	// true/falseで返します。ここで実行可能であったコマンド群が、
 	// 画面に表示され、train_user_cmd()が実行されます。
-	ScrTrainUserCmdAble = "train_user_cmd_able"
+	ScrTrainReplaceCmdAble = "train_replace_cmd_able"
 
 	// +callback: {{.Name}}()
 	// ユーザー定義のコマンド群の表示をこの関数で行います。
-	ScrTrainUserShowOtherCmd = "train_user_show_other_cmd"
+	ScrTrainReplaceShowOtherCmd = "train_replace_show_other_cmd"
 
 	// +callback: handled = {{.Name}}(input_num)
 	// 選択番号input_numに対応するコマンドを実行します。
@@ -121,9 +124,11 @@ func (ts *trainScene) trainCycle() (Scene, error) {
 		if err := ts.showTrainCommands(); err != nil {
 			return nil, err
 		}
-		if err := script.maybeCall(ScrTrainUserShowOtherCmd); err != nil {
+		userShownOtherCommands, err := ts.showOtherTrainCommands()
+		if err != nil {
 			return nil, err
 		}
+		ts.user_shown_other_commands = userShownOtherCommands
 
 		// get user command
 		num, err := ts.IO().CommandNumber()
@@ -158,8 +163,12 @@ func (ts *trainScene) CheckTrainCommand(cmd_no int, name string) error {
 		return nil
 	}
 
-	ok, err := ts.Script().maybeCallBoolArgInt(ScrTrainUserCmdAble, int64(cmd_no))
-	ts.command_ables[cmd_no] = ok
+	ret, err := ts.Script().checkCallBoolArgInt(ScrTrainReplaceCmdAble, int64(cmd_no))
+	if ret.Called {
+		ts.command_ables[cmd_no] = ret.Return
+	} else {
+		ts.command_ables[cmd_no] = true // always true on builtin flow
+	}
 	return err
 }
 
@@ -191,6 +200,22 @@ func (ts *trainScene) showTrainCommands() error {
 	return nil
 }
 
+func (ts *trainScene) showOtherTrainCommands() (userCalled bool, err error) {
+	called, err := ts.Script().checkCall(ScrTrainReplaceShowOtherCmd)
+	if err != nil {
+		return
+	}
+
+	// buitin flow
+	if !called {
+		io := ts.IO()
+		io.PrintL("")
+		io.PrintC("[-1] "+DefaultOrString("Back", ts.ReplaceText().ReturnMenu), DefaultPrintCWidth)
+		io.PrintL("")
+	}
+	return called, err
+}
+
 // do train which is given by command No.
 func (ts *trainScene) DoTrain(cmd_no int64) error {
 	if !ts.can_do_train {
@@ -203,9 +228,18 @@ func (ts *trainScene) DoTrain(cmd_no int64) error {
 	var cmd_handled bool
 	var err error
 	if ts.isExecutable(int(cmd_no)) {
+		// do train command
 		cmd_handled, err = script.cautionCallBoolArgInt(ScrTrainUserCmd, cmd_no)
+	} else if ts.user_shown_other_commands {
+		// do user defined other command
+		cmd_handled, err = script.cautionCallBoolArgInt(ScrTrainUserOtherCmd, cmd_no)
 	} else {
-		cmd_handled, err = script.maybeCallBoolArgInt(ScrTrainUserOtherCmd, cmd_no)
+		// do builtin other command
+		if cmd_no == -1 {
+			// select `[-1] Back`
+			err = ts.Scenes().SetNextByName(SceneNameTrainEnd)
+			cmd_handled = false // indeed command handled but set false to stop rest of execution.
+		}
 	}
 	if !cmd_handled || err != nil {
 		return err
