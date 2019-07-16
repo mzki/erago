@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# assumes runs from top directory of erago repository.
+
+DOCKER_IMAGE_NAME=golang-cross-archive:1.12.5 
+DIR_ON_DOCKER=/home/gopher/erago
+
+docker run -it \
+  -v $PWD:$DIR_ON_DOCKER \
+  -w $DIR_ON_DOCKER \
+  $DOCKER_IMAGE_NAME \
+  make -f $DIR_ON_DOCKER/Makefile.docker cross

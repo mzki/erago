@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# assumes runs from top directory of erago repository.
+
+DOCKER_IMAGE_NAME=golang-cross-archive:1.12.5 
+
+docker build -t $DOCKER_IMAGE_NAME -f ./dockerfiles/Dockerfile.cross .
