@@ -70,3 +70,103 @@ func TestMarshall(t *testing.T) {
 		t.Error("object pointer is changed before and after unmarshall.")
 	}
 }
+
+func TestMarshallWithAddChara(t *testing.T) {
+	gamestate := state.NewGameState(CSVDB, Repo)
+
+	// find first characterID
+	var charaID int64 = -1
+	for id, _ := range CSVDB.CharaMap {
+		charaID = id
+		break // just get firstID
+	}
+	if charaID < 0 {
+		t.Fatalf("csv has no character IDs, cant test this case")
+	}
+
+	// add new character and modify its parameter.
+	addedChara, err := gamestate.SystemData.Chara.AddID(charaID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const VarName = "Base"
+	const IndexKey = "体力"
+	const SetValue = 100
+
+	if base, ok := addedChara.UserVariables.GetInt(VarName); !ok {
+		t.Fatalf("character value %v is not found", VarName)
+	} else if base.SetByStr(IndexKey, SetValue); err != nil {
+		t.Fatal(err)
+	}
+
+	// save current state.
+	if err := gamestate.SaveSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// load state into empty one.
+	loadedGameState := state.NewGameState(CSVDB, Repo)
+	if err := loadedGameState.LoadSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// check identity
+	loadedChara := loadedGameState.SystemData.Chara.Get(0)
+	loadedBase, ok := loadedChara.UserVariables.GetInt(VarName)
+	if !ok {
+		t.Fatalf("character value %s is not found after load state into empty one", VarName)
+	}
+	if v, ok := loadedBase.GetByStr(IndexKey); !ok {
+		t.Errorf("cant get %s[%s] after load state into empty one", VarName, IndexKey)
+		t.Log(v)
+	} else if v != SetValue {
+		t.Errorf("violates identity for loaded value, expect %v, got %v", SetValue, v)
+	}
+}
+
+func TestMarshallWithTarget(t *testing.T) {
+	gamestate := state.NewGameState(CSVDB, Repo)
+
+	// find first characterID
+	var charaID int64 = -1
+	for id, _ := range CSVDB.CharaMap {
+		charaID = id
+		break // just get firstID
+	}
+	if charaID < 0 {
+		t.Fatalf("csv has no character IDs, cant test this case")
+	}
+
+	// add new character and modify its parameter.
+	addedChara, err := gamestate.SystemData.Chara.AddID(charaID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := gamestate.SystemData.Target.Set(0, addedChara); err != nil {
+		t.Fatal(err)
+	}
+
+	// save current state.
+	if err := gamestate.SaveSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// load state into empty one.
+	loadedGameState := state.NewGameState(CSVDB, Repo)
+	if err := loadedGameState.LoadSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// check identity
+	loadedChara := loadedGameState.SystemData.Chara.Get(0)
+	loadedTarget := loadedGameState.SystemData.Target.GetChara(0)
+	if loadedTarget == nil {
+		t.Fatal("target has no character reference!")
+	}
+
+	if loadedChara != loadedTarget {
+		t.Fatal("relationship of charachter and chara reference is broken.")
+	}
+}

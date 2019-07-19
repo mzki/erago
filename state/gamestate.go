@@ -49,7 +49,13 @@ func (state *GameState) SaveSystemWithComment(no int, comment string) error {
 
 // load game system state from save[No.].
 func (state *GameState) LoadSystem(no int) error {
-	return state.repo.LoadSystemData(context.Background(), no, state)
+	err := state.repo.LoadSystemData(context.Background(), no, state)
+	if err != nil {
+		return err
+	}
+	// require to recover unexported fields
+	state.SystemData.refine(state.CSV)
+	return nil
 }
 
 // save shared data to "share.sav"
@@ -59,7 +65,13 @@ func (state *GameState) SaveShare() error {
 
 // load shared data from "share.sav"
 func (state *GameState) LoadShare() error {
-	return state.repo.LoadShareData(context.Background(), state)
+	err := state.repo.LoadShareData(context.Background(), state)
+	if err != nil {
+		return err
+	}
+	// require to recover unexported fields
+	state.ShareData.refine(state.CSV.Constants())
+	return nil
 }
 
 // load only header from save[No.].
@@ -78,43 +90,43 @@ func (state *GameState) FileExists(no int) bool {
 
 // to prevent user modify but export field
 // use unexported type.
-type intParamMap map[string]IntParam
-type strParamMap map[string]StrParam
+
+type intData struct {
+	Values []int64
+}
+type strData struct {
+	Values []string
+}
+type intParamMap map[string]intData
+type strParamMap map[string]strData
 
 type UserVariables struct {
+	// exported to marshall/unmarshall object. user should not
+	// access this field directory
 	IntMap intParamMap
 	StrMap strParamMap
-}
 
-func newUserVariables() UserVariables {
-	return UserVariables{
-		IntMap: make(intParamMap),
-		StrMap: make(strParamMap),
-	}
+	// unexported to not marshall/unmarshall object.
+	constantMap map[string]csv.Constant
 }
 
 // NOTE: slice of given imap and smap are taken over UserVariables.
 // be sure to not pass shared imap and smap.
 func newUserVariablesByMap(imap map[string][]int64, smap map[string][]string, cmap map[string]csv.Constant) UserVariables {
-	uv := newUserVariables()
-	for name, ivars := range imap {
-		var nidx NameIndexer
-		if c, ok := cmap[name]; ok {
-			nidx = c.NameIndex
-		} else {
-			nidx = NoneNameIndexer{}
-		}
-		uv.IntMap[name] = NewIntParam(ivars, nidx)
+	intMap := make(intParamMap, len(imap))
+	for k, v := range imap {
+		intMap[k] = intData{v}
 	}
 
-	for name, svars := range smap {
-		var nidx NameIndexer
-		if c, ok := cmap[name]; ok {
-			nidx = c.NameIndex
-		} else {
-			nidx = NoneNameIndexer{}
-		}
-		uv.StrMap[name] = NewStrParam(svars, nidx)
+	strMap := make(strParamMap, len(smap))
+	for k, v := range smap {
+		strMap[k] = strData{v}
+	}
+
+	uv := UserVariables{
+		IntMap:      intMap,
+		StrMap:      strMap,
+		constantMap: cmap,
 	}
 	return uv
 }
@@ -150,7 +162,8 @@ func (uvars UserVariables) Clear() {
 // return IntParam, found.
 func (usr_vars UserVariables) GetInt(varname string) (IntParam, bool) {
 	if vars, ok := usr_vars.IntMap[varname]; ok {
-		return vars, true
+		indexer, _ := usr_vars.nameIndexer(varname)
+		return NewIntParam(vars.Values, indexer), true
 	}
 	return IntParam{}, false
 }
@@ -159,22 +172,40 @@ func (usr_vars UserVariables) GetInt(varname string) (IntParam, bool) {
 // return StrParam, found.
 func (usr_vars UserVariables) GetStr(varname string) (StrParam, bool) {
 	if vars, ok := usr_vars.StrMap[varname]; ok {
-		return vars, true
+		indexer, _ := usr_vars.nameIndexer(varname)
+		return NewStrParam(vars.Values, indexer), true
 	}
 	return StrParam{}, false
 }
 
+func (usr_vars *UserVariables) nameIndexer(varname string) (NameIndexer, bool) {
+	if c, ok := usr_vars.constantMap[varname]; ok {
+		return c.NameIndex, ok
+	} else {
+		return NoneNameIndexer{}, false
+	}
+}
+
+// This methods is used for technical reason:
+// UserVariables after unmarshaling has no constantMap since it is unexported,
+// therefore, requiring re-set csv relationship.
+func (usr_vars *UserVariables) refine(cmap map[string]csv.Constant) {
+	usr_vars.constantMap = cmap
+}
+
 // iteration of each int parameters.
 func (usr_vars UserVariables) ForEachIntParam(f func(string, IntParam)) {
-	for key, param := range usr_vars.IntMap {
-		f(key, param)
+	for key, vars := range usr_vars.IntMap {
+		indexer, _ := usr_vars.nameIndexer(key)
+		f(key, NewIntParam(vars.Values, indexer))
 	}
 }
 
 // iteration of each str parameters.
 func (usr_vars UserVariables) ForEachStrParam(f func(string, StrParam)) {
-	for key, param := range usr_vars.StrMap {
-		f(key, param)
+	for key, vars := range usr_vars.StrMap {
+		indexer, _ := usr_vars.nameIndexer(key)
+		f(key, NewStrParam(vars.Values, indexer))
 	}
 }
 
@@ -216,6 +247,14 @@ func (sysdata *SystemData) Clear() {
 	sysdata.Assi.Clear()
 
 	sysdata.UserVariables.Clear()
+}
+
+// refine csv relationship for internally, requiring after unmarshal.
+func (sysdata *SystemData) refine(csvM *csv.CsvManager) {
+	sysdata.Chara.refine(csvM)
+
+	constants := csvM.Constants()
+	sysdata.UserVariables.refine(constants)
 }
 
 // SaveInfo has information isolated save and load.

@@ -88,6 +88,15 @@ func newCharacters(csv *csv.CsvManager) *Characters {
 	}
 }
 
+func (cs *Characters) refine(csvM *csv.CsvManager) {
+	cs.csv = csvM
+
+	constants := csvM.Constants()
+	for _, c := range cs.List {
+		c.UserVariables.refine(constants)
+	}
+}
+
 // like array access a_chara = charas[i], if idx out of range return nil
 func (cs Characters) Get(i int) *Character {
 	if cs.inRange(i) {
