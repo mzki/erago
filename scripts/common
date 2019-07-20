@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# docker image name to be used for cross build
+DOCKER_IMAGE_NAME=golang-cross-archive:1.12.5 
+
+# working directory on the docker image
+DIR_ON_DOCKER=/home/gopher/erago
+
+# return archive path from output binary path and version string.
+function archive_path() {
+  local OUTPUT_BIN_DIR=$1
+  local VERSION=$2
+
+  echo "$OUTPUT_BIN_DIR/archive/$VERSION"
+}
+

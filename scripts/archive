@@ -2,7 +2,9 @@
 
 set -eu -o pipefail
 
-# require arguments
+source scripts/common
+
+# usage: archive OUTPUTDIR ARCHIVE_MISC...
 OUTPUTDIR=$1
 ARCHIVE_MISC=${@:2:($#-1)}
 
@@ -15,7 +17,7 @@ ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 
 
 # we extract version from output of built binary.
 VERSION=`${OUTPUTDIR}/${ARCHIVE_SRC_LINUX} -version 2>/dev/null`
-ARCHIVE_DIR=${OUTPUTDIR}/archive/${VERSION}
+ARCHIVE_DIR=`archive_path ${OUTPUTDIR} ${VERSION}`
 
 ARCHIVE_DST_LINUX=${ARCHIVE_DIR}/${ARCHIVE_SRC_LINUX}.tar.gz
 ARCHIVE_DST_DARWIN=${ARCHIVE_DIR}/${ARCHIVE_SRC_DARWIN}.tar.gz

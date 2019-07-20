@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+source scripts/common
+
+# usage: release OUTPUTDIR VERSION GITHUB_API_TOKEN
+OUTPUTDIR=$1
+VERSION=$2
+GITHUB_API_TOKEN=$3
+
+ARCHIVE_DIR=`archive_path $OUTPUTDIR $VERSION`
+
+command -v ghr > /dev/null 2>&1 || {
+  echo >&2 "command ghr is required but not found. get it from https://github.com/tcnksm/ghr"
+  exit 1
+}
+
+# -----------------------
+# do release
+# -----------------------
+: "release $VERSION..." && \
+  ghr -soft -t $GITHUB_API_TOKEN $VERSION $ARCHIVE_DIR
