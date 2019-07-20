@@ -4,9 +4,10 @@ set -eu -o pipefail
 
 source scripts/common
 
-# usage: archive OUTPUTDIR ARCHIVE_MISC...
+# usage: archive OUTPUTDIR 
 OUTPUTDIR=$1
-ARCHIVE_MISC=${@:2:($#-1)}
+# optional files to be archived
+ARCHIVE_MISC="LICENSE README.md"
 
 # setting for src 
 ARCHIVE_SRC_LINUX=`find ${OUTPUTDIR} -name "erago*_linux_*"   -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
@@ -28,14 +29,14 @@ ARCHIVE_DST_WINDOWS=${ARCHIVE_DIR}/${ARCHIVE_SRC_WINDOWS//.exe/.zip}
 # -----------------------
 set -x
 mkdir -p ${ARCHIVE_DIR} 
-cp ${ARCHIVE_MISC} ${OUTPUTDIR}
+cp -r ${ARCHIVE_MISC} ${OUTPUTDIR}
+cd ${OUTPUTDIR} 
 
 : "packing for linux..." && \
-  cd ${OUTPUTDIR} && \
-  tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC} 
+  tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC}
 : "packing for darwin..." && \
-  cd ${OUTPUTDIR} && \
   tar zcf ${ARCHIVE_DST_DARWIN} ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC}
 : "packing for windows..." && \
-  cd ${OUTPUTDIR} && \
   zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+
+cd - # return top 

@@ -18,13 +18,3 @@ dependency:
 .PHONY: cross-clean
 cross-clean: 
 	@ $(RM) -r $(OUTPUTDIR)
-
-# --------------------------
-#  Archive
-# --------------------------
-# optional files to be archived 
-ARCHIVE_MISC := LICENSE README.md
-
-.PHONY: cross-archive
-cross-archive: $(OUTPUTDIR)
-	bash scripts/archive $(OUTPUTDIR) $(ARCHIVE_MISC)

@@ -6,11 +6,13 @@ DOCKER_IMAGE_NAME=golang-cross-archive:1.12.5
 # working directory on the docker image
 DIR_ON_DOCKER=/home/gopher/erago
 
-# return archive path from output binary path and version string.
+# return absolute archive path from output binary path and version string.
 function archive_path() {
   local OUTPUT_BIN_DIR=$1
   local VERSION=$2
 
-  echo "$OUTPUT_BIN_DIR/archive/$VERSION"
+  local OUTPUT_BIN_PATH=$(cd $(dirname $OUTPUT_BIN_DIR) && pwd)/$(basename $OUTPUT_BIN_DIR)
+
+  echo "$OUTPUT_BIN_PATH/archive/$VERSION"
 }
 
