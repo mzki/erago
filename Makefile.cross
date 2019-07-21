@@ -1,0 +1,30 @@
+OUTPUTDIR        ?= build
+VERSION          ?= $(shell git describe --tags --abbrev=0)
+GITHUB_API_TOKEN ?="none"
+
+# --------------------------
+#  Build & Clean
+# --------------------------
+.PHONY: all
+all: 
+	@echo "do nothing"
+
+.PHONY: build
+build:
+	@bash scripts/cross-on-docker
+
+.PHONY: archive
+archive: 
+	@bash scripts/archive-on-docker $(OUTPUTDIR)
+
+.PHONY: release
+release: 
+	@bash scripts/release $(OUTPUTDIR) $(VERSION) $(GITHUB_API_TOKEN)
+
+.PHONY: build-and-release
+build-and-release: clean build archive release
+
+.PHONY: clean
+clean:
+	@$(RM) -r $(OUTPUTDIR)
+

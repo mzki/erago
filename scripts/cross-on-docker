@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# assumes runs from top directory of erago repository.
+
+set -eu -o pipefail
+
+source scripts/common
+
+docker run -it \
+  -v $PWD:$DIR_ON_DOCKER \
+  -v $GOPATH:/go \
+  -w $DIR_ON_DOCKER \
+  $DOCKER_IMAGE_NAME \
+  make -f $DIR_ON_DOCKER/Makefile.docker cross

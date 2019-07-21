@@ -1,5 +1,5 @@
-OUTPUTDIR := $(PWD)/build
-CROSS_BUILD_DIR := $(PWD)/app/cmd
+OUTPUTDIR := $(CURDIR)/build
+CROSS_BUILD_DIR := $(CURDIR)/app/cmd
 
 # --------------------------
 #  Build & Clean
@@ -10,17 +10,11 @@ cross:
 	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile linux
 	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile windows
 	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile darwin
+
+.PHONY: dependency
+dependency: 
+	@ GO111MODULE=on go mod download
 	
 .PHONY: cross-clean
 cross-clean: 
 	@ $(RM) -r $(OUTPUTDIR)
-
-# --------------------------
-#  Archive
-# --------------------------
-# optional files to be archived 
-ARCHIVE_MISC := LICENSE README.md
-
-.PHONY: cross-archive
-cross-archive: $(OUTPUTDIR)
-	bash scripts/archive $(OUTPUTDIR) $(ARCHIVE_MISC)
