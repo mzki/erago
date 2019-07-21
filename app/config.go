@@ -6,7 +6,6 @@ import (
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/infra/serialize/toml"
 	"github.com/mzki/erago/util"
-	"github.com/mzki/erago/view/exp/theme"
 )
 
 const (
@@ -19,11 +18,12 @@ const (
 	LogFileStdErr  = "stderr"    // specify log outputs to stderr
 	DefaultLogFile = "erago.log" // default output log file.
 
-	LogLevelInfo  = "info"  // logging only information level.
-	LogLevelDebug = "debug" // logging all levels, debug and info.
+	LogLevelInfo    = "info"  // logging only information level.
+	LogLevelDebug   = "debug" // logging all levels, debug and info.
+	DefaultLogLevel = LogLevelInfo
 
-	DefaultFont     = theme.DefaultFontName // font file. empty means use builtin font.
-	DefaultFontSize = 12.0                  // font size in pt
+	DefaultFont     = ""   // font file. empty means use builtin font.
+	DefaultFontSize = 12.0 // font size in pt
 
 	DefaultWidth  = 800 // initial window width
 	DefaultHeight = 600 // initial window height
@@ -53,7 +53,7 @@ func NewConfig(baseDir string) *Config {
 	}
 	return &Config{
 		LogFile:  DefaultLogFile,
-		LogLevel: LogLevelInfo,
+		LogLevel: DefaultLogLevel,
 		Font:     DefaultFont,
 		FontSize: DefaultFontSize,
 		Width:    DefaultWidth,
