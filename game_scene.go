@@ -1,6 +1,9 @@
 package erago
 
 import (
+	"fmt"
+	"reflect"
+
 	attr "github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/scene"
 	"github.com/mzki/erago/util/errutil"
@@ -16,16 +19,6 @@ const (
 	replaceTextFileName = "__builtin_replace.lua"
 	replaceTextDataKey  = "ERA_BUILTIN_SCENE_REPLACE_TEXT"
 
-	replaceTextLoadingMessage   = "LoadingMessage"
-	replaceTextNewGame          = "NewGame"
-	replaceTextLoadGame         = "LoadGame"
-	replaceTextQuitGame         = "QuitGame"
-	replaceTextReturnMenu       = "ReturnMenu"
-	replaceTextMoneyFormat      = "MoneyFormat"
-	replaceTextSelectSaveData   = "SelectSaveData"
-	replaceTextSelectLoadData   = "SelectLoadData"
-	replaceTextConfirmOverwrite = "ConfirmOverwirte"
-
 	defaultLoadingMessage = "Now Loading..."
 )
 
@@ -37,27 +30,24 @@ func (game *Game) sceneBooting() (string, error) {
 		replaceData = map[string]string{}
 	}
 
-	// require parse format
-	{
-		moneyFormat := replaceData[replaceTextMoneyFormat]
-		if parsed, err := scene.ParseMoneyFormat(moneyFormat); err != nil {
-			log.Debugf("%s: Failed to parse money format for replacement text, %s", sceneNameBooting, moneyFormat)
-			replaceData[replaceTextMoneyFormat] = "" // overwrite by the no replacement.
-		} else {
-			replaceData[replaceTextMoneyFormat] = parsed
-		}
+	var replaceText scene.ConfigReplaceText
+
+	// fill replaceText by user defined data
+	if err := fillStructByMap(&replaceText, replaceData); err != nil {
+		log.Debugf("%s: Invalid replace format: %v", sceneNameBooting, err)
+		return "", err
 	}
 
-	var replaceText scene.ConfigReplaceText
-	replaceText.LoadingMessage = replaceData[replaceTextLoadingMessage]
-	replaceText.NewGame = replaceData[replaceTextNewGame]
-	replaceText.LoadGame = replaceData[replaceTextLoadGame]
-	replaceText.QuitGame = replaceData[replaceTextQuitGame]
-	replaceText.ReturnMenu = replaceData[replaceTextReturnMenu]
-	replaceText.MoneyFormat = replaceData[replaceTextMoneyFormat]
-	replaceText.SelectSaveData = replaceData[replaceTextSelectSaveData]
-	replaceText.SelectLoadData = replaceData[replaceTextSelectLoadData]
-	replaceText.ConfirmOverwrite = replaceData[replaceTextSelectLoadData]
+	// require parse format for specific fields
+	{
+		moneyFormat := replaceText.MoneyFormat
+		if parsed, err := scene.ParseMoneyFormat(moneyFormat); err != nil {
+			log.Debugf("%s: Failed to parse money format for replacement text, %s", sceneNameBooting, moneyFormat)
+			replaceText.MoneyFormat = "" // overwrite by the no replacement.
+		} else {
+			replaceText.MoneyFormat = parsed
+		}
+	}
 
 	if err := replaceText.Validate(); err != nil {
 		log.Debugf("%s: Invalid replace text: %v", sceneNameBooting, err)
@@ -86,4 +76,25 @@ func (game *Game) sceneBooting() (string, error) {
 
 	// next scene is title scene
 	return scene.SceneNameTitle, err
+}
+
+func fillStructByMap(dst interface{}, src map[string]string) error {
+	structValue := reflect.ValueOf(dst).Elem()
+	for k, v := range src {
+		field := structValue.FieldByName(k)
+		if !field.IsValid() {
+			continue // no such field, ignore
+		}
+		if !field.CanSet() {
+			continue // read only field, ignore
+		}
+
+		val := reflect.ValueOf(interface{}(v))
+		if field.Type() != val.Type() {
+			return fmt.Errorf("map value type for key %s does not match struct field type", k)
+		}
+
+		field.Set(val)
+	}
+	return nil
 }
