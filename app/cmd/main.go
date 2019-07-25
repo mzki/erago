@@ -27,6 +27,8 @@ func main() {
 	mode, args := parseFlags()
 
 	appConf := loadConfigOrDefault()
+	overwriteConfigByFlag(appConf)
+
 	switch mode {
 	case runMain:
 		fullTitle := Title + " " + version + "-" + commit
@@ -50,21 +52,31 @@ var (
 	FontSize float64 = app.DefaultFontSize
 )
 
+const (
+	flagNameLogFile  = "logfile"
+	flagNameLogLevel = "loglevel"
+	flagNameFont     = "font"
+	flagNameFontSize = "fontsize"
+
+	flagNameTest    = "test"
+	flagNameVersion = "version"
+)
+
 func parseFlags() (runningMode, []string) {
 	flag.Usage = printHelp
 
-	flag.StringVar(&LogFile, "logfile", LogFile, "`output-file` to write log. { stdout | stderr } is OK.")
-	flag.StringVar(&LogLevel, "loglevel", LogLevel, "`level` = { info | debug }.\n\t"+
+	flag.StringVar(&LogFile, flagNameLogFile, LogFile, "`output-file` to write log. { stdout | stderr } is OK.")
+	flag.StringVar(&LogLevel, flagNameLogLevel, LogLevel, "`level` = { info | debug }.\n\t"+
 		"info outputs information level log only, and debug also outputs debug level log.")
-	flag.StringVar(&Font, "font", Font, "`font-path` to print text on the screen. use builtin default if empty")
-	flag.Float64Var(&FontSize, "fontsize", FontSize, "`font-size` to print text on the screen, in point(Pt.).")
+	flag.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
+	flag.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
 
 	testing := false
-	flag.BoolVar(&testing, "test", testing, "run tests and quit. after given this flag,"+
+	flag.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+
 		" script files to test are required in the command-line arguments")
 
 	showVersion := false
-	flag.BoolVar(&showVersion, "version", showVersion, "show version info and quit.")
+	flag.BoolVar(&showVersion, flagNameVersion, showVersion, "show version info and quit.")
 
 	flag.Parse()
 
@@ -93,6 +105,21 @@ func printHelp() {
 
 `, progName, progName, app.ConfigFile)
 	flag.PrintDefaults()
+}
+
+func overwriteConfigByFlag(config *app.Config) {
+	flag.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case flagNameLogFile:
+			config.LogFile = LogFile
+		case flagNameLogLevel:
+			config.LogLevel = LogLevel
+		case flagNameFont:
+			config.Font = Font
+		case flagNameFontSize:
+			config.FontSize = FontSize
+		}
+	})
 }
 
 func loadConfigOrDefault() *app.Config {
