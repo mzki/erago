@@ -16,3 +16,10 @@ func TestTesting(t *testing.T) {
 		t.Logf("no existing file occurs error: %v", err)
 	}
 }
+
+func TestTestingWithInputRequest(t *testing.T) {
+	conf := NewConfig("./stub/")
+	if err := Testing(conf, []string{"./stub/ELA/game_test_input_request.lua"}); err != nil {
+		t.Fatal(err)
+	}
+}
