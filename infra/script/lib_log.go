@@ -2,8 +2,8 @@ package script
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/mzki/erago/util/log"
 	"github.com/yuin/gopher-lua"
 )
 
@@ -89,7 +89,7 @@ func logDebug(L *lua.LState) int {
 	vs := getDebugValues(L, 1)
 	header := getDebugHeader(L)
 	vs = unshiftDebugValues(vs, header)
-	log.Println(vs...)
+	log.Debugln(vs...)
 	return 0
 }
 
@@ -108,7 +108,7 @@ func LogDebugf(L *lua.LState) int {
 	vs := getDebugValues(L, 2)
 	header := getDebugHeader(L)
 	vs = unshiftDebugValues(vs, header)
-	log.Printf("%s "+fmt_str, vs...)
+	log.Debugf("%s "+fmt_str, vs...)
 	return 0
 }
 
@@ -163,7 +163,7 @@ func getDebugHeader(L *lua.LState) string {
 func logInfo(L *lua.LState) int {
 	vs := getDebugValues(L, 1)
 	vs = unshiftDebugValues(vs, "Script:")
-	log.Println(vs...)
+	log.Infoln(vs...)
 	return 0
 }
 
@@ -177,6 +177,6 @@ func logInfof(L *lua.LState) int {
 	fmt_str := L.CheckString(1)
 	vs := getDebugValues(L, 2)
 	vs = unshiftDebugValues(vs, "Script:")
-	log.Printf("%s "+fmt_str, vs...)
+	log.Infof("%s "+fmt_str, vs...)
 	return 0
 }
