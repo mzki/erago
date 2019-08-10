@@ -6,6 +6,8 @@ package csv
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -50,11 +52,12 @@ const (
 )
 
 // Constant is a constant data set defined by a csv file.
-// it contains constant key names Names,
-// and indexes of key in Names, NameIndex.
+// it must contains constant key names Names and hash map for index-key pair NameIndex.
+// may contains some custom fields.
 type Constant struct {
 	Names
 	NameIndex
+	CustomFields
 }
 
 // CSV Manager manages CSV variables.
@@ -410,6 +413,166 @@ func readNames(file string, intBuffer []int, strBuffer []string) (Names, error) 
 		names[index] = name
 	}
 	return names, nil
+}
+
+const (
+	csvHeaderFieldID   = "id"
+	csvHeaderFieldName = "name"
+
+	headerFieldPrefixNum = "num_"
+	headerFieldPrefixStr = "str_"
+)
+
+// read CSV file that defines names and custom fields for each variable,
+// return constant or error when read failed.
+func readConstantFile(file string, intBuffer []int, strBuffer []string) (*Constant, error) {
+	fp, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fp.Close()
+
+	constant, err := readConstant(fp, intBuffer, strBuffer)
+	if err != nil {
+		return nil, fmt.Errorf("file(%s): %v", file, err)
+	}
+	return constant, nil
+}
+
+// read CSV constants from io.Reader that defines names and custom fields for each variable.
+// return constant or error when read failed.
+func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Constant, error) {
+	reader := NewReader(ioreader)
+
+	// parsing header
+	headers, err := reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("can not parse header: %v", err)
+	}
+
+	if headers[0] != csvHeaderFieldID || headers[1] != csvHeaderFieldName {
+		return nil, fmt.Errorf("header fields should starts with %s, %s, but %s, %s",
+			csvHeaderFieldID, csvHeaderFieldName, headers[0], headers[1])
+	}
+
+	type parsedKey struct {
+		name string
+		typ  CustomFieldType
+	}
+	headerTypes := make([]parsedKey, 0, len(headers))
+
+	for _, h := range headers[2:] {
+		var dtype CustomFieldType
+		var name string
+		if prefix := headerFieldPrefixNum; strings.HasPrefix(h, prefix) {
+			dtype = IntType
+			name = strings.TrimPrefix(h, prefix)
+		} else if prefix := headerFieldPrefixStr; strings.HasPrefix(h, prefix) {
+			dtype = StrType
+			name = strings.TrimPrefix(h, prefix)
+		} else {
+			return nil, fmt.Errorf("custom header name should starts with either of `%s` or `%s`, but got `%s`",
+				headerFieldPrefixNum, headerFieldPrefixStr, h)
+		}
+
+		if len(name) == 0 {
+			return nil, fmt.Errorf("custom header field should have some name. but nothing, %s", h)
+		}
+
+		headerTypes = append(headerTypes, parsedKey{
+			name: name,
+			typ:  dtype,
+		})
+	}
+
+	customBuffers := make([]interface{}, 0, len(headerTypes))
+	for _, h := range headerTypes {
+		// TODO Get buffer from sync.Pool
+		if h.typ == IntType {
+			customBuffers = append(customBuffers, make([]int64, 0, len(intBuffer)))
+		} else if h.typ == StrType {
+			customBuffers = append(customBuffers, make([]string, 0, len(strBuffer)))
+		} else {
+			panic("should not occur")
+		}
+		// else case should not be occurd since such case is terminated by constructing headerTypes.
+	}
+
+	// reset buffer size
+	intBuffer = intBuffer[:0]
+	strBuffer = strBuffer[:0]
+
+	var max_index = 0
+
+	// parse content
+	for record, err := reader.Read(); err != io.EOF; record, err = reader.Read() {
+		// parse error occured
+		if err != nil {
+			return nil, err
+		}
+		if len(record) < len(headerTypes) {
+			return nil, fmt.Errorf("missing custom field values, expect %v fields but got %v fields, %v", len(headerTypes), len(record), record)
+		}
+
+		index := getAsInt(record, 0)
+		key := record[1]
+
+		intBuffer = append(intBuffer, index)
+		strBuffer = append(strBuffer, key)
+
+		// parsing CustomFields
+		const customOffset = 2
+		for i, field := range record[customOffset:] {
+			if h := headerTypes[i]; h.typ == IntType {
+				cbuf := customBuffers[i].([]int64)
+				customBuffers[i] = append(cbuf, int64(getAsInt(record, i+customOffset)))
+			} else if h.typ == StrType {
+				cbuf := customBuffers[i].([]string)
+				customBuffers[i] = append(cbuf, field)
+			} else {
+				panic("should not occur")
+			}
+		}
+
+		if max_index < index {
+			max_index = index
+		}
+	}
+
+	// store result,
+	names := newNames(max_index + 1)
+	for i, index := range intBuffer {
+		name := strBuffer[i]
+		if len(names[index]) > 0 {
+			return nil, fmt.Errorf(">\"%d,%s\": csv index(%d) is already used.", index, name, index)
+		}
+		names[index] = name
+	}
+
+	customFields := make(map[string]slicedType, len(headerTypes))
+	for i, h := range headerTypes {
+		if h.typ == IntType {
+			nums := make([]int64, len(names))
+			numBuf := customBuffers[i].([]int64)
+			for i, index := range intBuffer {
+				nums[index] = numBuf[i]
+			}
+			customFields[h.name] = &Numbers{nums}
+		} else if h.typ == StrType {
+			strs := newNames(len(names))
+			strBuf := customBuffers[i].([]string)
+			for i, index := range intBuffer {
+				strs[index] = strBuf[i]
+			}
+			customFields[h.name] = &Strings{strs}
+		}
+	}
+
+	return &Constant{
+		Names:        names,
+		NameIndex:    newNameIndex(names),
+		CustomFields: CustomFields{customFields},
+	}, nil
 }
 
 // Item and ItemPrice are exceptions.
