@@ -142,7 +142,11 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 		for i, field := range record[customOffset:] {
 			if h := headerTypes[i]; h.typ == CFIntType {
 				cbuf := customBuffers[i].([]int64)
-				customBuffers[i] = append(cbuf, int64(getAsInt(record, i+customOffset)))
+				val, err := strconv.ParseInt(field, 0, 64)
+				if err != nil {
+					return nil, fmt.Errorf("invalid number format for %q: %v", field, err)
+				}
+				customBuffers[i] = append(cbuf, val)
 			} else if h.typ == CFStrType {
 				cbuf := customBuffers[i].([]string)
 				customBuffers[i] = append(cbuf, field)
