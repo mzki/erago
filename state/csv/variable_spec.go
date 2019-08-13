@@ -27,8 +27,10 @@ const (
 	scopeShare
 	scopeChara
 	scopeCSV
+)
 
-	dTypeInt = 100
+const (
+	dTypeInt vspecIdent = scopeCSV + 1 + iota
 	dTypeStr
 )
 

@@ -181,7 +181,7 @@ func (cm *CsvManager) BuildStrUserVars(where VarScope) map[string][]string {
 // It allocates new valiables every call.
 func (cm *CsvManager) BuildIntUserVars(where VarScope) map[string][]int64 {
 	if scope := vspecIdent(where); scope == scopeChara {
-		return newIntMapByVSpecs(cm.vspecsCharaStr)
+		return newIntMapByVSpecs(cm.vspecsCharaInt)
 	} else {
 		vs := cm.vspecs.selectByScopeAndDType(scope, dTypeInt)
 		return newIntMapByVSpecs(vs)

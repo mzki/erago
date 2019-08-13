@@ -45,6 +45,11 @@ func TestNewGameState(t *testing.T) {
 	if _, ok := base_vars.GetByStr("数値１"); !ok {
 		t.Error("Can not get Number[”数値１”] variable.")
 	}
+	if _, ok := base_vars.GetByStr("数値２"); ok {
+		t.Error("Can get Number[”数値２”] variable. but it should not exist")
+	}
+
+	t.Log(base_vars)
 
 	// compare length of
 	// if base_vars.Len() != CSVDB.CharaMap[1].
@@ -219,5 +224,39 @@ func TestUserVariableMarshal(t *testing.T) {
 	} else if v != 100 {
 		t.Errorf("unmarshaled value is different, expect %v, got %v", 100, v)
 		t.Logf("%#v", newUV)
+	}
+}
+
+func TestUserVariableForEach(t *testing.T) {
+	gamestate := NewGameState(CSVDB, Repo)
+
+	// Int
+	{
+		const expectLen = 3
+		keys := make([]string, 0, expectLen)
+		intparams := make([]IntParam, 0, expectLen)
+		gamestate.SystemData.ForEachIntParam(func(k string, v IntParam) {
+			keys = append(keys, k)
+			intparams = append(intparams, v)
+		})
+
+		if len(keys) != expectLen {
+			t.Errorf("different int param size, expect %v, got %v, keys %#v", expectLen, len(keys), keys)
+		}
+	}
+
+	// String
+	{
+		const expectLen = 1
+		keys := make([]string, 0, expectLen)
+		strparams := make([]StrParam, 0, expectLen)
+		gamestate.SystemData.ForEachStrParam(func(k string, v StrParam) {
+			keys = append(keys, k)
+			strparams = append(strparams, v)
+		})
+
+		if len(keys) != expectLen {
+			t.Errorf("different str param size, expect %v, got %v, keys %#v", expectLen, len(keys), keys)
+		}
 	}
 }

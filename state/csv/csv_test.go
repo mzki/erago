@@ -124,6 +124,41 @@ func TestBuiltinVariables(t *testing.T) {
 	}
 }
 
+func TestBuildVariables(t *testing.T) {
+	cm, err := newCsvManagerInited()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	intMap := cm.BuildIntUserVars(ScopeSystem)
+	intNames := []string{
+		BuiltinItemName,
+		BuiltinItemStockName,
+		"Number",
+	}
+	if len(intMap) != len(intNames) {
+		t.Errorf("different int usr variable size, expect %v, got %v", len(intNames), len(intMap))
+	}
+	for _, name := range intNames {
+		if _, ok := intMap[name]; !ok {
+			t.Errorf("Missing int system value: %v", name)
+		}
+	}
+
+	strMap := cm.BuildStrUserVars(ScopeSystem)
+	strNames := []string{
+		"Str",
+	}
+	if len(strMap) != len(strNames) {
+		t.Errorf("different str usr variable size, expect %v, got %v", len(strNames), len(strMap))
+	}
+	for _, name := range strNames {
+		if _, ok := strMap[name]; !ok {
+			t.Errorf("Missing str system value: %v", name)
+		}
+	}
+}
+
 func BenchmarkNameIndexOf(b *testing.B) {
 	cm, err := newCsvManagerInited()
 	if err != nil {

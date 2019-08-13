@@ -77,7 +77,16 @@ layout.setLayout(
 
 -- data access
 
+era.printl ""
 assert(era.system)
+assert(era.system.Number)
+era.system.Number[0] = 10
+assert(era.system.Number[0] == 10)
+era.system.Number["数値１"] = 20
+assert(era.system.Number["数値１"] == 20)
+assert(era.system.Str)
+era.system.Str[0] = "ABC"
+assert(era.system.Str[0] == "ABC")
 assert(era.share)
 
 assert(era.csv.Train)
