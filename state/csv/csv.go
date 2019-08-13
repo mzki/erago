@@ -4,10 +4,8 @@
 package csv
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/mzki/erago/util/errutil"
@@ -258,7 +256,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 	// load builtin exceptional variables
 	{
-		names, prices, err := readItemAndPrice(
+		newConst, err := readConstantFile(
 			config.filepath(BuiltinItemName+".csv"),
 			cm.readIntBuffer,
 			cm.readStringBuffer,
@@ -266,14 +264,18 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 		if err != nil {
 			return fmt.Errorf("csv: can not be initialized: %v", err)
 		}
+		if !newConst.CustomFields.Has(HeaderFieldItemPrice) {
+			return fmt.Errorf("csv: can not be initialized: %s.csv must have `%s` field, but not exist", BuiltinItemName, HeaderFieldItemPrice)
+		}
 
 		// TODO Remove struct Field Item and ItemPrices?
-		cm.Item = Constant{Names: names, NameIndex: newNameIndex(names)}
-		cm.ItemPrices = prices
+		cm.Item = *newConst
+		cm.ItemPrices = newConst.CustomFields.MustNumbers(HeaderFieldItemPrice).data
 
 		// Publish as Constant so that it is used in
 		// the same mannar as the other variables.
-		cm.constants[BuiltinItemName] = cm.Item
+		// cm.constants[BuiltinItemName] = cm.Item
+		cm.constants[BuiltinItemName] = *newConst
 	}
 
 	// fit variable size by Constant.Names one.
@@ -319,7 +321,7 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 		constant, has := cm.constants[fname]
 		if !has {
 			// load new csv file
-			names, err := readNames(
+			newConst, err := readConstantFile(
 				cm.config.filepath(fname),
 				cm.readIntBuffer,
 				cm.readStringBuffer,
@@ -327,10 +329,7 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 			if err != nil {
 				return err
 			}
-			constant = Constant{
-				Names:     names,
-				NameIndex: newNameIndex(names),
-			}
+			constant = *newConst
 		}
 		// register Names and its indexes.
 		varname := vs.VarName
@@ -349,58 +348,6 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 		}
 	}
 	return nil
-}
-
-// Item and ItemPrice are exceptions.
-// So treat as special.
-//
-// It return ItemNames, ItemPrices and error.
-func readItemAndPrice(file string, intBuffer []int, strBuffer []string) (Names, []int64, error) {
-	intBuffer = intBuffer[:0]
-	strBuffer = strBuffer[:0]
-	priceBuffer := make([]int64, 0, 200)
-
-	var max_index int
-	err := ReadFileFunc(file, func(record []string) error {
-		if len(record) < 3 {
-			return fmt.Errorf("csv require 3 field but: %v", record)
-		}
-
-		index, err := strconv.Atoi(record[0])
-		if err != nil {
-			return err
-		}
-
-		name := record[1]
-		if len(name) == 0 {
-			return errors.New("value name must not be empty")
-		}
-
-		price, err := strconv.ParseInt(record[2], 0, 64)
-		if err != nil {
-			return err
-		}
-
-		intBuffer = append(intBuffer, index)
-		strBuffer = append(strBuffer, name)
-		priceBuffer = append(priceBuffer, price)
-
-		if index > max_index {
-			max_index = index
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	names := newNames(max_index + 1)
-	prices := make([]int64, max_index+1)
-	for i, index := range intBuffer {
-		names[index] = strBuffer[i]
-		prices[index] = priceBuffer[i]
-	}
-	return names, prices, err
 }
 
 // read all csv characters files matched to given pattern.

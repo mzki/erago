@@ -33,11 +33,15 @@ type Constant struct {
 }
 
 const (
-	csvHeaderFieldID   = "id"
-	csvHeaderFieldName = "name"
+	HeaderFieldID   = "id"
+	HeaderFieldName = "name"
 
-	headerFieldPrefixNum = "num_"
-	headerFieldPrefixStr = "str_"
+	HeaderFieldPrefixNum = "num_"
+	HeaderFieldPrefixStr = "str_"
+
+	// exceptional custom field which must exist on Item constant
+	// after successful of the csv initialization.
+	HeaderFieldItemPrice = "price"
 )
 
 // read CSV file that defines names and custom fields for each variable,
@@ -67,10 +71,17 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 		return nil, fmt.Errorf("can not parse header: %v", err)
 	}
 
-	if headers[0] != csvHeaderFieldID || headers[1] != csvHeaderFieldName {
-		return nil, fmt.Errorf("header fields should starts with %s, %s, but %s, %s",
-			csvHeaderFieldID, csvHeaderFieldName, headers[0], headers[1])
+	if len(headers) < 2 {
+		return nil, fmt.Errorf("header fields should starts with \"%s, %s\", but %#v",
+			HeaderFieldID, HeaderFieldName, headers)
 	}
+	if headers[0] != HeaderFieldID || headers[1] != HeaderFieldName {
+		return nil, fmt.Errorf("header fields should starts with \"%s, %s\", but \"%s, %s\"",
+			HeaderFieldID, HeaderFieldName, headers[0], headers[1])
+	}
+
+	// offset for starting custom fields. 2 elements must exist here from above
+	const customOffset = 2
 
 	type parsedKey struct {
 		name string
@@ -78,18 +89,18 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 	}
 	headerTypes := make([]parsedKey, 0, len(headers))
 
-	for _, h := range headers[2:] {
+	for _, h := range headers[customOffset:] {
 		var dtype CustomFieldType
 		var name string
-		if prefix := headerFieldPrefixNum; strings.HasPrefix(h, prefix) {
+		if prefix := HeaderFieldPrefixNum; strings.HasPrefix(h, prefix) {
 			dtype = CFIntType
 			name = strings.TrimPrefix(h, prefix)
-		} else if prefix := headerFieldPrefixStr; strings.HasPrefix(h, prefix) {
+		} else if prefix := HeaderFieldPrefixStr; strings.HasPrefix(h, prefix) {
 			dtype = CFStrType
 			name = strings.TrimPrefix(h, prefix)
 		} else {
 			return nil, fmt.Errorf("custom header name should starts with either of `%s` or `%s`, but got `%s`",
-				headerFieldPrefixNum, headerFieldPrefixStr, h)
+				HeaderFieldPrefixNum, HeaderFieldPrefixStr, h)
 		}
 
 		if len(name) == 0 {
@@ -110,9 +121,9 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 		} else if h.typ == CFStrType {
 			customBuffers = append(customBuffers, make([]string, 0, len(strBuffer)))
 		} else {
+			// else case should not be occurred since such case is terminated by constructing headerTypes.
 			panic("should not occur")
 		}
-		// else case should not be occurd since such case is terminated by constructing headerTypes.
 	}
 
 	// reset buffer size
@@ -123,12 +134,12 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 
 	// parse content
 	for record, err := reader.Read(); err != io.EOF; record, err = reader.Read() {
-		// parse error occured
+		// parse error occurred
 		if err != nil {
 			return nil, err
 		}
-		if len(record) < len(headerTypes) {
-			return nil, fmt.Errorf("missing custom field values, expect %v fields but got %v fields, %v", len(headerTypes), len(record), record)
+		if gotCustomLen := len(record) - customOffset; gotCustomLen < len(headerTypes) {
+			return nil, fmt.Errorf("missing custom field values, expect %v fields but got %v fields, %#v", len(headerTypes), gotCustomLen, record)
 		}
 
 		index := getAsInt(record, 0)
@@ -138,8 +149,9 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 		strBuffer = append(strBuffer, key)
 
 		// parsing CustomFields
-		const customOffset = 2
-		for i, field := range record[customOffset:] {
+		customFields := record[customOffset : customOffset+len(headerTypes)]
+
+		for i, field := range customFields {
 			if h := headerTypes[i]; h.typ == CFIntType {
 				cbuf := customBuffers[i].([]int64)
 				val, err := strconv.ParseInt(field, 0, 64)
