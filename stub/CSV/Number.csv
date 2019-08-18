@@ -1,2 +1,2 @@
-id,name
-0,数値１
+id,name,str_desc
+0,数値１,こんにちは

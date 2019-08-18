@@ -119,6 +119,21 @@ func TestBuiltinVariables(t *testing.T) {
 	}
 }
 
+func TestBuiltinCustomFieldsExist(t *testing.T) {
+	csv, err := newCsvManagerInited()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Item := csv.constants["Item"]
+	if !Item.CustomFields.Has(HeaderFieldItemPrice) {
+		t.Error("Item.price is not parsed. See Item.csv to check that existance.")
+	}
+	if got := Item.CustomFields.TypeOf(HeaderFieldItemPrice); got != CFIntType {
+		t.Errorf("Item.price type is invalid. expect int(%v), got %v", CFIntType, got)
+	}
+}
+
 func TestBuildVariables(t *testing.T) {
 	cm, err := newCsvManagerInited()
 	if err != nil {

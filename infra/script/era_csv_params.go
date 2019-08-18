@@ -1,15 +1,18 @@
 package script
 
 import (
-	"github.com/yuin/gopher-lua"
-
 	"github.com/mzki/erago/state"
 	"github.com/mzki/erago/state/csv"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const (
-	csvModuleName      = "csv"
-	csvIndexModuleName = "csvindex"
+	csvModuleName       = "csv"
+	csvFieldsModuleName = "csvfields"
+	csvIndexModuleName  = "csvindex"
+
+	csvFieldsNumbersMetaName = csvIndexModuleName + ".numbers"
+	csvFieldsStringsMetaName = csvIndexModuleName + ".strings"
 
 	csvItemPriceMetaName = "item_price"
 )
@@ -88,6 +91,25 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 			csv_index_module.RawSetString(key, ud)
 		}
 	}
+
+	{ // register csv fields
+		registerCsvFieldsMeta(L) // must be first
+
+		csv_fields_module := L.NewTable()
+		L.SetMetatable(csv_fields_module, getStrictTableMetatable(L))
+		era_module.RawSetString(csvFieldsModuleName, csv_fields_module)
+
+		// register csv index deifined by user.
+		csv_fields_meta := newMetatable(L, csvFieldsModuleName, map[string]lua.LValue{
+			"__index":     L.NewFunction(csvFieldsMetaIndex),
+			"__len":       LLenFunction,
+			"__metatable": metaProtectObj,
+		})
+		for key, c := range CSV.Constants() {
+			ud := newUserDataWithMt(L, c.CustomFields, csv_fields_meta)
+			csv_fields_module.RawSetString(key, ud)
+		}
+	}
 }
 
 // TODO use struct with debug information, varname.
@@ -143,5 +165,96 @@ func csvIndexMetaIndex(L *lua.LState) int {
 		L.ArgError(2, key+" is not found")
 	}
 	L.Push(lua.LNumber(index))
+	return 1
+}
+
+// // csv fields
+
+func registerCsvFieldsMeta(L *lua.LState) {
+	if lv := L.GetTypeMetatable(csvFieldsNumbersMetaName); lua.LVAsBool(lv) {
+		return // already exists
+	}
+
+	LLenFunction := L.NewFunction(lenScalable)
+
+	// Numbers
+	_ = newMetatable(L, csvFieldsNumbersMetaName, map[string]lua.LValue{
+		"__index":     L.NewFunction(csvNumbersMetaIndex),
+		"__len":       LLenFunction,
+		"__metatable": metaProtectObj,
+	})
+	// Strings
+	_ = newMetatable(L, csvFieldsStringsMetaName, map[string]lua.LValue{
+		"__index":     L.NewFunction(csvStringsMetaIndex),
+		"__len":       LLenFunction,
+		"__metatable": metaProtectObj,
+	})
+}
+
+func checkCsvFields(L *lua.LState, pos int) csv.CustomFields {
+	ud := L.CheckUserData(pos)
+	if cf, ok := ud.Value.(csv.CustomFields); ok {
+		return cf
+	}
+	L.ArgError(pos, "require csvfields.* object")
+	return csv.CustomFields{}
+}
+
+func csvFieldsMetaIndex(L *lua.LState) int {
+	cf := checkCsvFields(L, 1)
+	key := L.CheckString(2)
+
+	switch cf.TypeOf(key) {
+	case csv.CFIntType:
+		nums := cf.MustNumbers(key)
+		ud := newUserDataWithMt(L, nums, L.GetTypeMetatable(csvFieldsNumbersMetaName))
+		L.Push(ud)
+		return 1
+	case csv.CFStrType:
+		strs := cf.MustStrings(key)
+		ud := newUserDataWithMt(L, strs, L.GetTypeMetatable(csvFieldsStringsMetaName))
+		L.Push(ud)
+		return 1
+	default:
+		L.ArgError(2, key+" is not found in csv fields")
+		return 0
+	}
+}
+
+func checkCsvNumbers(L *lua.LState, pos int) *csv.Numbers {
+	ud := L.CheckUserData(pos)
+	if nums, ok := ud.Value.(*csv.Numbers); ok {
+		return nums
+	}
+	L.ArgError(pos, "require csvfields.numbers object")
+	return nil
+}
+
+func checkCsvStrings(L *lua.LState, pos int) *csv.Strings {
+	ud := L.CheckUserData(pos)
+	if strs, ok := ud.Value.(*csv.Strings); ok {
+		return strs
+	}
+	L.ArgError(pos, "require csvfields.numbers object")
+	return nil
+}
+
+func csvNumbersMetaIndex(L *lua.LState) int {
+	nums := checkCsvNumbers(L, 1)
+	i := L.CheckInt(2)
+	if i < 0 || i >= nums.Len() {
+		L.ArgError(2, "index out of bounds")
+	}
+	L.Push(lua.LNumber(nums.Get(i)))
+	return 1
+}
+
+func csvStringsMetaIndex(L *lua.LState) int {
+	strs := checkCsvStrings(L, 1)
+	i := L.CheckInt(2)
+	if i < 0 || i >= strs.Len() {
+		L.ArgError(2, "index out of bounds")
+	}
+	L.Push(lua.LString(strs.Get(i)))
 	return 1
 }
