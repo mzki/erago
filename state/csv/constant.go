@@ -36,7 +36,7 @@ const (
 	HeaderFieldID   = "id"
 	HeaderFieldName = "name"
 
-	HeaderFieldPrefixNum = "num_"
+	HeaderFieldPrefixInt = "int_"
 	HeaderFieldPrefixStr = "str_"
 
 	// exceptional custom field which must exist on Item constant
@@ -92,7 +92,7 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 	for _, h := range headers[customOffset:] {
 		var dtype CustomFieldType
 		var name string
-		if prefix := HeaderFieldPrefixNum; strings.HasPrefix(h, prefix) {
+		if prefix := HeaderFieldPrefixInt; strings.HasPrefix(h, prefix) {
 			dtype = CFIntType
 			name = strings.TrimPrefix(h, prefix)
 		} else if prefix := HeaderFieldPrefixStr; strings.HasPrefix(h, prefix) {
@@ -100,7 +100,7 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 			name = strings.TrimPrefix(h, prefix)
 		} else {
 			return nil, fmt.Errorf("custom header name should starts with either of `%s` or `%s`, but got `%s`",
-				HeaderFieldPrefixNum, HeaderFieldPrefixStr, h)
+				HeaderFieldPrefixInt, HeaderFieldPrefixStr, h)
 		}
 
 		if len(name) == 0 {
@@ -190,7 +190,7 @@ func readConstant(ioreader io.Reader, intBuffer []int, strBuffer []string) (*Con
 			for i, index := range intBuffer {
 				nums[index] = numBuf[i]
 			}
-			customFields[h.name] = &Numbers{nums}
+			customFields[h.name] = &Ints{nums}
 		} else if h.typ == CFStrType {
 			strs := newNames(len(names))
 			strBuf := customBuffers[i].([]string)
@@ -342,25 +342,25 @@ func keyPanic(key string) {
 	panic("csv: accessing with missing key(" + key + ")")
 }
 
-// MustNumbers returns csv constant with number type specified by the key.
+// MustInts returns csv constant with number type specified by the key.
 // If the constant is not a number type, it will panic.
-func (cf *CustomFields) MustNumbers(key string) *Numbers {
-	v, ok := cf.Numbers(key)
+func (cf *CustomFields) MustInts(key string) *Ints {
+	v, ok := cf.Ints(key)
 	if !ok {
 		keyPanic(key)
 	}
 	return v
 }
 
-// Numbers returns csv constant with number type specified by the key.
+// Ints returns csv constant with number type specified by the key.
 // If the constant is not a number type, it will returns false as 2nd return value.
-func (cf *CustomFields) Numbers(key string) (*Numbers, bool) {
+func (cf *CustomFields) Ints(key string) (*Ints, bool) {
 	v, ok := cf.slices[key]
 	if !ok {
 		return nil, false
 	}
 
-	if ns, vok := v.(*Numbers); vok {
+	if ns, vok := v.(*Ints); vok {
 		return ns, true
 	} else {
 		return nil, false
@@ -392,16 +392,16 @@ func (cf *CustomFields) Strings(key string) (*Strings, bool) {
 	}
 }
 
-// Numbers is the read-only int64 slice treated as a number type for csv constant
-type Numbers struct {
+// Ints is the read-only int64 slice treated as a number type for csv constant
+type Ints struct {
 	data []int64
 }
 
-func (*Numbers) customFieldType() CustomFieldType { return CFIntType }
+func (*Ints) customFieldType() CustomFieldType { return CFIntType }
 
-func (v *Numbers) Get(i int) int64 { return v.data[i] }
+func (v *Ints) Get(i int) int64 { return v.data[i] }
 
-func (v *Numbers) Len() int { return len(v.data) }
+func (v *Ints) Len() int { return len(v.data) }
 
 // Strings is the read-only string slice treated as a string type for csv constant
 type Strings struct {

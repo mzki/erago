@@ -13,7 +13,7 @@ func TestReadNames(t *testing.T) {
 }
 
 func TestReadConstant(t *testing.T) {
-	var constText = `id, name, num_value1, str_value2
+	var constText = `id, name, int_value1, str_value2
 0, fisrt, 10, 20
 1, second,20, 40
 10,third, 30, 60`
@@ -30,7 +30,7 @@ func TestReadConstant(t *testing.T) {
 	if got, expect := constant.NameIndex.GetIndex("second"), 1; got != expect {
 		t.Errorf("differenct nameindex, expect %v, got %v", expect, got)
 	}
-	if got, expect := constant.CustomFields.MustNumbers("value1").Get(1), int64(20); got != expect {
+	if got, expect := constant.CustomFields.MustInts("value1").Get(1), int64(20); got != expect {
 		t.Errorf("differenct customFieldValue, expect %v, got %v", expect, got)
 	}
 	if got, expect := constant.CustomFields.MustStrings("value2").Get(10), "60"; got != expect {

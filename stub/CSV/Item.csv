@@ -1,4 +1,4 @@
-id,name,num_price
+id,name,int_price
 
 0,ダミー,200,
 1,ダミー,5000,

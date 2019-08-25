@@ -270,7 +270,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 		// TODO Remove struct Field Item and ItemPrices?
 		cm.Item = *newConst
-		cm.ItemPrices = newConst.CustomFields.MustNumbers(HeaderFieldItemPrice).data
+		cm.ItemPrices = newConst.CustomFields.MustInts(HeaderFieldItemPrice).data
 
 		// Publish as Constant so that it is used in
 		// the same mannar as the other variables.

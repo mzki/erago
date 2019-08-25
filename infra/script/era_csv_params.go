@@ -206,7 +206,7 @@ func csvFieldsMetaIndex(L *lua.LState) int {
 
 	switch cf.TypeOf(key) {
 	case csv.CFIntType:
-		nums := cf.MustNumbers(key)
+		nums := cf.MustInts(key)
 		ud := newUserDataWithMt(L, nums, L.GetTypeMetatable(csvFieldsNumbersMetaName))
 		L.Push(ud)
 		return 1
@@ -221,12 +221,12 @@ func csvFieldsMetaIndex(L *lua.LState) int {
 	}
 }
 
-func checkCsvNumbers(L *lua.LState, pos int) *csv.Numbers {
+func checkCsvInts(L *lua.LState, pos int) *csv.Ints {
 	ud := L.CheckUserData(pos)
-	if nums, ok := ud.Value.(*csv.Numbers); ok {
+	if nums, ok := ud.Value.(*csv.Ints); ok {
 		return nums
 	}
-	L.ArgError(pos, "require csvfields.numbers object")
+	L.ArgError(pos, "require "+csvFieldsNumbersMetaName+" object")
 	return nil
 }
 
@@ -235,12 +235,12 @@ func checkCsvStrings(L *lua.LState, pos int) *csv.Strings {
 	if strs, ok := ud.Value.(*csv.Strings); ok {
 		return strs
 	}
-	L.ArgError(pos, "require csvfields.numbers object")
+	L.ArgError(pos, "require "+csvFieldsStringsMetaName+" object")
 	return nil
 }
 
 func csvNumbersMetaIndex(L *lua.LState) int {
-	nums := checkCsvNumbers(L, 1)
+	nums := checkCsvInts(L, 1)
 	i := L.CheckInt(2)
 	if i < 0 || i >= nums.Len() {
 		L.ArgError(2, "index out of bounds")
