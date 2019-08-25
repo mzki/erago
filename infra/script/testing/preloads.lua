@@ -35,6 +35,8 @@ _ = time.format(now)
 _ = time.tostring(1*time.SECOND + 1*time.MILLISECOND + 1 *time.NANOSECOND)
 
 -- csv module
+-- DEPRECATED
+--[[
 local csv = require "csv"
 csv.readFunc("csvdata.csv", function(i, records) 
   if i == 1 then
@@ -43,6 +45,11 @@ csv.readFunc("csvdata.csv", function(i, records)
     assert(records[2] == "2")
   end
 end)
+--]]
+
+-- should fail.
+local ok = pcall(require, "csv")
+assert(not ok)
 
 -- constants
 assert(MAX_INTEGER)
