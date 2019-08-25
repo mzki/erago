@@ -9,12 +9,18 @@ import (
 	"github.com/mzki/erago/app"
 )
 
+var testFlagSet *flag.FlagSet
+
+func init() {
+	clearAllFlag()
+}
+
 func clearAllFlag() {
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	testFlagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 }
 
 func setFlag(name, value string) error {
-	return flag.CommandLine.Set(name, value)
+	return testFlagSet.Set(name, value)
 }
 
 func TestOverwriteFlag(t *testing.T) {
@@ -43,14 +49,14 @@ func TestOverwriteFlag(t *testing.T) {
 	for _, test := range testcases {
 		clearAllFlag()
 
-		parseFlags()
+		parseFlags(testFlagSet, []string{})
 		// set flag should be after flag.Parse()
 		if err := setFlag(test.FlagName, test.FlagValue); err != nil {
 			t.Fatal(err)
 		}
 
 		conf := loadConfigOrDefault()
-		overwriteConfigByFlag(conf)
+		overwriteConfigByFlag(conf, testFlagSet)
 
 		if ok := test.Equals(conf, test.FlagValue); !ok {
 			t.Errorf("flag %v: not overwritten by flag value, expect: %v, got: %v", test.FlagName, test.FlagValue, conf)

@@ -18,16 +18,18 @@ var (
 
 const Title = "erago"
 
+var flagSet = flag.CommandLine
+
 func main() {
 	// runtime.SetBlockProfileRate(1)
 	// go func() {
 	// 	log.Info(http.ListenAndServe("0.0.0.0:6060", nil))
 	// }()
 
-	mode, args := parseFlags()
+	mode, args := parseFlags(flagSet, os.Args[1:])
 
 	appConf := loadConfigOrDefault()
-	overwriteConfigByFlag(appConf)
+	overwriteConfigByFlag(appConf, flagSet)
 
 	switch mode {
 	case runMain:
@@ -62,23 +64,23 @@ const (
 	flagNameVersion = "version"
 )
 
-func parseFlags() (runningMode, []string) {
-	flag.Usage = printHelp
+func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
+	flags.Usage = printHelp
 
-	flag.StringVar(&LogFile, flagNameLogFile, LogFile, "`output-file` to write log. { stdout | stderr } is OK.")
-	flag.StringVar(&LogLevel, flagNameLogLevel, LogLevel, "`level` = { info | debug }.\n\t"+
+	flags.StringVar(&LogFile, flagNameLogFile, LogFile, "`output-file` to write log. { stdout | stderr } is OK.")
+	flags.StringVar(&LogLevel, flagNameLogLevel, LogLevel, "`level` = { info | debug }.\n\t"+
 		"info outputs information level log only, and debug also outputs debug level log.")
-	flag.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
-	flag.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
+	flags.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
+	flags.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
 
 	testing := false
-	flag.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+
+	flags.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+
 		" script files to test are required in the command-line arguments")
 
 	showVersion := false
-	flag.BoolVar(&showVersion, flagNameVersion, showVersion, "show version info and quit.")
+	flags.BoolVar(&showVersion, flagNameVersion, showVersion, "show version info and quit.")
 
-	flag.Parse()
+	flags.Parse(argv)
 
 	// show version and exit immediately
 	if showVersion {
@@ -88,7 +90,7 @@ func parseFlags() (runningMode, []string) {
 
 	// return running mode
 	if testing {
-		return runTest, flag.Args()
+		return runTest, flags.Args()
 	}
 	return runMain, nil
 }
@@ -104,11 +106,11 @@ func printHelp() {
   loaded from the file.
 
 `, progName, progName, app.ConfigFile)
-	flag.PrintDefaults()
+	flagSet.PrintDefaults()
 }
 
-func overwriteConfigByFlag(config *app.Config) {
-	flag.Visit(func(f *flag.Flag) {
+func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
+	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case flagNameLogFile:
 			config.LogFile = LogFile
