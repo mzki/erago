@@ -22,7 +22,6 @@ const (
 	// but its size is unstable.
 	BuiltinTrainName  = "Train"  // Scope CSV
 	BuiltinSourceName = "Source" // Scope CSV
-	BuiltinExName     = "Ex"     // Scope CSV
 
 	BuiltinParamName  = "Param"  // Scope Chara
 	BuiltinJuelName   = "Juel"   // Scope Chara

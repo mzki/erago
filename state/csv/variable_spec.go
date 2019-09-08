@@ -50,7 +50,6 @@ var builtinVSpecs = variableSpecs{
 	// CSV scope, dType is not used and not allocated.
 	BuiltinTrainName:  {scopeCSV, dTypeStr, BuiltinTrainName, BuiltinTrainName + ".csv", []int{0}},
 	BuiltinSourceName: {scopeCSV, dTypeInt, BuiltinSourceName, BuiltinSourceName + ".csv", []int{0}},
-	BuiltinExName:     {scopeCSV, dTypeInt, BuiltinExName, BuiltinExName + ".csv", []int{0}},
 
 	// Chara scope, to be used as character variable.
 	BuiltinParamName: {scopeChara, dTypeInt, BuiltinParamName, BuiltinParamName + ".csv", []int{0}},

@@ -80,8 +80,6 @@ func TestBuiltinVariables(t *testing.T) {
 	constNames := []string{
 		BuiltinTrainName,
 		BuiltinSourceName,
-		BuiltinExName,
-		// TODO BuiltinItemPriceName,; it's not string type, can't integrate Const map.
 	}
 	for _, name := range constNames {
 		if _, ok := constMap[name]; !ok {
