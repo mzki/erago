@@ -1,6 +1,8 @@
 package csv
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -164,5 +166,25 @@ func TestBuildVariables(t *testing.T) {
 		if _, ok := strMap[name]; !ok {
 			t.Errorf("Missing str system value: %v", name)
 		}
+	}
+}
+
+func TestDuplicateBuildinVariables(t *testing.T) {
+	VSPEC := fmt.Sprintf(`
+CSV,Int,%s, ,100
+System,Int,%s, ,100
+Share,Int,%s, ,100
+Chara,Int,%s, ,100
+`, BuiltinTrainName, BuiltinSourceName, BuiltinParamName, BuiltinJuelName)
+
+	reader := strings.NewReader(VSPEC)
+	all_specs, err := readVariableSpecs(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	notAppended := appendBuiltinVSpecs(all_specs)
+	if len(notAppended) == 0 {
+		t.Error("duplicate builtin but not detected")
 	}
 }

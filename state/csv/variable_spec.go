@@ -3,6 +3,8 @@ package csv
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -66,14 +68,21 @@ var builtinVSpecs = variableSpecs{
 }
 
 // read new specs of user variables from file, "VariableSpec.csv".
-func readVariableSpecs(fname string) (variableSpecs, error) {
-	vspecs := make(variableSpecs, len(builtinVSpecs)+16)
-
-	for k, v := range builtinVSpecs {
-		vspecs[k] = v
+func readVariableSpecsFile(fname string) (variableSpecs, error) {
+	fp, err := os.Open(fname)
+	if err != nil {
+		return nil, err
 	}
+	defer fp.Close()
 
-	err := ReadFileFunc(fname, func(record []string) error {
+	return readVariableSpecs(fp)
+}
+
+// read new specs of user variables from io.Reader
+func readVariableSpecs(r io.Reader) (variableSpecs, error) {
+	vspecs := make(variableSpecs, len(builtinVSpecs)+16) // 16 is arbitrary value
+
+	err := ReadFunc(r, func(record []string) error {
 		vs, err := parseVariableSpec(record)
 		if err != nil {
 			return err
@@ -87,6 +96,22 @@ func readVariableSpecs(fname string) (variableSpecs, error) {
 		return nil
 	})
 	return vspecs, err
+}
+
+// append builtin variablespecs into given vspec map.
+// Some buitin vspec are not appended if the variable name for these
+// already exist in the given vspec map.
+// It returns appended number of builtin variable spec and the maximum.
+func appendBuiltinVSpecs(vspecs variableSpecs) []string {
+	notApeendedKeys := make([]string, 0, 4)
+	for vname, v := range builtinVSpecs {
+		if _, has := vspecs[vname]; has {
+			notApeendedKeys = append(notApeendedKeys, vname)
+		} else {
+			vspecs[vname] = v
+		}
+	}
+	return notApeendedKeys
 }
 
 func parseVariableSpec(record []string) (variableSpec, error) {

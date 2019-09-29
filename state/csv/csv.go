@@ -241,11 +241,16 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 		var all_vspecs variableSpecs
 		var vspec_path = config.filepath(variableSpecFile)
 		if FileExists(vspec_path) {
-			if vs, err := readVariableSpecs(vspec_path); err != nil {
+			if vs, err := readVariableSpecsFile(vspec_path); err != nil {
 				return err
 			} else {
 				all_vspecs = vs
 			}
+		}
+		notAppended := appendBuiltinVSpecs(all_vspecs)
+		// NOTE: duplicated varnames with builtin's are not allowed.
+		if len(notAppended) > 0 {
+			return fmt.Errorf("Varname %v are preserved by builtin values. Rename it", notAppended)
 		}
 
 		if err := cm.initVariableSpecs(all_vspecs); err != nil {
