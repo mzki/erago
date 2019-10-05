@@ -31,6 +31,7 @@ const (
 	BuiltinExpName    = "Exp"    // Scope Chara
 
 	BuiltinItemStockName = "ItemStock" // Scope System
+	BuiltinMoneyName     = "Money"     // Scope System
 
 	// it shares csv defined Item-Names with but separated as variable data.
 	BuiltinItemName      = "Item"      // Scope System

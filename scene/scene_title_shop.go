@@ -210,9 +210,6 @@ func (bs *baseScene) inputLoop() error {
 // * SHOP SCENE
 type shopScene struct {
 	sceneCommon
-
-	// userShop is whether user shows shop items?
-	userShop bool
 }
 
 func newShopScene(sf *sceneFields) *shopScene {
@@ -234,10 +231,21 @@ const (
 	// +callback: handled = {{.Name}}(input_num)
 	// 入力番号input_numと共に呼ばれ、それに対する処理を行う。
 	// もし、何らかの処理を行った場合、この関数の戻り値としてtrueを
-	// 返してください。その場合、次のシーンの遷移先が決まっていれば、
-	// 遷移します。決まっていなければ、再び、選択肢の表示から繰り返します。
-	// 戻り値としてfalseを返した場合、ユーザーの入力待ちから繰り返します。
-	ScrShopUserMenuSelected = "shop_user_menu_selected"
+	// 返してください。tureを返した場合、次のシーンの遷移先の確認を行います。
+	// 次のシーンが決まっていれば遷移します。決まっていなければ、
+	// 再び、選択肢の表示から繰り返します。
+	// 戻り値としてfalseを返した場合、通常の購入処理を続行します。
+	ScrShopEventMenuSelected = "shop_event_menu_selected"
+
+	// +callback: done = {{.Name}}(buy_item_number)
+	// 購入処理の後に呼ばれます。購入に成功した場合、buy_item_number
+	// には正数が渡されます。失敗していた場合は、-1 が渡されます。
+	// 戻り値として true を返した場合、次のシーンの遷移先の確認を行います。
+	// 次のシーンが決まってなければ、再び、選択肢の表示から繰り返します。
+	// 戻り値として false を返した場合、ユーザー入力から繰り返します。
+	// この関数が定義されていない場合、戻り値 false を返した場合と同様に
+	// ユーザー入力から繰り返します。
+	ScrShopEventBuyItem = "shop_event_buy_item"
 )
 
 func (sc *shopScene) Next() (Scene, error) {
@@ -258,6 +266,10 @@ func (sc *shopScene) Next() (Scene, error) {
 			if moneyFormat := replaceText.MoneyFormat; len(moneyFormat) > 0 {
 				itemFormat = "[%d] %s (" + replaceText.MoneyFormat + ")"
 			}
+
+			money, _ := sc.State().SystemData.GetInt(csv.BuiltinMoneyName)
+			io.PrintL(fmt.Sprintf("Money: %d", money.Get(0)))
+			io.PrintLine(DefaultLineSymbol)
 			if err := sc.ShowItems(itemFormat); err != nil {
 				return nil, err
 			}
@@ -266,9 +278,9 @@ func (sc *shopScene) Next() (Scene, error) {
 			io.PrintL("")
 		}
 
-		sc.userShop = called
-
-		if err := sc.inputLoop(); err != nil {
+		// do input and action loop
+		err = sc.inputLoop()
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -283,19 +295,68 @@ func (sc *shopScene) inputLoop() error {
 			return err
 		}
 
-		// handle user input in script.
-		handled, err := sc.Script().cautionCallBoolArgInt(ScrShopUserMenuSelected, int64(input))
+		// handle user action for input
+
+		// firstly, handle user input in script
+		handled, err := sc.Script().maybeCallBoolArgInt(ScrShopEventMenuSelected, int64(input))
 		if handled || err != nil {
 			return err
 		}
 
-		// default item prints: [-1] 戻る
-		if !sc.userShop && input == -1 {
+		// default item prints: [-1] Back
+		if input == -1 {
 			s := sc.Scenes()
 			s.SetNext(s.Prev())
 			return nil
 		}
+
+		// default buy items
+		succeeded, err := sc.buyItem(input)
+		if succeeded || err != nil {
+			return err
+		}
 	}
+}
+
+func (sc *shopScene) buyItem(input int) (succeeded bool, err error) {
+	const int64max = (1 << 63) - 1
+	// these are builtin values, no error
+	State := sc.State()
+	itemStocks, _ := State.SystemData.GetInt(csv.BuiltinItemStockName)
+	item, _ := State.SystemData.GetInt(csv.BuiltinItemName)
+	money, _ := State.SystemData.GetInt(csv.BuiltinMoneyName)
+
+	// call buy item event at end of sequence.
+	// argument of the event is changed to positive after buy item is succeeded
+	var eventInput int64 = -1
+	defer func() {
+		succeeded, err = sc.Script().maybeCallBoolArgInt(ScrShopEventBuyItem, eventInput)
+	}()
+
+	if input < 0 || input >= itemStocks.Len() {
+		return
+	}
+	if itemStocks.Get(input) <= 0 {
+		return
+	}
+	if item.Get(input) >= int64max {
+		return
+	}
+
+	CSV := sc.State().CSV
+	itemPrices := CSV.ItemPrices
+
+	var afterBoughtMoney int64 = money.Get(0) - itemPrices[input]
+	if afterBoughtMoney < 0 {
+		return
+	}
+
+	// buying item is available
+	eventInput = int64(input)
+	money.Set(0, afterBoughtMoney)
+	item.Set(input, item.Get(input)+1)
+
+	return
 }
 
 const DefaultShowItemFormat = "[%d] %s ($%d)"

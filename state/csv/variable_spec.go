@@ -65,6 +65,9 @@ var builtinVSpecs = variableSpecs{
 	// System scope, to be used as global variable.
 	BuiltinItemName:      {scopeSystem, dTypeInt, BuiltinItemName, BuiltinItemName + ".csv", []int{0}},
 	BuiltinItemStockName: {scopeSystem, dTypeInt, BuiltinItemStockName, BuiltinItemName + ".csv", []int{0}},
+
+	// System scope, with no csv
+	BuiltinMoneyName: {scopeSystem, dTypeInt, BuiltinMoneyName, "", []int{1}},
 }
 
 // read new specs of user variables from file, "VariableSpec.csv".

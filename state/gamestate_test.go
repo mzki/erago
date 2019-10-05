@@ -232,7 +232,7 @@ func TestUserVariableForEach(t *testing.T) {
 
 	// Int
 	{
-		const expectLen = 3
+		const expectLen = 4
 		keys := make([]string, 0, expectLen)
 		intparams := make([]IntParam, 0, expectLen)
 		gamestate.SystemData.ForEachIntParam(func(k string, v IntParam) {

@@ -96,6 +96,7 @@ func TestBuiltinVariables(t *testing.T) {
 	intNames := []string{
 		BuiltinItemName,
 		BuiltinItemStockName,
+		BuiltinMoneyName,
 	}
 	for _, name := range intNames {
 		if _, ok := intMap[name]; !ok {
@@ -144,6 +145,7 @@ func TestBuildVariables(t *testing.T) {
 	intNames := []string{
 		BuiltinItemName,
 		BuiltinItemStockName,
+		BuiltinMoneyName,
 		"Number",
 	}
 	if len(intMap) != len(intNames) {
