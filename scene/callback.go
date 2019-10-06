@@ -107,5 +107,5 @@ func (cb callBacker) cautionCallBoolArgInt(fn_name string, arg int64) (bool, err
 }
 
 func (cb callBacker) printCaution(fn_name string) error {
-	return cb.io.PrintW("era." + fn_name + "を定義してください")
+	return cb.io.PrintW("era." + fn_name + " is not found.")
 }
