@@ -23,6 +23,8 @@ type Interpreter struct {
 	state *state.GameState
 	game  GameController
 
+	customLoaders *customLoaders
+
 	config Config
 }
 
@@ -37,10 +39,11 @@ func NewInterpreter(s *state.GameState, g GameController, config Config) *Interp
 	})
 
 	ip := &Interpreter{
-		vm:     vm,
-		state:  s,
-		game:   g,
-		config: config,
+		vm:            vm,
+		state:         s,
+		game:          g,
+		customLoaders: newCustomLoaders(),
+		config:        config,
 	}
 	ip.init()
 	return ip
@@ -97,6 +100,11 @@ func (ip *Interpreter) init() {
 	reg_path := filepath.Join(ip.config.LoadDir, "?.lua")
 	L.SetField(L.GetGlobal("package"), "path", lua.LString(reg_path))
 
+	// register custom loader
+	if err := ip.customLoaders.Register(L); err != nil {
+		panic(err) // it never occurs
+	}
+
 	ip.config.register(L)
 }
 
@@ -108,7 +116,9 @@ func (ip Interpreter) SetContext(ctx context.Context) {
 
 // Quit quits virtual machine in Interpreter.
 // use it for releasing resources.
-func (ip Interpreter) Quit() {
+func (ip *Interpreter) Quit() {
+	ip.customLoaders.RemoveAll()
+	ip.customLoaders.Unregister(ip.vm)
 	ip.vm.Close()
 	ip.game = nil
 	ip.state = nil
