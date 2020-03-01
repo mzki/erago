@@ -2,10 +2,10 @@ package toml
 
 import (
 	"io"
-	"os"
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/log"
 )
 
@@ -17,7 +17,7 @@ func Encode(w io.Writer, data interface{}) error {
 
 // encode data to file.
 func EncodeFile(file string, data interface{}) error {
-	fp, err := os.Create(file)
+	fp, err := filesystem.Store(file)
 	if err != nil {
 		return err
 	}
@@ -36,9 +36,10 @@ func Decode(r io.Reader, data interface{}) error {
 
 // decode from file and store it to data.
 func DecodeFile(file string, data interface{}) error {
-	meta, err := toml.DecodeFile(file, data)
-	if undecoded := meta.Undecoded(); undecoded != nil && len(undecoded) > 0 {
-		log.Infoln("toml.DecodeFile:", "undecoded keys exist,", undecoded)
+	fp, err := filesystem.Load(file)
+	if err != nil {
+		return err
 	}
-	return err
+	defer fp.Close()
+	return Decode(fp, data)
 }

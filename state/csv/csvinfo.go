@@ -2,9 +2,10 @@ package csv
 
 import (
 	"fmt"
-	"github.com/mzki/erago/util"
 	"strconv"
 	"strings"
+
+	"github.com/mzki/erago/filesystem"
 )
 
 // Number constants excepted from CSV names.
@@ -63,7 +64,7 @@ func newGameBase(file string) (*GameBase, error) {
 	gb := &GameBase{}
 
 	// not found, then return empty.
-	if ok := util.FileExists(file); !ok {
+	if ok := filesystem.Exist(file); !ok {
 		return gb, nil
 	}
 

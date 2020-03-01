@@ -3,9 +3,10 @@ package csv
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/mzki/erago/filesystem"
 )
 
 // It converts field specified by column i to int number and returns the number.
@@ -47,7 +48,7 @@ const (
 // read CSV file that defines names and custom fields for each variable,
 // return constant or error when read failed.
 func readConstantFile(file string, intBuffer []int, strBuffer []string) (*Constant, error) {
-	fp, err := os.Open(file)
+	fp, err := filesystem.Load(file)
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,11 @@
 package csv
 
 import (
-	"github.com/mzki/erago/util"
+	"github.com/mzki/erago/filesystem"
 )
 
-// check whether file exists. It wraps util.FileExists()
-// so that user need not to import util package explicitly.
+// check whether file exists. It wraps filesystem.Exist()
+// so that user need not to import filesystem package explicitly.
 func FileExists(file string) bool {
-	return util.FileExists(file)
+	return filesystem.Exist(file)
 }

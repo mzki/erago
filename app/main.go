@@ -19,6 +19,7 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/log"
 	customTheme "github.com/mzki/erago/view/exp/theme"
 	"github.com/mzki/erago/view/exp/ui"
@@ -69,7 +70,7 @@ func setLogConfig(appConf *Config) (func(), error) {
 		writer = os.Stderr
 	default:
 		dstString = logfile
-		fp, err := os.Create(logfile)
+		fp, err := filesystem.Store(logfile)
 		if err != nil {
 			return nil, err
 		}

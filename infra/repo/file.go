@@ -6,11 +6,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/ugorji/go/codec"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/state"
 	"github.com/mzki/erago/state/csv"
 	"github.com/mzki/erago/util"
@@ -26,11 +25,6 @@ const (
 
 func defaultFileOf(No int) string {
 	return defaultSavePrefix + fmt.Sprintf("%02d", No) + defaultSaveExt
-}
-
-// make directory of given path. if exist do nothing.
-func mkdirPath(path string) error {
-	return os.MkdirAll(filepath.Dir(path), 0755)
 }
 
 // implements local/erago/state.Repository
@@ -61,10 +55,7 @@ func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, gs *stat
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
-	if err := mkdirPath(path); err != nil {
-		return err
-	}
-	fp, err := os.Create(path)
+	fp, err := filesystem.Store(path)
 	if err != nil {
 		return err
 	}
@@ -86,7 +77,7 @@ func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, gs *stat
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
-	fp, err := os.Open(path)
+	fp, err := filesystem.Load(path)
 	if err != nil {
 		return err
 	}
@@ -108,10 +99,7 @@ func (repo *FileRepository) SaveShareData(ctx context.Context, gs *state.GameSta
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
-	if err := mkdirPath(path); err != nil {
-		return err
-	}
-	fp, err := os.Create(path)
+	fp, err := filesystem.Store(path)
 	if err != nil {
 		return err
 	}
@@ -129,7 +117,7 @@ func (repo *FileRepository) LoadShareData(ctx context.Context, gs *state.GameSta
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
-	fp, err := os.Open(path)
+	fp, err := filesystem.Load(path)
 	if err != nil {
 		return err
 	}
@@ -161,7 +149,7 @@ func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*st
 
 // Load only metadata by file path
 func loadMetaData(path string, expectMeta state.MetaData) (*state.MetaData, error) {
-	fp, err := os.Open(path)
+	fp, err := filesystem.Load(path)
 	if err != nil {
 		return nil, err
 	}

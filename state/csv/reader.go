@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strings"
+
+	"github.com/mzki/erago/filesystem"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 // Each records in the csv file processed by the user function.
 // It returns error with at which line occurs.
 func ReadFileFunc(file string, f func([]string) error) error {
-	fp, err := os.Open(file)
+	fp, err := filesystem.Load(file)
 	if err != nil {
 		return err
 	}

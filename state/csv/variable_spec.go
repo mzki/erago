@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/errutil"
 )
 
@@ -72,7 +72,7 @@ var builtinVSpecs = variableSpecs{
 
 // read new specs of user variables from file, "VariableSpec.csv".
 func readVariableSpecsFile(fname string) (variableSpecs, error) {
-	fp, err := os.Open(fname)
+	fp, err := filesystem.Load(fname)
 	if err != nil {
 		return nil, err
 	}

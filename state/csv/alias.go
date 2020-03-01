@@ -1,6 +1,8 @@
 package csv
 
-import "errors"
+import (
+	"errors"
+)
 
 // alias descrilbs as like;
 //	# Alias, Original
