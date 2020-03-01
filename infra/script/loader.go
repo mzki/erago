@@ -3,7 +3,7 @@ package script
 import (
 	"fmt"
 
-	"github.com/mzki/erago/infra/loader"
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/errutil"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -11,14 +11,14 @@ import (
 // CustomLoaders holds platform depended file loaders which is used by package.loader
 // to search module name and import additional script into the interpreter environtment.
 type customLoaders struct {
-	loaders map[loader.Loader]struct{}
+	loaders map[filesystem.Loader]struct{}
 
 	registry map[*lua.LState]*lua.LFunction
 }
 
 func newCustomLoaders() *customLoaders {
 	return &customLoaders{
-		loaders:  make(map[loader.Loader]struct{}, 4),
+		loaders:  make(map[filesystem.Loader]struct{}, 4),
 		registry: make(map[*lua.LState]*lua.LFunction),
 	}
 }
@@ -113,11 +113,11 @@ func (ldrs *customLoaders) Unregister(L *lua.LState) {
 	panic("never reached")
 }
 
-func (ldrs *customLoaders) Add(ld loader.Loader) {
+func (ldrs *customLoaders) Add(ld filesystem.Loader) {
 	ldrs.loaders[ld] = struct{}{}
 }
 
-func (ldrs *customLoaders) Remove(ld loader.Loader) {
+func (ldrs *customLoaders) Remove(ld filesystem.Loader) {
 	delete(ldrs.loaders, ld)
 }
 
@@ -129,10 +129,10 @@ func (ldrs *customLoaders) RemoveAll() {
 
 // -- Interprer APIs
 
-func (ip *Interpreter) AddCustomLoader(ld loader.Loader) {
+func (ip *Interpreter) AddCustomLoader(ld filesystem.Loader) {
 	ip.customLoaders.Add(ld)
 }
 
-func (ip *Interpreter) RemoveCustomLoader(ld loader.Loader) {
+func (ip *Interpreter) RemoveCustomLoader(ld filesystem.Loader) {
 	ip.customLoaders.Remove(ld)
 }

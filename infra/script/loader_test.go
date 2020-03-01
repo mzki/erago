@@ -52,6 +52,10 @@ func (m *MockLoader) Load(modname string) (io.ReadCloser, error) {
 	return &m.Reader, nil
 }
 
+func (m *MockLoader) Exist(modname string) bool {
+	return true
+}
+
 func TestCallCustomLoader(t *testing.T) {
 	const requirePath = "must/not/be/present"
 	mockLoader := &MockLoader{}

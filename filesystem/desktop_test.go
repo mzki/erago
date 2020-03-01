@@ -1,4 +1,4 @@
-package loader
+package filesystem
 
 import (
 	"io"
@@ -7,8 +7,10 @@ import (
 	"testing"
 )
 
+const OSLoadSource = "desktop_test.go"
+
 func TestOSLoader(t *testing.T) {
-	reader, err := OS.Load("loader_test.go")
+	reader, err := Desktop.Load(OSLoadSource)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,14 +21,14 @@ func TestOSLoader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !strings.HasPrefix(string(content), "package loader") {
+	if !strings.HasPrefix(string(content), "package filesystem") {
 		t.Errorf("can not read first line of this file")
 	}
 }
 
 func TestOSLoaderSizeExceed(t *testing.T) {
-	osldr := &OSLoader{MaxFileSize: 10}
-	reader, err := osldr.Load("loader_test.go")
+	osldr := &OSFileSystem{MaxFileSize: 10}
+	reader, err := osldr.Load(OSLoadSource)
 	if err == nil {
 		reader.Close()
 		t.Fatalf("with max file size 10 byte, but loader reports no error")
