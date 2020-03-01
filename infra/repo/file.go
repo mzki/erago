@@ -12,7 +12,6 @@ import (
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/state"
 	"github.com/mzki/erago/state/csv"
-	"github.com/mzki/erago/util"
 	"github.com/mzki/erago/util/errutil"
 )
 
@@ -47,7 +46,7 @@ func NewFileRepository(csvdb *csv.CsvManager, config Config) *FileRepository {
 func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
-	return util.FileExists(path)
+	return filesystem.Exist(path)
 }
 
 // save game system data to file.

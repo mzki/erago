@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/mzki/erago"
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/infra/serialize/toml"
-	"github.com/mzki/erago/util"
 )
 
 const (
@@ -70,7 +70,7 @@ var ErrDefaultConfigGenerated error = errors.New("default config generated")
 // if config file exists load it and return.
 // if not exists return default config and write it.
 func LoadConfigOrDefault(file string) (*Config, error) {
-	if !util.FileExists(file) {
+	if !filesystem.Exist(file) {
 		appConf := NewConfig(DefaultBaseDir)
 		// write default config
 		if err := toml.EncodeFile(file, appConf); err != nil {
