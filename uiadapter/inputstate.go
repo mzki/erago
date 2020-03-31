@@ -100,10 +100,6 @@ type inputIdling struct {
 
 func (s inputIdling) Type() inputStateType { return typeInputIdling }
 
-func (s inputIdling) Enter(p *inputPort) {
-	p.requestChanged(InputRequestNone)
-}
-
 func (s inputIdling) NextState(p *inputPort, ev interface{}) inputState {
 	switch ev := ev.(type) {
 	case input.Event:
@@ -129,7 +125,6 @@ type commandWaiting struct {
 func (s commandWaiting) Type() inputStateType { return typeCommandWaiting }
 
 func (s commandWaiting) Enter(p *inputPort) {
-	p.requestChanged(InputRequestCommand)
 	p.cbuf.Clear()
 }
 
@@ -162,7 +157,6 @@ type inputWaiting struct {
 func (s inputWaiting) Type() inputStateType { return typeInputWaiting }
 
 func (s inputWaiting) Enter(p *inputPort) {
-	p.requestChanged(InputRequestInput)
 	p.cbuf.Clear()
 }
 
@@ -195,7 +189,6 @@ type waitSkipping struct {
 }
 
 func (s waitSkipping) Enter(p *inputPort) {
-	p.requestChanged(InputRequestNone)
 	p.cbuf.Send("") // TODO: awake pending of command buffer by signal only?
 }
 
@@ -236,7 +229,6 @@ type rawInputWaiting struct {
 func (s rawInputWaiting) Type() inputStateType { return typeRawInputWaiting }
 
 func (s rawInputWaiting) Enter(p *inputPort) {
-	p.requestChanged(InputRequestRawInput)
 	p.cbuf.Clear()
 }
 

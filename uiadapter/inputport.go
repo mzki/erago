@@ -197,6 +197,9 @@ func (port *inputPort) WaitWithTimeout(ctx context.Context, timeout time.Duratio
 	port.ebuf.Send(internalEventStartInput.New())
 	defer port.ebuf.SendFirst(internalEventStopInput.New())
 
+	port.requestChanged(InputRequestInput)
+	defer port.requestChanged(InputRequestNone)
+
 	timeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -240,6 +243,9 @@ func (port *inputPort) CommandWithTimeout(ctx context.Context, timeout time.Dura
 
 	port.ebuf.Send(internalEventStartCommand.New())
 	defer port.ebuf.SendFirst(internalEventStopCommand.New())
+
+	port.requestChanged(InputRequestCommand)
+	defer port.requestChanged(InputRequestNone)
 
 	timeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -290,6 +296,9 @@ func (port *inputPort) CommandNumberWithTimeout(ctx context.Context, timeout tim
 	port.ebuf.Send(internalEventStartCommand.New())
 	defer port.ebuf.SendFirst(internalEventStopCommand.New())
 
+	port.requestChanged(InputRequestCommand)
+	defer port.requestChanged(InputRequestNone)
+
 	timeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -325,6 +334,9 @@ func (port *inputPort) RawInputWithTimeout(ctx context.Context, timeout time.Dur
 
 	port.ebuf.Send(internalEventStartRawInput)
 	defer port.ebuf.SendFirst(internalEventStopRawInput)
+
+	port.requestChanged(InputRequestRawInput)
+	defer port.requestChanged(InputRequestNone)
 
 	timeCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
