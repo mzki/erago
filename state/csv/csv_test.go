@@ -31,6 +31,19 @@ func TestCsvInit(t *testing.T) {
 	}
 }
 
+var invalidConfig = Config{
+	Dir:          "path/to/not/found/CSV",
+	CharaPattern: "Chara/Chara*",
+}
+
+func TestCsvInitInvalidConfig(t *testing.T) {
+	config := invalidConfig
+	csv := &CsvManager{}
+	if err := csv.Initialize(config); err == nil {
+		t.Fatalf("invalid config %v given, but no error!", config)
+	}
+}
+
 var (
 	ValidVSpecs = variableSpecs{
 		"Base": {scopeSystem, dTypeInt, "Base", "./../../stub/CSV/Base.csv", []int{100}},

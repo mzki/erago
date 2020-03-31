@@ -239,7 +239,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 	// load user specific variables.
 	{
-		var all_vspecs variableSpecs
+		var all_vspecs variableSpecs = make(variableSpecs)
 		var vspec_path = config.filepath(variableSpecFile)
 		if FileExists(vspec_path) {
 			if vs, err := readVariableSpecsFile(vspec_path); err != nil {
