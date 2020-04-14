@@ -51,6 +51,13 @@ type RequestObserver interface {
 	OnRequestChanged(InputRequestType)
 }
 
+type RequestObserverFunc func(InputRequestType)
+
+// implements RequestObserver interface.
+func (fn RequestObserverFunc) OnRequestChanged(typ InputRequestType) {
+	fn(typ)
+}
+
 // indicates requesting of current input.
 type InputRequestType int8
 

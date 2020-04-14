@@ -229,10 +229,12 @@ func TestWaitWithTimeout(t *testing.T) {
 	}
 
 	{
-		go func() {
-			time.Sleep(5 * time.Millisecond)
-			SendCommand(port, "")
-		}()
+		emptyCommandSender := RequestObserverFunc(func(typ InputRequestType) {
+			if typ == InputRequestInput {
+				SendCommand(port, "")
+			}
+		})
+		port.AddRequestObserver(emptyCommandSender)
 
 		if err := port.WaitWithTimeout(ctx, 10*time.Millisecond); err != nil {
 			t.Fatal(err)
