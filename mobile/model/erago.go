@@ -29,7 +29,7 @@ func Init(ui UI, baseDir string) error {
 	if err := game.Init(uiadapter.SingleUI{mobileUI}, erago.NewConfig(baseDir)); err != nil {
 		return err
 	}
-	game.AddRequestObserver(mobileUI)
+	game.RegisterRequestObserver(mobileUI)
 	initialized = true
 	return nil
 }
@@ -66,7 +66,7 @@ func Quit() {
 	initialized = false
 
 	if mobileUI != nil {
-		game.RemoveRequestObserver(mobileUI)
+		game.UnregisterRequestObserver(mobileUI)
 		mobileUI = nil
 	}
 	if game != nil {

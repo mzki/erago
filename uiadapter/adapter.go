@@ -23,10 +23,10 @@ func New(ui UI) *UIAdapter {
 type Sender interface {
 	// send input event to app.
 	Send(ev input.Event)
-	// set listener for changing input request type.
-	AddRequestObserver(RequestObserver)
-	// remove listener for changing input request type.
-	RemoveRequestObserver(RequestObserver)
+	// register listener for changing input request type.
+	RegisterRequestObserver(RequestObserver)
+	// unregister listener for changing input request type.
+	UnregisterRequestObserver(RequestObserver)
 	// short hand for Send(QuitEvent).
 	Quit()
 }

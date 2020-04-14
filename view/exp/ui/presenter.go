@@ -127,8 +127,8 @@ func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) bool 
 		}
 		defer p.game.Quit()
 
-		p.game.AddRequestObserver(p)
-		defer p.game.RemoveRequestObserver(p)
+		p.game.RegisterRequestObserver(p)
+		defer p.game.UnregisterRequestObserver(p)
 
 		// run game model's main.
 		if err := p.game.Main(); err != nil {

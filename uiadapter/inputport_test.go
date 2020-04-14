@@ -234,7 +234,7 @@ func TestWaitWithTimeout(t *testing.T) {
 				SendCommand(port, "")
 			}
 		})
-		port.AddRequestObserver(emptyCommandSender)
+		port.RegisterRequestObserver(emptyCommandSender)
 
 		if err := port.WaitWithTimeout(ctx, 10*time.Millisecond); err != nil {
 			t.Fatal(err)

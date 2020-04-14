@@ -76,12 +76,12 @@ const (
 )
 
 //  It can not use concurrently.
-func (port *inputPort) AddRequestObserver(o RequestObserver) {
+func (port *inputPort) RegisterRequestObserver(o RequestObserver) {
 	port.requestObservers = append(port.requestObservers, o)
 }
 
 //  It can not use concurrently.
-func (port *inputPort) RemoveRequestObserver(o RequestObserver) {
+func (port *inputPort) UnregisterRequestObserver(o RequestObserver) {
 	observers := port.requestObservers
 	for i, obs := range observers {
 		if obs == o {
