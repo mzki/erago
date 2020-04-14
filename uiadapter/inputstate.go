@@ -131,7 +131,7 @@ func (s commandWaiting) Enter(p *inputPort) {
 func (s commandWaiting) Exit(p *inputPort) {
 	p.cbuf.Clear()
 	if p.cbuf.MacroSize() == 0 {
-		p.ebuf.SendFirst(internalEventMacroDone)
+		p.sendInternalEventFirst(internalEventMacroDone.New())
 	}
 }
 

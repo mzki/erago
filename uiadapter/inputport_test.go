@@ -76,6 +76,20 @@ func TestInputState(t *testing.T) {
 	current = next
 
 	// current is commandWaiting
+	next = current.NextState(port, internalEventStopCommand.New())
+	if ntype, ctype := next.Type(), current.Type(); ntype == ctype || ntype != typeInputIdling {
+		t.Fatalf("next state must be inputIdling, next: %v, current: %v", ntype, ctype)
+	}
+	current = next
+
+	// current is inputIdling
+	next = current.NextState(port, internalEventStartRawInput.New())
+	if ntype, ctype := next.Type(), current.Type(); ntype == ctype || ntype != typeRawInputWaiting {
+		t.Fatalf("next state must be inputIdling, next: %v, current: %v", ntype, ctype)
+	}
+	current = next
+
+	// current is rawInputWaiting
 }
 
 func TestInputRecieve(t *testing.T) {

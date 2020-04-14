@@ -179,6 +179,16 @@ func (port *inputPort) Quit() {
 	port.ebuf.Send(input.NewEventQuit())
 }
 
+// helper function to send internal event with type check
+func (port *inputPort) sendInternalEvent(ev internalEvent) {
+	port.ebuf.Send(ev)
+}
+
+// helper function to send internal event first with type check
+func (port *inputPort) sendInternalEventFirst(ev internalEvent) {
+	port.ebuf.SendFirst(ev)
+}
+
 //
 // funcions for waiting user input.
 //
@@ -201,8 +211,8 @@ func (port *inputPort) WaitWithTimeout(ctx context.Context, timeout time.Duratio
 		return err
 	}
 
-	port.ebuf.Send(internalEventStartInput.New())
-	defer port.ebuf.SendFirst(internalEventStopInput.New())
+	port.sendInternalEvent(internalEventStartInput.New())
+	defer port.sendInternalEventFirst(internalEventStopInput.New())
 
 	port.requestChanged(InputRequestInput)
 	defer port.requestChanged(InputRequestNone)
@@ -248,8 +258,8 @@ func (port *inputPort) CommandWithTimeout(ctx context.Context, timeout time.Dura
 		return "", err
 	}
 
-	port.ebuf.Send(internalEventStartCommand.New())
-	defer port.ebuf.SendFirst(internalEventStopCommand.New())
+	port.sendInternalEvent(internalEventStartCommand.New())
+	defer port.sendInternalEventFirst(internalEventStopCommand.New())
 
 	port.requestChanged(InputRequestCommand)
 	defer port.requestChanged(InputRequestNone)
@@ -300,8 +310,8 @@ func (port *inputPort) CommandNumberWithTimeout(ctx context.Context, timeout tim
 		return 0, err
 	}
 
-	port.ebuf.Send(internalEventStartCommand.New())
-	defer port.ebuf.SendFirst(internalEventStopCommand.New())
+	port.sendInternalEvent(internalEventStartCommand.New())
+	defer port.sendInternalEventFirst(internalEventStopCommand.New())
 
 	port.requestChanged(InputRequestCommand)
 	defer port.requestChanged(InputRequestNone)
@@ -339,8 +349,8 @@ func (port *inputPort) RawInputWithTimeout(ctx context.Context, timeout time.Dur
 		return "", err
 	}
 
-	port.ebuf.Send(internalEventStartRawInput)
-	defer port.ebuf.SendFirst(internalEventStopRawInput)
+	port.sendInternalEvent(internalEventStartRawInput.New())
+	defer port.sendInternalEventFirst(internalEventStopRawInput.New())
 
 	port.requestChanged(InputRequestRawInput)
 	defer port.requestChanged(InputRequestNone)
