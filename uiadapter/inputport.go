@@ -27,7 +27,7 @@ type inputPort struct {
 	ebuf deque.EventDeque
 	cbuf *commandBuffer
 
-	requestObservers []RequestObserver
+	requestObservers [inputRequestTypeLen]RequestObserver
 
 	// this mutex controls the fields below.
 	mu     *sync.Mutex
@@ -63,7 +63,7 @@ type InputRequestType int8
 
 const (
 	// request is none.
-	InputRequestNone = iota
+	InputRequestNone InputRequestType = iota
 
 	// request command which is confirmed by user.
 	InputRequestCommand
@@ -73,29 +73,48 @@ const (
 
 	// request raw inputting such as pressed key by user.
 	InputRequestRawInput
+
+	// input request size
+	inputRequestTypeLen
 )
 
 //  It can not use concurrently.
-func (port *inputPort) RegisterRequestObserver(o RequestObserver) {
-	port.requestObservers = append(port.requestObservers, o)
+func (port *inputPort) RegisterRequestObserver(typ InputRequestType, o RequestObserver) {
+	if typ < InputRequestNone || typ >= inputRequestTypeLen {
+		panic("invalid input reqeust type")
+	}
+	port.requestObservers[typ] = o
 }
 
 //  It can not use concurrently.
-func (port *inputPort) UnregisterRequestObserver(o RequestObserver) {
-	observers := port.requestObservers
-	for i, obs := range observers {
-		if obs == o {
-			copy(observers[i:], observers[i+1:])
-			port.requestObservers = observers[:len(observers)-1]
-			return
-		}
+func (port *inputPort) UnregisterRequestObserver(typ InputRequestType) {
+	if typ < InputRequestNone || typ >= inputRequestTypeLen {
+		panic("invalid input reqeust type")
 	}
+	port.requestObservers[typ] = nil
 }
 
 //  It can not use concurrently.
 func (port *inputPort) requestChanged(typ InputRequestType) {
-	for _, obs := range port.requestObservers {
+	if obs := port.requestObservers[typ]; obs != nil {
 		obs.OnRequestChanged(typ)
+	}
+}
+
+// Helper function for register RequestObserver for all of InputRequestType.
+// The RequestObservers already registered are overwritten.
+func RegisterAllRequestObserver(sender Sender, o RequestObserver) {
+	for i := int(InputRequestNone); i < int(inputRequestTypeLen); i++ {
+		typ := InputRequestType(i)
+		sender.RegisterRequestObserver(typ, o)
+	}
+}
+
+// Helper function for unregister RequestObserver for all of InputRequestType.
+func UnregisterAllRequestObserver(sender Sender) {
+	for i := int(InputRequestNone); i < int(inputRequestTypeLen); i++ {
+		typ := InputRequestType(i)
+		sender.UnregisterRequestObserver(typ)
 	}
 }
 

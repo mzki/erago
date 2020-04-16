@@ -123,6 +123,10 @@ func SendCommand(port *inputPort, cmd string) {
 	port.Send(input.NewEventCommand(cmd))
 }
 
+func SendRawInput(port *inputPort, ch rune) {
+	port.Send(input.NewEventRawInput(ch))
+}
+
 func TestInputWait(t *testing.T) {
 	port := newInputPort(newSyncer())
 	ctx, cancel := context.WithCancel(context.Background())
@@ -244,14 +248,126 @@ func TestWaitWithTimeout(t *testing.T) {
 
 	{
 		emptyCommandSender := RequestObserverFunc(func(typ InputRequestType) {
-			if typ == InputRequestInput {
-				SendCommand(port, "")
-			}
+			SendCommand(port, "")
 		})
-		port.RegisterRequestObserver(emptyCommandSender)
+		port.RegisterRequestObserver(InputRequestInput, emptyCommandSender)
 
 		if err := port.WaitWithTimeout(ctx, 10*time.Millisecond); err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func TestRegisterAllRequestObserver(t *testing.T) {
+	port := newInputPort(newSyncer())
+	// register call counter
+	var comesInputRequests = make(map[InputRequestType]int)
+	countUpRequest := RequestObserverFunc(func(typ InputRequestType) {
+		comesInputRequests[typ]++
+		// immediately return response
+		if typ == InputRequestRawInput {
+			SendRawInput(port, '!')
+		} else {
+			SendCommand(port, "")
+		}
+	})
+	RegisterAllRequestObserver(port, countUpRequest)
+	defer UnregisterAllRequestObserver(port)
+
+	// start internal loop
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
+
+	// do change input request
+	const DeadLine = 1 * time.Second
+	if err := port.WaitWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := port.CommandWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := port.RawInputWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+
+	// check call counter
+	for _, typ := range []InputRequestType{
+		InputRequestNone,
+		InputRequestCommand,
+		InputRequestInput,
+		InputRequestRawInput,
+	} {
+		cnt, ok := comesInputRequests[typ]
+		if !ok {
+			t.Errorf("input request (%d) never comes", typ)
+		}
+		if cnt <= 0 {
+			t.Errorf("input request (%d) comes but not count up, expect > 0, got %d", typ, cnt)
+		}
+	}
+}
+
+func TestUnregisterAllRequestObserver(t *testing.T) {
+	port := newInputPort(newSyncer())
+	// register call counter
+	var comesInputRequests = make(map[InputRequestType]int)
+	countUpRequest := RequestObserverFunc(func(typ InputRequestType) {
+		comesInputRequests[typ]++
+		// immediately return response
+		if typ == InputRequestRawInput {
+			SendRawInput(port, '!')
+		} else {
+			SendCommand(port, "")
+		}
+	})
+	RegisterAllRequestObserver(port, countUpRequest)
+
+	// unregister call counter
+	UnregisterAllRequestObserver(port)
+
+	// create 2nd counter
+	var comesInputRequests2 = make(map[InputRequestType]int)
+	countUpRequest2 := RequestObserverFunc(func(typ InputRequestType) {
+		comesInputRequests2[typ]++
+		// immediately return response
+		if typ == InputRequestRawInput {
+			SendRawInput(port, '!')
+		} else {
+			SendCommand(port, "")
+		}
+	})
+
+	// re-register
+	RegisterAllRequestObserver(port, countUpRequest2)
+
+	// start internal loop
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
+
+	// do change input request
+	const DeadLine = 1 * time.Second
+	if err := port.WaitWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := port.CommandWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := port.RawInputWithTimeout(ctx, DeadLine); err != nil {
+		t.Fatal(err)
+	}
+
+	// check call counter
+	for _, typ := range []InputRequestType{
+		InputRequestNone,
+		InputRequestCommand,
+		InputRequestInput,
+		InputRequestRawInput,
+	} {
+		cnt, ok := comesInputRequests[typ] // access from 1st counter to be sure no count
+		if ok {
+			t.Errorf("input request (%d) should never comes, but comes %d times", typ, cnt)
 		}
 	}
 }

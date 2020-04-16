@@ -24,9 +24,9 @@ type Sender interface {
 	// send input event to app.
 	Send(ev input.Event)
 	// register listener for changing input request type.
-	RegisterRequestObserver(RequestObserver)
+	RegisterRequestObserver(InputRequestType, RequestObserver)
 	// unregister listener for changing input request type.
-	UnregisterRequestObserver(RequestObserver)
+	UnregisterRequestObserver(InputRequestType)
 	// short hand for Send(QuitEvent).
 	Quit()
 }

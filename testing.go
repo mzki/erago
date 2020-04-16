@@ -36,7 +36,8 @@ func Testing(conf Config, script_files []string) error {
 	defer game.uiAdapter.Quit()
 
 	// add request observer to emulate user input.
-	game.RegisterRequestObserver(&requestObserver{game})
+	uiadapter.RegisterAllRequestObserver(game, &requestObserver{game})
+	defer uiadapter.UnregisterAllRequestObserver(game)
 
 	// do testing
 	errCh := make(chan error)

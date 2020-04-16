@@ -158,18 +158,36 @@ func (g *Game) Send(ev input.Event) {
 
 // implements uiadapter.Sender interface.
 // add input request chaged ovserver which can be used asynchrobously.
-func (g *Game) RegisterRequestObserver(obs uiadapter.RequestObserver) {
+func (g *Game) RegisterRequestObserver(typ uiadapter.InputRequestType, obs uiadapter.RequestObserver) {
 	if s := g.sender; s != nil {
-		s.RegisterRequestObserver(obs)
+		s.RegisterRequestObserver(typ, obs)
 		return
 	}
 	panic("Game: game is not initialized")
 }
 
 // remove input request chaged ovserver which can be used asynchrobously.
-func (g *Game) UnregisterRequestObserver(obs uiadapter.RequestObserver) {
+func (g *Game) UnregisterRequestObserver(typ uiadapter.InputRequestType) {
 	if s := g.sender; s != nil {
-		s.UnregisterRequestObserver(obs)
+		s.UnregisterRequestObserver(typ)
+		return
+	}
+	panic("Game: game is not initialized")
+}
+
+// helper function to register handler for all of input request type.
+func (g *Game) RegisterAllRequestObserver(obs uiadapter.RequestObserver) {
+	if s := g.sender; s != nil {
+		uiadapter.RegisterAllRequestObserver(s, obs)
+		return
+	}
+	panic("Game: game is not initialized")
+}
+
+// helper function to unregister handler for all of input request type.
+func (g *Game) UnregisterAllRequestObserver() {
+	if s := g.sender; s != nil {
+		uiadapter.UnregisterAllRequestObserver(s)
 		return
 	}
 	panic("Game: game is not initialized")
