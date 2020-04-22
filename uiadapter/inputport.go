@@ -8,6 +8,7 @@ import (
 
 	"github.com/mzki/erago/uiadapter/event/input"
 	"github.com/mzki/erago/util/deque"
+	"github.com/mzki/erago/util/log"
 )
 
 // Waiting functions without timeout feature, such as Wait(), Command() and so on,
@@ -161,6 +162,7 @@ func (p *inputPort) RunFilter(ctx context.Context) error {
 
 func (p *inputPort) updateState(current, next inputState) {
 	if next.Type() != current.Type() {
+		log.Debugf("inputPort.updateState: current %T, next %T", current, next)
 		current.Exit(p)
 		next.Enter(p)
 	}
