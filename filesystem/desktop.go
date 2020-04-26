@@ -15,7 +15,7 @@ const (
 
 var (
 	// Desktop is a FileSystem for the desktop environment
-	Desktop FileSystem = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
+	Desktop = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
 	// String is a adaptation of strings.Buffer with Loader interface.
 	String Loader = LoaderFunc(StringReadCloser)
 )

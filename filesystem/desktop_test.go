@@ -10,7 +10,8 @@ import (
 const OSLoadSource = "desktop_test.go"
 
 func TestOSLoader(t *testing.T) {
-	reader, err := Desktop.Load(OSLoadSource)
+	var FS FileSystem = Desktop
+	reader, err := FS.Load(OSLoadSource)
 	if err != nil {
 		t.Fatal(err)
 	}
