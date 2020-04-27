@@ -1,7 +1,11 @@
 package filesystem
 
-import "io"
-import "path/filepath"
+import (
+	"io"
+	"path/filepath"
+
+	"github.com/mzki/erago/util/log"
+)
 
 // abstraction for the filesystem.
 type FileSystem interface {
@@ -31,6 +35,7 @@ var (
 )
 
 func Load(filepath string) (reader io.ReadCloser, err error) {
+	log.Debugf("FileSystem.Load: %s", filepath)
 	return Default.Load(filepath)
 }
 
@@ -39,6 +44,7 @@ func Exist(filepath string) bool {
 }
 
 func Store(filepath string) (io.WriteCloser, error) {
+	log.Debugf("FileSystem.Store: %s", filepath)
 	return Default.Store(filepath)
 }
 
@@ -51,5 +57,6 @@ func Glob(pattern string) ([]string, error) {
 			return nil, err
 		}
 	}
+	log.Debugf("FileSystem.Glob: %s", pattern)
 	return filepath.Glob(pattern)
 }

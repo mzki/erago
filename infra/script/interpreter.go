@@ -132,9 +132,15 @@ func (ip Interpreter) DoString(src string) error {
 }
 
 // do given script on internal VM.
-func (ip Interpreter) DoFile(file string) error {
-	err := ip.vm.DoFile(file)
-	return checkSpecialError(err)
+func (ip *Interpreter) DoFile(file string) error {
+	// referenced from: github.com/yuin/gopher-lua/auxlib.go
+	if fn, err := ip.loadFileFromFS(file); err != nil {
+		return err
+	} else {
+		ip.vm.Push(fn)
+		err := ip.vm.PCall(0, lua.MultRet, nil)
+		return checkSpecialError(err)
+	}
 }
 
 // lua.LoadFile with filesystem API.
