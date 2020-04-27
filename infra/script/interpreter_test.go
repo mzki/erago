@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/scene"
 	"github.com/mzki/erago/stub"
+	lua "github.com/yuin/gopher-lua"
 )
 
 var globalInterpreter *Interpreter
@@ -130,6 +132,49 @@ func TestInterpreterLoadDataOnSandbox(t *testing.T) {
 		_, err := ip.LoadDataOnSandbox(filepath.Join(scriptDir, file), key)
 		if err == nil {
 			t.Errorf("file name isnt exists but no error!!!")
+		}
+	}
+}
+
+func TestInterpreterLoadFileFromFS(t *testing.T) {
+	ip := globalInterpreter
+
+	// exists
+	for _, file := range []string{
+		"data_on_sandbox.lua",
+	} {
+		lfunc, err := ip.loadFileFromFS(filepath.Join(scriptDir, file))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ip.vm.CallByParam(lua.P{
+			Fn:      lfunc,
+			NRet:    0,
+			Protect: true,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	backupFS := filesystem.Default
+	defer func() { filesystem.Default = backupFS }()
+
+	filesystem.Default = &filesystem.AbsPathFileSystem{}
+
+	// exists
+	for _, file := range []string{
+		"data_on_sandbox.lua",
+	} {
+		lfunc, err := ip.loadFileFromFS(filepath.Join(scriptDir, file))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ip.vm.CallByParam(lua.P{
+			Fn:      lfunc,
+			NRet:    0,
+			Protect: true,
+		}); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/state"
 
 	lua "github.com/yuin/gopher-lua"
@@ -136,6 +137,16 @@ func (ip Interpreter) DoFile(file string) error {
 	return checkSpecialError(err)
 }
 
+// lua.LoadFile with filesystem API.
+func (ip *Interpreter) loadFileFromFS(file string) (*lua.LFunction, error) {
+	fp, err := filesystem.Load(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fp.Close()
+	return ip.vm.Load(fp, file)
+}
+
 // do given script file on internal VM with sandbox environment.
 // Return data table queried by the dataKey.
 func (ip *Interpreter) LoadDataOnSandbox(file, dataKey string) (map[string]string, error) {
@@ -146,8 +157,7 @@ func (ip *Interpreter) LoadDataOnSandbox(file, dataKey string) (map[string]strin
 		return nil, fmt.Errorf("empty data key")
 	}
 
-	vm := ip.vm
-	lfunc, err := vm.LoadFile(file)
+	lfunc, err := ip.loadFileFromFS(file)
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +165,7 @@ func (ip *Interpreter) LoadDataOnSandbox(file, dataKey string) (map[string]strin
 	// do script on empty environment for only loading data.
 	// TODO use data load enviornment held by the interpreter rather
 	// than new empty environment?
+	vm := ip.vm
 	emptyEnv := vm.NewTable()
 	vm.SetFEnv(lfunc, emptyEnv)
 	if err := vm.CallByParam(lua.P{
@@ -193,7 +204,7 @@ func (ip Interpreter) PathOf(file string) string {
 // it is used for loading user scirpts under specified directory.
 func (ip Interpreter) LoadSystem() error {
 	path := ip.config.loadPattern()
-	files, err := filepath.Glob(path)
+	files, err := filesystem.Glob(path)
 	if err != nil {
 		return err
 	}

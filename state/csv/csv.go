@@ -5,9 +5,9 @@ package csv
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/errutil"
 )
 
@@ -357,7 +357,7 @@ func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
 
 // read all csv characters files matched to given pattern.
 func (csv *CsvManager) initCharacters(pattern string) error {
-	files, err := filepath.Glob(pattern)
+	files, err := filesystem.Glob(pattern)
 	if err != nil {
 		return err
 	}

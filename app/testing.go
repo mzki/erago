@@ -14,7 +14,7 @@ func Testing(appConf *Config, scriptFiles []string) {
 
 	// returned value must be called once.
 	// returned value must be called once.
-	reset, err := setLogConfig(appConf)
+	reset, err := SetLogConfig(appConf)
 	if err != nil {
 		log.Infoln("Error: Can't create log file:", err)
 		return

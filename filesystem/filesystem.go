@@ -1,6 +1,7 @@
 package filesystem
 
 import "io"
+import "path/filepath"
 
 // abstraction for the filesystem.
 type FileSystem interface {
@@ -39,4 +40,16 @@ func Exist(filepath string) bool {
 
 func Store(filepath string) (io.WriteCloser, error) {
 	return Default.Store(filepath)
+}
+
+// Glob is wrap function for filepath.Glob with use filesystem.Default
+func Glob(pattern string) ([]string, error) {
+	if abspathFS, ok := Default.(*AbsPathFileSystem); ok {
+		var err error
+		pattern, err = abspathFS.ResolvePath(pattern)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return filepath.Glob(pattern)
 }

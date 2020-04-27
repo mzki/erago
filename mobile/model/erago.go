@@ -1,7 +1,11 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/mzki/erago"
+	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/uiadapter/event/input"
 )
@@ -14,9 +18,10 @@ import (
 // UI reference.
 
 var (
-	game        *erago.Game
-	mobileUI    *uiAdapter
-	initialized = false
+	game         *erago.Game
+	mobileUI     *uiAdapter
+	logCloseFunc func()
+	initialized  = false
 )
 
 func Init(ui UI, baseDir string) error {
@@ -24,9 +29,37 @@ func Init(ui UI, baseDir string) error {
 		panic("game already initialized")
 	}
 
+	// setup mobile filesystem to properly access resources.
+	mobileFS := filesystem.Mobile
+	mobileFS.CurrentDir = baseDir
+	filesystem.Default = mobileFS // replace file system used by erago
+
+	// load config file
+	configPath, err := mobileFS.ResolvePath(app.ConfigFile)
+	if err != nil {
+		return fmt.Errorf("Can not use base directory %v. err: %v", baseDir, err)
+	}
+	appConfig, err := app.LoadConfigOrDefault(configPath)
+	switch err {
+	case nil, app.ErrDefaultConfigGenerated:
+	default:
+		return fmt.Errorf("Config load error: %v", err)
+	}
+
+	if appConfig != nil {
+		// set log level, destinations
+		closeFunc, err := app.SetLogConfig(appConfig)
+		if err != nil {
+			return fmt.Errorf("Log configure error: %v", err)
+		}
+		// just store it, called on Quit()
+		logCloseFunc = closeFunc
+	}
+
+	// create game instance
 	game = erago.NewGame()
 	mobileUI = newUIAdapter(ui)
-	if err := game.Init(uiadapter.SingleUI{mobileUI}, erago.NewConfig(baseDir)); err != nil {
+	if err := game.Init(uiadapter.SingleUI{mobileUI}, appConfig.Game); err != nil {
 		return err
 	}
 	game.RegisterAllRequestObserver(mobileUI)
@@ -54,15 +87,13 @@ func Main(appContext AppContext) {
 		panic("Main(): nil game state")
 	}
 	go func() {
+		// start game engine
 		err := game.Main()
 		appContext.NotifyQuit(err)
 	}()
 }
 
 func Quit() {
-	if !initialized {
-		panic("Quit(): Init() must be called firstly")
-	}
 	initialized = false
 
 	if mobileUI != nil {
@@ -72,6 +103,10 @@ func Quit() {
 	if game != nil {
 		game.Quit()
 		game = nil
+	}
+	if logCloseFunc != nil {
+		logCloseFunc()
+		logCloseFunc = nil
 	}
 }
 

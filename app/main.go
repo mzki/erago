@@ -46,7 +46,7 @@ func BuildTheme(appConf *Config) (*theme.Theme, error) {
 
 // set log configuration and return finalize function with internal error.
 // when returned error, the finalize function is nil and need not be called.
-func setLogConfig(appConf *Config) (func(), error) {
+func SetLogConfig(appConf *Config) (func(), error) {
 	// set log level.
 	switch level := appConf.LogLevel; level {
 	case LogLevelInfo:
@@ -59,15 +59,20 @@ func setLogConfig(appConf *Config) (func(), error) {
 	}
 
 	// set log distination
-	var dstString string
-	var writer io.WriteCloser
+	var (
+		dstString string
+		writer    io.WriteCloser
+		closeFunc func()
+	)
 	switch logfile := appConf.LogFile; logfile {
 	case LogFileStdOut, "":
 		dstString = "Stdout"
 		writer = os.Stdout
+		closeFunc = func() {}
 	case LogFileStdErr:
 		dstString = "Stdout"
 		writer = os.Stderr
+		closeFunc = func() {}
 	default:
 		dstString = logfile
 		fp, err := filesystem.Store(logfile)
@@ -75,13 +80,12 @@ func setLogConfig(appConf *Config) (func(), error) {
 			return nil, err
 		}
 		writer = fp
+		closeFunc = func() { fp.Close() }
 	}
 	log.SetOutput(writer)
 	log.Infof("Output log to %s", dstString)
 
-	return func() {
-		writer.Close()
-	}, nil
+	return closeFunc, nil
 }
 
 // entry point of main application. appconf nil is OK,
@@ -93,7 +97,7 @@ func Main(title string, appConf *Config) {
 	}
 
 	// returned value must be called once.
-	reset, err := setLogConfig(appConf)
+	reset, err := SetLogConfig(appConf)
 	if err != nil {
 		log.Infoln("Error: Can't create log file:", err)
 		return
