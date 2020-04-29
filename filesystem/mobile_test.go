@@ -45,7 +45,7 @@ func TestAbsPathFileSystemResolvePath(t *testing.T) {
 
 	// case2: returns absolute path even if empty current dir.
 	{
-		EmptyFS := &AbsPathFileSystem{CurrentDir: ""}
+		var EmptyFS PathResolver = &AbsPathFileSystem{CurrentDir: ""}
 		fpath, err := EmptyFS.ResolvePath(MobileLoadSource)
 		if err != nil {
 			t.Fatal(err)

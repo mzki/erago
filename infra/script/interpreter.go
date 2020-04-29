@@ -98,7 +98,10 @@ func (ip *Interpreter) init() {
 
 	// register load path which is limited under config.LoadDir only.
 	// NOTE: bultin path is cleared. ( /usr/local/share/lua5.1  etc. are not available)
-	reg_path := filepath.Join(ip.config.LoadDir, "?.lua")
+	reg_path, err := filesystem.ResolvePath(filepath.Join(ip.config.LoadDir, "?.lua"))
+	if err != nil {
+		panic(err) // it should never occurs
+	}
 	L.SetField(L.GetGlobal("package"), "path", lua.LString(reg_path))
 
 	// register custom loader

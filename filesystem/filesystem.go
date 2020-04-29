@@ -15,6 +15,11 @@ type FileSystem interface {
 	Store(filepath string) (io.WriteCloser, error)
 }
 
+// path resolver resolves file path on the filesystem.
+type PathResolver interface {
+	ResolvePath(path string) (string, error)
+}
+
 // Loader is a platform depended file loader which searches file path and
 // return its content as io.Reader.
 type Loader interface {
@@ -50,13 +55,34 @@ func Store(filepath string) (io.WriteCloser, error) {
 
 // Glob is wrap function for filepath.Glob with use filesystem.Default
 func Glob(pattern string) ([]string, error) {
-	if abspathFS, ok := Default.(*AbsPathFileSystem); ok {
-		var err error
-		pattern, err = abspathFS.ResolvePath(pattern)
-		if err != nil {
-			return nil, err
-		}
-	}
 	log.Debugf("FileSystem.Glob: %s", pattern)
+	return GlobFS(Default, pattern)
+}
+
+// Glob is wrap function for filepath.Glob with use filesystem.FileSystem
+// if FileSystem also implements PathResolver, use it to resolve path.
+func GlobFS(fs FileSystem, pattern string) ([]string, error) {
+	var err error
+	pattern, err = ResolvePathFS(fs, pattern)
+	if err != nil {
+		return nil, err
+	}
 	return filepath.Glob(pattern)
+}
+
+// ResolvePath resolve file path under filesystem.Default.
+// if Default also implements PathResolver, use it to resolve path,
+// otherwise returns path itself.
+func ResolvePath(path string) (string, error) {
+	return ResolvePathFS(Default, path)
+}
+
+// ResolvePathFS resolve file path under given FileSystem.
+// if FileSystem also implements PathResolver, use it to resolve path,
+// otherwise returns path itself.
+func ResolvePathFS(fs FileSystem, path string) (string, error) {
+	if pr, ok := fs.(PathResolver); ok {
+		return pr.ResolvePath(path)
+	}
+	return path, nil
 }

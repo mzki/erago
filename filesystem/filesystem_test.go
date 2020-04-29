@@ -46,3 +46,32 @@ func TestGlob(t *testing.T) {
 		t.Fatalf("given missing pattern, but Glob returns some result: %q", mobileFsGoFiles)
 	}
 }
+
+func TestResolvePath(t *testing.T) {
+	const testPath = "path/to/notfound"
+	gotPath, err := ResolvePath(testPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != testPath {
+		t.Errorf("differenct resolved path: got %v, expect %v", gotPath, testPath)
+	}
+
+	backupDefault := Default
+	defer func() { Default = backupDefault }()
+
+	absPathFS := &AbsPathFileSystem{CurrentDir: ""}
+	Default = absPathFS
+
+	testAbsPath, err := filepath.Abs(testPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotAbsPath, err := ResolvePath(testPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotAbsPath != testAbsPath {
+		t.Errorf("differenct resolved abs path: got %v, expect %v", gotAbsPath, testAbsPath)
+	}
+}
