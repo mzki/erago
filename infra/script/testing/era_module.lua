@@ -132,6 +132,7 @@ local base = chara.Base
 local len = base:len()
 base:set(key, 100)
 assert(base:get(key) == 100)
+assert(base[len-1] == 0)
 
 local sliced_base = base:slice(0, 2)
 sliced_base:fill(10)
@@ -139,8 +140,12 @@ assert(base:get(0) == 10)
 assert(sliced_base:get(0) == 10)
 
 local new_intparam = IntParam.new(100)
-_ = new_intparam:len()
+len = new_intparam:len()
 new_intparam:slice(0,10):fill(100)
+assert(new_intparam[9] == 100)
+assert(new_intparam[10] == 0)
+local ok, msg = pcall(IntParam.get, new_intparam, len)
+assert(not ok)
 
 -- check pairs loops infinity?
 local table = {}

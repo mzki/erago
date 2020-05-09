@@ -131,7 +131,7 @@ func lenScalable(L *lua.LState) int {
 
 // return whether given index is in range of scalableValues.
 func indexIsInRange(index int, sv scalableValues) bool {
-	return index >= 0 && index <= sv.Len()
+	return index >= 0 && index < sv.Len()
 }
 
 // // XXXParam
