@@ -30,6 +30,9 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 	}
 
 	LLenFunction := L.NewFunction(lenScalable)
+	LNextIntFunction := L.NewFunction(lnextIntPair)
+	LNextStrFunction := L.NewFunction(lnextStrPair)
+	LPairsFunction := L.NewFunction(lintstrIteratorMetaPairs)
 	{ // register csv names
 		csv_module := L.NewTable()
 		L.SetMetatable(csv_module, getStrictTableMetatable(L))
@@ -38,6 +41,9 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 		csv_names_meta := newMetatable(L, csvModuleName, map[string]lua.LValue{
 			"__index":     L.NewFunction(csvNamesMetaIndex),
 			"__len":       LLenFunction,
+			"__next":      LNextStrFunction,
+			"__ipairs":    LPairsFunction,
+			"__pairs":     LPairsFunction,
 			"__metatable": metaProtectObj,
 		})
 
@@ -60,6 +66,9 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 		meta := newMetatable(L, csvItemPriceMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(intParamMetaIndex),
 			"__len":       LLenFunction,
+			"__next":      LNextIntFunction,
+			"__ipairs":    LPairsFunction,
+			"__pairs":     LPairsFunction,
 			"__metatable": metaProtectObj,
 		})
 		item_prices := newUserDataWithMt(L, int_param, meta)

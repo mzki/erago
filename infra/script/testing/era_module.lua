@@ -147,6 +147,31 @@ assert(new_intparam[10] == 0)
 local ok, msg = pcall(IntParam.get, new_intparam, len)
 assert(not ok)
 
+-- pairs and ipairs
+local nextop, t, val = ipairs(new_intparam:slice(0, 5))
+assert(type(nextop) == "function")
+assert(type(t) == "userdata")
+assert(type(val) == "number")
+
+local i, v = nextop(t, val) 
+assert(i == 0)
+assert(v == 100)
+i, v = nextop(t, i) 
+assert(i == 1)
+assert(v == 100)
+
+nextop, t, val = pairs(new_intparam:slice(0, 5))
+assert(type(nextop) == "function")
+assert(type(t) == "userdata")
+assert(type(val) == "number")
+
+i, v = nextop(t, val) 
+assert(i == 0)
+assert(v == 100)
+i, v = nextop(t, i) 
+assert(i == 1)
+assert(v == 100)
+
 -- check pairs loops infinity?
 local table = {}
 table[0] = 1
@@ -156,3 +181,4 @@ table[10] = 10
 for _, v in pairs(table) do
 	era.print(v)
 end
+era.printl ""

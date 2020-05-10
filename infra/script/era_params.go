@@ -29,10 +29,16 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 	}
 
 	len_func := L.NewFunction(lenScalable)
+	next_int_func := L.NewFunction(lnextIntPair)
+	next_str_func := L.NewFunction(lnextStrPair)
+	pairs_func := L.NewFunction(lintstrIteratorMetaPairs)
 	intparam_meta := newMetatable(L, intParamMetaName, map[string]lua.LValue{
 		"__index":     L.NewFunction(intParamMetaIndex),
 		"__newindex":  L.NewFunction(intParamMetaNewIndex),
 		"__len":       len_func,
+		"__ipairs":    pairs_func,
+		"__pairs":     pairs_func,
+		"__next":      next_int_func,
 		"__metatable": metaProtectObj,
 	})
 	L.SetFuncs(intparam_meta, intParamMethods)
@@ -42,6 +48,9 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 		"__index":     L.NewFunction(strParamMetaIndex),
 		"__newindex":  L.NewFunction(strParamMetaNewIndex),
 		"__len":       len_func,
+		"__ipairs":    pairs_func,
+		"__pairs":     pairs_func,
+		"__next":      next_str_func,
 		"__metatable": metaProtectObj,
 	})
 	L.SetFuncs(strparam_meta, strParamMethods)

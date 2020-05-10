@@ -93,8 +93,8 @@ func (ip *Interpreter) init() {
 	registerSystemParams(L, ip.state)
 	registerCsvParams(L, ip.state.CSV)
 	registerCharaParams(L, ip.state)
-
 	registerMisc(L)
+	registerExtPairs(L)
 
 	// register load path which is limited under config.LoadDir only.
 	// NOTE: bultin path is cleared. ( /usr/local/share/lua5.1  etc. are not available)
