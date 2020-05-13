@@ -11,7 +11,7 @@ var unsafeLibs = []string{
 	"dostring",
 	"load",
 	"loadfile",
-	"loadstring",
+	// "loadstring" // it is usable and not accessing filesystem.
 }
 
 func knockoutUnsafeLibs(L *lua.LState) {
