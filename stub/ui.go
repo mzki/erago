@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	attr "github.com/mzki/erago/attribute"
-	"github.com/mzki/erago/uiadapter"
 )
 
 type gameUIStub struct{}
 
-func NewGameUIStub() uiadapter.UI {
-	return uiadapter.SingleUI{&gameUIStub{}}
+func NewGameUIStub() *gameUIStub {
+	return &gameUIStub{}
 }
 
 func (ui gameUIStub) Print(s string) error {
@@ -43,3 +42,9 @@ func (ui gameUIStub) WindowRuneWidth() (int, error)         { return 0, nil }
 func (ui gameUIStub) LineCount() (int, error)               { return 0, nil }
 func (ui gameUIStub) CurrentRuneWidth() (int, error)        { return 0, nil }
 func (ui gameUIStub) Sync() error                           { return nil }
+
+// implement Layouter interface
+func (gameUIStub) SetLayout(layout *attr.LayoutData) error { return nil }
+func (gameUIStub) SetCurrentView(vname string) error       { return nil }
+func (gameUIStub) GetCurrentViewName() string              { return "single" }
+func (gameUIStub) GetViewNames() []string                  { return []string{"single"} }

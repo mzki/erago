@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/mzki/erago/uiadapter"
 )
 
 // implements scene.IOController
 type sceneIOController struct {
-	uiadapter.UI
+	*gameUIStub
 }
 
 // return implements scene.IOController
