@@ -24,35 +24,34 @@ func newOutputPort(ui UI, ls *lineSyncer) *outputPort {
 	}
 }
 
-const patternString = `\[\s*(\-?[0-9]+)\s*\][\s　]?[^\n]+`
+const patternString = `\[\s*(\-?[0-9]+)\s*\][\s　]?[^\[\n]+`
 
 var buttonPattern = regexp.MustCompile(patternString)
 
 // Print text s or print button if text s represents button pattern.
 // Given text s must end "\n" or contain no "\n".
 func (p outputPort) parsePrint(s string) error {
-	loc := buttonPattern.FindStringSubmatchIndex(s)
-	if loc == nil {
-		return p.UI.Print(s)
-	}
+	for len(s) > 0 {
+		loc := buttonPattern.FindStringSubmatchIndex(s)
+		if loc == nil {
+			return p.UI.Print(s)
+		}
 
-	i, j := loc[0], loc[1]
-	cmd := s[loc[2]:loc[3]]
+		i, j := loc[0], loc[1]
+		cmd := s[loc[2]:loc[3]]
 
-	if i > 0 {
-		if err := p.UI.Print(s[:i]); err != nil {
+		if i > 0 {
+			if err := p.UI.Print(s[:i]); err != nil {
+				return err
+			}
+		}
+
+		if err := p.UI.PrintButton(s[i:j], cmd); err != nil {
 			return err
 		}
-	}
 
-	if err := p.UI.PrintButton(s[i:j], cmd); err != nil {
-		return err
+		s = s[j:]
 	}
-
-	if j < len(s) {
-		return p.UI.Print(s[j:])
-	}
-
 	return nil
 }
 
