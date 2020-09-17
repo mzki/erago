@@ -80,8 +80,9 @@ func (c Condition) firstBytesWidth(bs []byte) (int, int) {
 			w = 1
 		}
 	case width.Neutral:
-		if b := bs[0]; b == 0 {
-			w = 0 // Null character \x00
+		if b := bs[0]; b < 0x1f {
+			// Null character \x00 ~ Unit separator \x1f
+			w = 0
 		} else {
 			w = 1
 		}
