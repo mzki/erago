@@ -6,7 +6,7 @@ set -eu -o pipefail
 
 source scripts/common
 
-docker run -t \
+docker run --rm -t \
   -v $PWD:$DIR_ON_DOCKER \
   -v $GOPATH:/go \
   -w $DIR_ON_DOCKER \
