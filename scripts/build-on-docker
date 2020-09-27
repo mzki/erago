@@ -15,7 +15,7 @@ BUILD_TARGET=${1:- linux}
 
 docker run --rm -t \
   -v ${REPO_ROOT}:${TARGET_ROOT} \
-  -v $GOPATH:/go \
+  -v ${DOCKER_VOLUME_NAME_GOPKG}:/go/pkg \
   -w ${TARGET_ROOT}/app/cmd \
   $BUILD_DOCKER_IMAGE \
   make $BUILD_TARGET
