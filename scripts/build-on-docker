@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# build binary for specifed platform on docker environment.
+# assumes runs from top directory of erago repository.
+
+set -eu
+
+source scripts/common
+
+REPO_ROOT=${PWD} 
+TARGET_ROOT=${DIR_ON_DOCKER}
+BUILD_DOCKER_IMAGE=${DOCKER_IMAGE_NAME}
+
+BUILD_TARGET=${1:- linux}
+
+docker run -t \
+  -v ${REPO_ROOT}:${TARGET_ROOT} \
+  -v $GOPATH:/go \
+  -w ${TARGET_ROOT}/app/cmd \
+  $BUILD_DOCKER_IMAGE \
+  make $BUILD_TARGET
