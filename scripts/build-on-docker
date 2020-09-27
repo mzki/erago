@@ -8,8 +8,9 @@ set -eu
 source scripts/common
 
 TARGET_ROOT=${DIR_ON_DOCKER}
-BUILD_DOCKER_IMAGE=${DOCKER_IMAGE_NAME}
-# BUILD_DOCKER_IMAGE=golang:1.15.2-buster
+# BUILD_DOCKER_IMAGE=${DOCKER_IMAGE_NAME}
+# latest go feature, can apply to linux and windows, but not darwin
+BUILD_DOCKER_IMAGE=golang:1.15.2-buster 
 
 BUILD_TARGET=${1:- linux}
 
