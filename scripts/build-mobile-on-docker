@@ -1,0 +1,13 @@
+#!/bin/bash
+set -eu
+
+source scripts/common
+
+# only go/pkg is shared to cached
+# TODO use named-volume for erago-build-pkg-cache
+docker run --rm -t \
+  -v ${REPO_ROOT}:${DIR_ON_DOCKER} \
+  -v $GOPATH/pkg:/go/pkg \
+  -w ${DIR_ON_DOCKER}/mobile/model \
+  $DOCKER_IMAGE_NAME_MOBILE \
+  /bin/bash build.sh

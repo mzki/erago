@@ -8,4 +8,4 @@ BUILD_FLAGS="-gcflags=-trimpath=${GOPATH}"
 TARGET_FLAGS=android # can use "android/arm,android/amd64" to shrink data size
 
 echo "building ${PRODUCT}..."
-gomobile bind ${BUILD_FLAGS} -target ${TARGET_FLAGS} -o ${PRODUCT} github.com/mzki/erago/mobile/model || exit 1
+gomobile bind ${BUILD_FLAGS} -target ${TARGET_FLAGS} -o ${PRODUCT} . || exit 1

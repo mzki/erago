@@ -7,9 +7,9 @@ set -eu
 
 source scripts/common
 
-REPO_ROOT=${PWD} 
 TARGET_ROOT=${DIR_ON_DOCKER}
 BUILD_DOCKER_IMAGE=${DOCKER_IMAGE_NAME}
+# BUILD_DOCKER_IMAGE=golang:1.15.2-buster
 
 BUILD_TARGET=${1:- linux}
 
