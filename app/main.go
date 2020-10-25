@@ -173,19 +173,40 @@ func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) e
 		switch e := e.(type) {
 		case lifecycle.Event:
 			root.OnLifecycleEvent(e)
-			if e.To == lifecycle.StageDead {
+
+			// game thread control
+			switch {
+			case e == stageDeadEvent:
+				// Model Error
 				return mef.Err()
-			}
-			if e.Crosses(lifecycle.StageVisible) == lifecycle.CrossOn {
+			case e == stageRestartEvent:
+				if err := presenter.RestartGameThread(root.Editor(), appConf.Game); err == nil {
+					log.Debug("RestartGameThread() ... OK")
+					mef.Reset() // resets model error state too since game thread does.
+				} else {
+					log.Debug("RestartGameThread() ... NG")
+					return fmt.Errorf("Failed to restart game: %w", err)
+				}
+			case e.Crosses(lifecycle.StageVisible) == lifecycle.CrossOn:
 				log.Debug("RunGameThread() ... ")
-				if startOK := presenter.RunGameThread(root.Editor(), appConf.Game); startOK {
-					log.Debug("RunGameThread() ... start OK")
+				if err := presenter.RunGameThread(root.Editor(), appConf.Game); err == nil {
+					log.Debug("RunGameThread() ... OK")
 					defer presenter.Quit()
+				} else {
+					log.Debug("RunGameThread() ... NG")
+					return fmt.Errorf("Failed to start game: %w", err)
 				}
 			}
 
 		case gesture.Event, key.Event, mouse.Event:
 			root.OnInputEvent(e, image.Point{})
+
+			if e, ok := e.(key.Event); ok {
+				if e.Code == key.CodeF5 && e.Direction == key.DirPress {
+					// restart command
+					w.Send(stageRestartEvent)
+				}
+			}
 
 		case PaintScheduled:
 			// paint event is comming after some times
@@ -254,8 +275,12 @@ func (me ModelErrorFilter) Err() error {
 	return me.err
 }
 
-// TODO: This way is OK for quitting application manually?
-var stageDeadEvent = lifecycle.Event{To: lifecycle.StageDead, From: lifecycle.StageFocused}
+var (
+	// TODO: This way is OK for quitting application manually?
+	stageDeadEvent = lifecycle.Event{To: lifecycle.StageDead, From: lifecycle.StageFocused}
+
+	stageRestartEvent = lifecycle.Event{To: lifecycle.StageVisible, From: lifecycle.StageVisible}
+)
 
 func (me *ModelErrorFilter) Filter(e interface{}) interface{} {
 	if me.err == nil {
@@ -263,11 +288,18 @@ func (me *ModelErrorFilter) Filter(e interface{}) interface{} {
 		switch e := e.(type) {
 		case ui.ModelError:
 			log.Debug("catch ModelError")
-			if e.HasCause() {
+			switch err := e.Cause(); err {
+			case nil:
+				// game quiting correctly. end application immediately.
+				return stageDeadEvent
+			case ui.ErrorGameQuitByRestartRequest:
+				// caused by restart request, ignore this error.
+				return nil
+			default:
+				// game thread error. end application by next event.
 				me.err = e
 				return nil
 			}
-			return stageDeadEvent
 
 		default:
 			return e
@@ -282,7 +314,7 @@ func (me *ModelErrorFilter) Filter(e interface{}) interface{} {
 		}
 
 	case key.Event:
-		if e.Direction == key.DirPress {
+		if e.Code == key.CodeReturnEnter && e.Direction == key.DirPress {
 			return stageDeadEvent
 		}
 
@@ -292,4 +324,9 @@ func (me *ModelErrorFilter) Filter(e interface{}) interface{} {
 		}
 	}
 	return e
+}
+
+// Reset resets internal error state.
+func (me *ModelErrorFilter) Reset() {
+	me.err = nil
 }

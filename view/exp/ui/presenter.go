@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -26,6 +27,8 @@ type CmdSender interface {
 type EragoPresenter struct {
 	game        *erago.Game
 	gameRunning bool
+	gameRestart chan<- struct{}
+	gameDone    <-chan struct{}
 
 	eventQ screen.EventDeque
 
@@ -40,6 +43,16 @@ type EragoPresenter struct {
 }
 
 const defaultSyncInterval = 1 * time.Second / 120 // 120 op/sec
+
+var (
+	// ErrorGameQuitByRestartRequest indicates the game thread ends by restart request.
+	// It is notified via ModelErorr and can be obtained from ModelError.Cause().
+	ErrorGameQuitByRestartRequest = fmt.Errorf("Quit model thread by restart request")
+
+	// ErrorGameAlreadyRunning indicates the game thread already running but
+	// invalid operations such as starting the game are arrived.
+	ErrorGameAlreadyRunning = fmt.Errorf("game already running")
+)
 
 //
 func NewEragoPresenter(eventQ screen.EventDeque) *EragoPresenter {
@@ -107,9 +120,9 @@ func (p *EragoPresenter) CommandWaiting() bool {
 
 // run game main thread on other gorutine.
 // return true if staring at first time, false if multiple calling this.
-func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) bool {
+func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) error {
 	if p.gameRunning {
-		return false
+		return ErrorGameAlreadyRunning
 	}
 	p.gameRunning = true
 
@@ -118,7 +131,13 @@ func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) bool 
 	}
 
 	p.ui = ui
+
+	gameDone := make(chan struct{})
+	gameRestart := make(chan struct{}, 1) // +1 for pending request
+	p.gameDone = gameDone
+	p.gameRestart = gameRestart
 	go func() {
+		defer close(gameDone)
 		// initializing game model
 		if err := p.init(Conf); err != nil {
 			p.onErrorInModel(err)
@@ -134,11 +153,46 @@ func (p *EragoPresenter) RunGameThread(ui uiadapter.UI, Conf erago.Config) bool 
 		if err := p.game.Main(); err != nil {
 			p.onErrorInModel(err)
 			p.notifyQuitApp(err)
-			return
+		} else {
+			select {
+			case <-gameRestart:
+				// send error with restart request
+				p.notifyQuitApp(ErrorGameQuitByRestartRequest)
+			default:
+				p.notifyQuitApp(nil) // send quiting signal without error.
+			}
 		}
-		p.notifyQuitApp(nil) // send quiting signal without error.
 	}()
-	return true
+	return nil
+}
+
+// RestartGameThread restarts game thread with another game instance.
+// Exsiting game thread is stopped and diposed.
+// It returns nil when restart succeeded and also notifies
+// ModelError.Cause() == ErrorGameQuitByRestartRequest through the event queue.
+// Otherwise returns error.
+func (p *EragoPresenter) RestartGameThread(ui uiadapter.UI, conf erago.Config) error {
+	if p.gameRunning {
+		// stop game thread safely and recreate game intance.
+
+		select {
+		case p.gameRestart <- struct{}{}:
+			// OK. do nothing
+		default:
+			return fmt.Errorf("GameRestart request can not be sent. invalid state.")
+		}
+		const QuitTimeout = 10 * time.Second
+		p.Quit()
+		select {
+		case <-p.gameDone:
+			// OK. do nothing
+		case <-time.After(QuitTimeout):
+			return fmt.Errorf("GameQuit signal timeout for %v", QuitTimeout)
+		}
+		// create new game instance and dispose old.
+		p.game = erago.NewGame()
+	}
+	return p.RunGameThread(ui, conf)
 }
 
 func (p *EragoPresenter) init(Conf erago.Config) error {
@@ -169,6 +223,7 @@ func (p *EragoPresenter) notifyQuitApp(cause error) {
 // it must be called after RunGameThread().
 func (p *EragoPresenter) Quit() {
 	p.game.Send(input.NewEventQuit())
+	p.gameRunning = false
 }
 
 // Mark any node.Marks, NeedsPaint etc, to node n. It is queued in main event queue
@@ -216,6 +271,12 @@ func (me ModelError) Error() string {
 // whether model's error has cause? model error if cause exist, quiting signal otherwise.
 func (me ModelError) HasCause() bool {
 	return me.err != nil
+}
+
+// Cause returns error which caused this ModelError,
+// or may return nil when game thread quiting correctly.
+func (me ModelError) Cause() error {
+	return me.err
 }
 
 // Presenter pushes asynchronized task for screen.EventDeque.
