@@ -308,18 +308,8 @@ func (me *ModelErrorFilter) Filter(e interface{}) interface{} {
 
 	// modelErr is catched, quit app immediately when specified events are arrived.
 	switch e := e.(type) {
-	case gesture.Event:
-		if e.Type == gesture.TypeStart {
-			return stageDeadEvent
-		}
-
 	case key.Event:
 		if e.Code == key.CodeReturnEnter && e.Direction == key.DirPress {
-			return stageDeadEvent
-		}
-
-	case mouse.Event:
-		if e.Direction == mouse.DirPress {
 			return stageDeadEvent
 		}
 	}

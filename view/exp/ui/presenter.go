@@ -208,7 +208,7 @@ func (p *EragoPresenter) onErrorInModel(err error) {
 	if ui := p.ui; ui != nil {
 		ui.PrintLine("#")
 		ui.Print(err.Error())
-		ui.Print("\n終了します\n")
+		ui.Print("\n\nQuiting Game...\n")
 		p.eventQ.Send(paint.Event{})
 	}
 }
