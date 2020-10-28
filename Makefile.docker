@@ -9,7 +9,7 @@ cross:
 	@ mkdir -p $(OUTPUTDIR)
 	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile linux
 	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile windows
-	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile darwin
+#	@ OUTPUTDIR=$(OUTPUTDIR) $(MAKE) -C $(CROSS_BUILD_DIR) -f $(CROSS_BUILD_DIR)/Makefile darwin
 
 .PHONY: dependency
 dependency: 

@@ -8,12 +8,12 @@ ENV HOME /home/${USER}
 ENV SHELL /bin/bash
 
 # add user 
-RUN echo "Adding ${USER} user and group" \
-  && groupadd --system --gid 1000 ${USER} \
-  && useradd --system --gid ${USER} --uid 1000 --shell ${SHELL} --create-home ${USER} \
-  && chown --recursive ${USER}:${USER} ${HOME}
-RUN echo "${USER}:${USER}"| chpasswd
-RUN usermod -aG sudo gopher
+#RUN echo "Adding ${USER} user and group" \
+#  && groupadd --system --gid 1000 ${USER} \
+#  && useradd --system --gid ${USER} --uid 1000 --shell ${SHELL} --create-home ${USER} \
+#  && chown --recursive ${USER}:${USER} ${HOME}
+#RUN echo "${USER}:${USER}"| chpasswd
+#RUN usermod -aG sudo gopher
 
 # install dependency tools
 RUN apt-get update \
@@ -21,7 +21,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # start user space task...
-USER ${USER}
+#USER ${USER}
+RUN mkdir -p ${HOME}
 WORKDIR ${HOME}
 
 # Get android sdk, ndk, and rest of the stuff needed to build the android app.
@@ -49,3 +50,5 @@ RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager \
 # Get gomobile
 RUN go get -u golang.org/x/mobile/cmd/gomobile \
   && gomobile init 
+
+CMD ["gomobile", "version"]

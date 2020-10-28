@@ -11,7 +11,8 @@ ARCHIVE_MISC="LICENSE README.md"
 
 # setting for src 
 ARCHIVE_SRC_LINUX=`find ${OUTPUTDIR} -name "erago*_linux_*"   -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
-ARCHIVE_SRC_DARWIN=`find ${OUTPUTDIR} -name "erago*_darwin_*"  -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
+#ARCHIVE_SRC_DARWIN=`find ${OUTPUTDIR} -name "erago*_darwin_*"  -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
+ARCHIVE_SRC_DARWIN="" # empty
 ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 | xargs basename`
 
 # setting for dst
@@ -32,11 +33,17 @@ mkdir -p ${ARCHIVE_DIR}
 cp -r ${ARCHIVE_MISC} ${OUTPUTDIR}
 cd ${OUTPUTDIR} 
 
-: "packing for linux..." && \
-  tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC}
-: "packing for darwin..." && \
-  tar zcf ${ARCHIVE_DST_DARWIN} ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC}
-: "packing for windows..." && \
-  zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+if [ -n "${ARCHIVE_SRC_LINUX}" ]; then
+  : "packing for linux..." && \
+    tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC}
+fi
+if [ -n "${ARCHIVE_SRC_DARWIN}" ]; then
+  : "packing for darwin..." && \
+    tar zcf ${ARCHIVE_DST_DARWIN} ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC}
+fi
+if [ -n "${ARCHIVE_SRC_WINDOWS}" ]; then
+  : "packing for windows..." && \
+    zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+fi
 
 cd - # return top 
