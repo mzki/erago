@@ -21,13 +21,20 @@ DOCKER_VOLUME_NAME_GOPKG=erago-build-pkg-cache
 DIR_ON_DOCKER=/home/gopher/erago
 
 # return absolute archive path from output binary path and version string.
-function archive_path() {
+function absolute_archive_path() {
   local OUTPUT_BIN_DIR=$1
   local VERSION=$2
 
-  local OUTPUT_BIN_PATH=$(cd $(dirname $OUTPUT_BIN_DIR) && pwd)/$(basename $OUTPUT_BIN_DIR)
+  local ARCHIVE_REL_PATH=`archive_path $OUTPUT_BIN_DIR $VERSION`
+  local OUTPUT_BIN_PATH=$(cd $(dirname $OUTPUT_BIN_DIR) && pwd)/${ARCHIVE_REL_PATH}
 
-  echo "$OUTPUT_BIN_PATH/archive/$VERSION"
+  echo "$OUTPUT_BIN_PATH"
+}
+
+function archive_path() {
+  local OUTPUT_BIN_DIR=$1
+  local VERSION=$2
+  echo "$OUTPUT_BIN_DIR/archive/$VERSION"
 }
 
 # set no path conversion for windows <-> POSIX filesystem for 

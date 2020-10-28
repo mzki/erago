@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# assumes runs from top directory of erago repository.
+
+source scripts/common
+
+# GITHUB_API_TOKEN # from environment value
+if [ -z "${GITHUB_API_TOKEN}" ]; then
+  echo "environment value GITHUB_API_TOKEN required, but empty"
+  exit 1
+fi
+
+set -eu -o pipefail
+
+OUTPUTDIR=${1:-"build"}
+VERSION=`git describe --tags --abbrev=0`
+ARCHIVE_DIR=`archive_path $OUTPUTDIR $VERSION`
+
+echo "============================="
+echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
+echo "VERSION=${VERSION}"
+echo "GITHUB_API_TOKEN=xxx"
+echo "============================="
+
+# do relese on docker
+
+docker run --rm \
+  -v $PWD:$DIR_ON_DOCKER \
+  -w $DIR_ON_DOCKER \
+  -t $DOCKER_IMAGE_NAME_RELEASE \
+  sh scripts/release $ARCHIVE_DIR $VERSION $GITHUB_API_TOKEN
+
+#make -f $DIR_ON_DOCKER/Makefile.docker cross-archive

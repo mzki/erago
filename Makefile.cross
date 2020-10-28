@@ -1,6 +1,4 @@
 OUTPUTDIR        ?= build
-VERSION          ?= $(shell git describe --tags --abbrev=0)
-GITHUB_API_TOKEN ?="none"
 
 # --------------------------
 #  Build & Clean
@@ -19,7 +17,7 @@ archive:
 
 .PHONY: release
 release: 
-	@bash scripts/release $(OUTPUTDIR) $(VERSION) $(GITHUB_API_TOKEN)
+	@bash scripts/release-on-docker $(OUTPUTDIR)
 
 .PHONY: build-and-release
 build-and-release: clean build archive release
