@@ -17,7 +17,7 @@ Erago is a unofficial product. Please don't ask any issues about Erago to the ma
 
 * Use Lua5.1 as scripting language
 * Resizable window
-* Single binary and Cross platforms 
+* Single binary and Cross platforms
 
 ## Getting started
 
@@ -26,11 +26,13 @@ If you are developer or want to build manually, see next section.
 
 ### Starting Game 
 
-To start Game, just runs the executable binary (click .exe file on Windows).
+To start Game
+1. prepare extra resources, user scripts on `ELA` and game data schema table on `CSV`.
+2. run the executable binary (click .exe file on Windows) on direcotry with above.
 
 ## Build binary from source
 
-Requires `Go 1.12 >`.
+Requires `Go 1.15` or higher.
 
 You can use `go get` to fetch the repository.
 
@@ -71,7 +73,7 @@ bash build.sh
 ```
 
 You can prepare the build environment using Docker and Dockerfile.
-See `erago/mobile/model/Dockerfile` .
+See `erago/dockerfiles/Dockerfiles.mobile` .
 
 
 ## License
