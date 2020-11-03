@@ -154,12 +154,13 @@ func TestUnmarshalSystemDataNotRemainOlderData(t *testing.T) {
 	t.Logf("before marshal %#v", base)
 
 	// marshal gamestate
-	initialDump, err := json.Marshal(&gamestate.SystemData)
-	if err != nil {
+	if err := gamestate.SaveSystem(0); err != nil {
 		t.Fatal(err)
 	}
 
 	// modify game state after marshall
+	const BaseAfterValue = 201
+	base.SetByStr("体力", BaseAfterValue)
 	// 2nd chara
 	if _, err := gamestate.SystemData.Chara.AddID(CharaID); err != nil {
 		t.Fatal(err)
@@ -169,10 +170,9 @@ func TestUnmarshalSystemDataNotRemainOlderData(t *testing.T) {
 	}
 
 	//  gamestate using unmarshall
-	if err := json.Unmarshal(initialDump, &gamestate.SystemData); err != nil {
+	if err := gamestate.LoadSystem(0); err != nil {
 		t.Fatal(err)
 	}
-	gamestate.SystemData.refine(gamestate.CSV)
 
 	// check unmarshal result
 	if l := gamestate.SystemData.Chara.Len(); l != 1 {
@@ -182,6 +182,65 @@ func TestUnmarshalSystemDataNotRemainOlderData(t *testing.T) {
 	unmarshalChara := gamestate.SystemData.Chara.Get(0)
 	if unmarshalChara == nil {
 		t.Fatalf("nil characeter at index 0 after unmarshall")
+	}
+
+	// Check whether values are equal before and after marshal/unmarshal
+	oldBaseV, oldBaseOk := base.GetByStr("体力")
+	newBase, _ := unmarshalChara.GetInt("Base")
+	newBaseV, newBaseOk := newBase.GetByStr("体力")
+	if !oldBaseOk || !newBaseOk {
+		t.Fatal("missing Base value")
+	}
+	if oldBaseV == newBaseV {
+		t.Errorf("propagate unmarshal value for old data, not expect: %v, got: %v", oldBaseV, newBaseV)
+	}
+}
+
+// testing for system-data object should not remain older data
+func TestUnmarshalUserDataShouldNotHasOldData(t *testing.T) {
+	gamestate := NewGameState(CSVDB, Repo)
+	const CharaID = 1 // it must exist
+
+	// marshal gamestate
+	if err := gamestate.SaveSystem(0); err != nil {
+		t.Fatal(err)
+	}
+	if err := gamestate.SaveShare(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add unknown key
+	const UnknownValueKey = "Unknown"
+	gamestate.SystemData.UserVariables.IntMap[UnknownValueKey] = intData{}
+	gamestate.ShareData.IntMap[UnknownValueKey] = intData{}
+
+	//  unmarshall gamestate
+	if err := gamestate.LoadSystem(0); err != nil {
+		t.Fatal(err)
+	}
+	if err := gamestate.LoadShare(); err != nil {
+		t.Fatal(err)
+	}
+
+	// check unmarshal result
+	if _, ok := gamestate.SystemData.UserVariables.GetInt(UnknownValueKey); ok {
+		t.Errorf("Loaded game state should not have unknown value key, but has key: %v", UnknownValueKey)
+
+		names := make([]string, 0, 4)
+		for k := range gamestate.SystemData.UserVariables.IntMap {
+			names = append(names, k)
+		}
+		t.Logf("Dump IntMap keys: %#v", names)
+	}
+	// check unmarshal result
+	if _, ok := gamestate.ShareData.GetInt(UnknownValueKey); ok {
+		t.Errorf("Loaded game state should not have unknown value key, but has key: %v", UnknownValueKey)
+
+		names := make([]string, 0, 4)
+		for k := range gamestate.ShareData.IntMap {
+			names = append(names, k)
+		}
+		t.Logf("Dump IntMap keys: %#v", names)
 	}
 }
 

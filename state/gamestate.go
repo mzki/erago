@@ -50,6 +50,11 @@ func (state *GameState) SaveSystemWithComment(no int, comment string) error {
 
 // load game system state from save[No.].
 func (state *GameState) LoadSystem(no int) error {
+	// NOTE: dropExtra needed before unmarshal to compact unused values.
+	// It is not needed after unmarshal.
+	// When older data is loaded and extra data is restored, it may be
+	// used for migration from older data to newer data at higher layer.
+	state.SystemData.dropExtra()
 	err := state.repo.LoadSystemData(context.Background(), no, state.SystemData, state.SaveInfo)
 	if err != nil {
 		return err
@@ -66,6 +71,7 @@ func (state *GameState) SaveShare() error {
 
 // load shared data from "share.sav"
 func (state *GameState) LoadShare() error {
+	state.ShareData.dropExtra()
 	err := state.repo.LoadShareData(context.Background(), state.ShareData)
 	if err != nil {
 		return err
@@ -187,6 +193,28 @@ func (usr_vars *UserVariables) nameIndexer(varname string) (NameIndexer, bool) {
 	}
 }
 
+func (uvars *UserVariables) dropExtra() {
+	dropKeys := make([]string, 0)
+	for k := range uvars.IntMap {
+		if _, ok := uvars.constantMap[k]; !ok {
+			dropKeys = append(dropKeys, k)
+		}
+	}
+	for _, k := range dropKeys {
+		delete(uvars.IntMap, k)
+	}
+
+	dropKeys = dropKeys[:0]
+	for k := range uvars.StrMap {
+		if _, ok := uvars.constantMap[k]; !ok {
+			dropKeys = append(dropKeys, k)
+		}
+	}
+	for _, k := range dropKeys {
+		delete(uvars.StrMap, k)
+	}
+}
+
 // This methods is used for technical reason:
 // UserVariables after unmarshaling has no constantMap since it is unexported,
 // therefore, requiring re-set csv relationship.
@@ -248,6 +276,15 @@ func (sysdata *SystemData) Clear() {
 	sysdata.Assi.Clear()
 
 	sysdata.UserVariables.Clear()
+}
+
+// dropExtra drops extra values which are not found in csv database.
+// requiring before unmarshal.
+func (sysdata *SystemData) dropExtra() {
+	for _, c := range sysdata.Chara.List {
+		c.UserVariables.dropExtra()
+	}
+	sysdata.UserVariables.dropExtra()
 }
 
 // refine csv relationship for internally, requiring after unmarshal.
