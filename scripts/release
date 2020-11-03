@@ -7,6 +7,7 @@ ARCHIVE_DIR=$1
 VERSION=$2
 GITHUB_API_TOKEN=$3
 USERNAME="mzki"
+REPONAME="erago"
 
 command -v ghr > /dev/null 2>&1 || {
   echo >&2 "command ghr is required but not found. get it from https://github.com/tcnksm/ghr"
@@ -17,4 +18,4 @@ command -v ghr > /dev/null 2>&1 || {
 # do release
 # -----------------------
 : "release $VERSION..." && \
-  ghr -soft -u $USERNAME -t $GITHUB_API_TOKEN $VERSION $ARCHIVE_DIR
+  ghr -soft -u $USERNAME -r $REPONAME -t $GITHUB_API_TOKEN $VERSION $ARCHIVE_DIR

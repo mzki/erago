@@ -19,7 +19,7 @@ ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 
 
 # we extract version from output of built binary.
 VERSION=`${OUTPUTDIR}/${ARCHIVE_SRC_LINUX} -version 2>/dev/null`
-ARCHIVE_DIR=`archive_path ${OUTPUTDIR} ${VERSION}`
+ARCHIVE_DIR=`absolute_archive_path ${OUTPUTDIR} ${VERSION}`
 
 ARCHIVE_DST_LINUX=${ARCHIVE_DIR}/${ARCHIVE_SRC_LINUX}.tar.gz
 ARCHIVE_DST_DARWIN=${ARCHIVE_DIR}/${ARCHIVE_SRC_DARWIN}.tar.gz
