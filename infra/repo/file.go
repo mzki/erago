@@ -50,7 +50,7 @@ func (repo *FileRepository) Exist(ctx context.Context, id int) bool {
 }
 
 // save game system data to file.
-func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, gs *state.GameState) error {
+func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, system *state.SystemData, info *state.SaveInfo) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
@@ -62,17 +62,17 @@ func (repo *FileRepository) SaveSystemData(ctx context.Context, id int, gs *stat
 
 	// save metadata with comment
 	var metadata state.MetaData = repo.expectMeta // deep copy
-	metadata.Title = gs.SaveInfo.SaveComment
+	metadata.Title = info.SaveComment
 	if err := writeMetaDataTo(fp, &metadata); err != nil {
 		return err
 	}
 
 	// save system data
-	return serialize(fp, gs.SystemData) // return encode ok?
+	return serialize(fp, system) // return encode ok?
 }
 
 // Load game system data from file.
-func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, gs *state.GameState) error {
+func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, system *state.SystemData, info *state.SaveInfo) error {
 	// context is not used.
 	path := repo.config.savePath(defaultFileOf(id))
 
@@ -87,14 +87,14 @@ func (repo *FileRepository) LoadSystemData(ctx context.Context, id int, gs *stat
 		return err
 	}
 
-	gs.SaveInfo.LastLoadVer = metadata.GameVersion
-	gs.SaveInfo.LastLoadComment = metadata.Title
+	info.LastLoadVer = metadata.GameVersion
+	info.LastLoadComment = metadata.Title
 
-	return deserialize(fp, gs.SystemData)
+	return deserialize(fp, system)
 }
 
 // save share data to file
-func (repo *FileRepository) SaveShareData(ctx context.Context, gs *state.GameState) error {
+func (repo *FileRepository) SaveShareData(ctx context.Context, uv *state.UserVariables) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
@@ -108,11 +108,11 @@ func (repo *FileRepository) SaveShareData(ctx context.Context, gs *state.GameSta
 	if err := writeMetaDataTo(fp, &metadata); err != nil {
 		return err
 	}
-	return serialize(fp, gs.ShareData)
+	return serialize(fp, uv)
 }
 
 // load shared data from file
-func (repo *FileRepository) LoadShareData(ctx context.Context, gs *state.GameState) error {
+func (repo *FileRepository) LoadShareData(ctx context.Context, uv *state.UserVariables) error {
 	// context is not used.
 	path := repo.config.savePath(shareSaveFileName)
 
@@ -125,7 +125,7 @@ func (repo *FileRepository) LoadShareData(ctx context.Context, gs *state.GameSta
 	if _, err := readAndCheckMetaDataByState(fp, repo.expectMeta); err != nil {
 		return err
 	}
-	return deserialize(fp, gs.ShareData)
+	return deserialize(fp, uv)
 }
 
 func (repo *FileRepository) LoadMetaList(ctx context.Context, ids ...int) ([]*state.MetaData, error) {

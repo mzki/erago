@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+
 	"github.com/mzki/erago/state/csv"
 )
 
@@ -38,7 +39,7 @@ func (state *GameState) Clear() {
 
 // save game system state to save[No.].
 func (state *GameState) SaveSystem(no int) error {
-	return state.repo.SaveSystemData(context.Background(), no, state)
+	return state.repo.SaveSystemData(context.Background(), no, state.SystemData, state.SaveInfo)
 }
 
 // save game system state to save[No.] with comment.
@@ -49,7 +50,7 @@ func (state *GameState) SaveSystemWithComment(no int, comment string) error {
 
 // load game system state from save[No.].
 func (state *GameState) LoadSystem(no int) error {
-	err := state.repo.LoadSystemData(context.Background(), no, state)
+	err := state.repo.LoadSystemData(context.Background(), no, state.SystemData, state.SaveInfo)
 	if err != nil {
 		return err
 	}
@@ -60,12 +61,12 @@ func (state *GameState) LoadSystem(no int) error {
 
 // save shared data to "share.sav"
 func (state *GameState) SaveShare() error {
-	return state.repo.SaveShareData(context.Background(), state)
+	return state.repo.SaveShareData(context.Background(), state.ShareData)
 }
 
 // load shared data from "share.sav"
 func (state *GameState) LoadShare() error {
-	err := state.repo.LoadShareData(context.Background(), state)
+	err := state.repo.LoadShareData(context.Background(), state.ShareData)
 	if err != nil {
 		return err
 	}

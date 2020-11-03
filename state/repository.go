@@ -16,25 +16,25 @@ type Repository interface {
 	// ID is used to identify the persisted data.
 	// return nil on success. return some error on failure or
 	// context is canceled.
-	SaveSystemData(ctx context.Context, id int, state *GameState) error
+	SaveSystemData(ctx context.Context, id int, state *SystemData, info *SaveInfo) error
 
 	// LoadSystemData restores SystemData, the game specific data,
 	// into the given GameState.
 	// ID is used to identify the persisted data.
 	// return nil on success. return some error on failure or
 	// context is canceled.
-	LoadSystemData(ctx context.Context, id int, state *GameState) error
+	LoadSystemData(ctx context.Context, id int, state *SystemData, info *SaveInfo) error
 
 	// SaveSharedData persists ShareData, sharing over different GameState,
 	// in the given GameState. return nil on success. return some error
 	// on failure or context is canceled.
-	SaveShareData(ctx context.Context, state *GameState) error
+	SaveShareData(ctx context.Context, state *UserVariables) error
 
 	// LoadShareData restores ShareData, sharing over different GameState,
 	// into the given GameState.
 	// return nil on success. return some error on failure or
 	// context is canceled.
-	LoadShareData(ctx context.Context, state *GameState) error
+	LoadShareData(ctx context.Context, state *UserVariables) error
 
 	// LoadMetaList returns list of meta data associated to id list.
 	// If id list is empty or nil, return empty list of meta data for persisted

@@ -136,6 +136,55 @@ func TestMarshalSystemData(t *testing.T) {
 	}
 }
 
+// testing for system-data object should not remain older data
+func TestUnmarshalSystemDataNotRemainOlderData(t *testing.T) {
+	gamestate := NewGameState(CSVDB, Repo)
+	const CharaID = 1 // it must exist
+
+	chara, err := gamestate.SystemData.Chara.AddID(CharaID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, ok := chara.GetInt("Base")
+	if !ok {
+		t.Fatal("the user variable Base is not found")
+	}
+
+	base.SetByStr("体力", 100)
+	t.Logf("before marshal %#v", base)
+
+	// marshal gamestate
+	initialDump, err := json.Marshal(&gamestate.SystemData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// modify game state after marshall
+	// 2nd chara
+	if _, err := gamestate.SystemData.Chara.AddID(CharaID); err != nil {
+		t.Fatal(err)
+	}
+	if l := gamestate.SystemData.Chara.Len(); l != 2 {
+		t.Fatalf("expect 2 characters but %v", l)
+	}
+
+	//  gamestate using unmarshall
+	if err := json.Unmarshal(initialDump, &gamestate.SystemData); err != nil {
+		t.Fatal(err)
+	}
+	gamestate.SystemData.refine(gamestate.CSV)
+
+	// check unmarshal result
+	if l := gamestate.SystemData.Chara.Len(); l != 1 {
+		t.Errorf("expect old gamestate to have 1 charcter , but len(Chara)=%d", l)
+	}
+
+	unmarshalChara := gamestate.SystemData.Chara.Get(0)
+	if unmarshalChara == nil {
+		t.Fatalf("nil characeter at index 0 after unmarshall")
+	}
+}
+
 const (
 	IntKey  = "i"
 	StrKey  = "s"
