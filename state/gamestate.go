@@ -107,6 +107,13 @@ type strData struct {
 type intParamMap map[string]intData
 type strParamMap map[string]strData
 
+func (v intParamMap) addEntry(k string, values []int64) {
+	v[k] = intData{values}
+}
+func (v strParamMap) addEntry(k string, values []string) {
+	v[k] = strData{values}
+}
+
 type UserVariables struct {
 	// exported to marshall/unmarshall object. user should not
 	// access this field directory
@@ -291,6 +298,8 @@ func (sysdata *SystemData) dropExtra() {
 func (sysdata *SystemData) refine(csvM *csv.CsvManager) {
 	sysdata.Chara.refine(csvM)
 
+	// TODO: constants with only system scope is required for
+	// UserVariables existent test. But not perform since it's less occurs.
 	constants := csvM.Constants()
 	sysdata.UserVariables.refine(constants)
 }

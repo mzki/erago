@@ -199,7 +199,6 @@ func TestUnmarshalSystemDataNotRemainOlderData(t *testing.T) {
 // testing for system-data object should not remain older data
 func TestUnmarshalUserDataShouldNotHasOldData(t *testing.T) {
 	gamestate := NewGameState(CSVDB, Repo)
-	const CharaID = 1 // it must exist
 
 	// marshal gamestate
 	if err := gamestate.SaveSystem(0); err != nil {
@@ -241,6 +240,47 @@ func TestUnmarshalUserDataShouldNotHasOldData(t *testing.T) {
 			names = append(names, k)
 		}
 		t.Logf("Dump IntMap keys: %#v", names)
+	}
+}
+
+// testing for system-data object should have value existing in CSV database
+// This occurs when update CSV database to add new value then older persistet data not have
+// such values.
+func TestUnmarshalUserDataShouldHaveCsvData(t *testing.T) {
+	gamestate := NewGameState(CSVDB, Repo)
+	const CharaID = 1 // must exist
+
+	// Drop existent key
+	const DropValueKey = "CStr"
+	if _, ok := gamestate.CSV.Constants()[DropValueKey]; !ok {
+		t.Fatalf("This test requires CSV to must have key %v", DropValueKey)
+	}
+	chara, err := gamestate.SystemData.Chara.AddID(CharaID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	delete(chara.UserVariables.StrMap, DropValueKey)
+
+	// marshal gamestate
+	if err := gamestate.SaveSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove character
+	gamestate.SystemData.Chara.Remove(0)
+
+	//  unmarshall gamestate; scenario: many time later... csv has dropped key.
+	if err := gamestate.LoadSystem(0); err != nil {
+		t.Fatal(err)
+	}
+
+	// check unmarshal result
+	chara = gamestate.SystemData.Chara.Get(0)
+	if chara == nil {
+		t.Fatalf("after loaded, character(index %v) is not restored", 0)
+	}
+	if _, ok := chara.UserVariables.GetStr(DropValueKey); !ok {
+		t.Errorf("Loaded game chara should have csv defined value, but not exist key: %v", DropValueKey)
 	}
 }
 

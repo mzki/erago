@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/mzki/erago/state/csv"
+	"github.com/mzki/erago/util/log"
 )
 
 // Character has some parameters including csv character's parameters.
@@ -91,8 +92,42 @@ func newCharacters(csv *csv.CsvManager) *Characters {
 func (cs *Characters) refine(csvM *csv.CsvManager) {
 	cs.csv = csvM
 
-	constants := csvM.Constants()
-	for _, c := range cs.List {
+	for index, c := range cs.List {
+		csvC, ok := csvM.CharaMap[c.ID]
+		if ok {
+			// restore not exist values
+			// copy() requires since csvC's value should be constant.
+			for k, csvVars := range csvC.GetIntMap() {
+				if _, ok := c.GetInt(k); !ok {
+					newVars := append([]int64{}, csvVars...)
+					c.UserVariables.IntMap.addEntry(k, newVars)
+				}
+			}
+			for k, csvVars := range csvC.GetStrMap() {
+				if _, ok := c.GetStr(k); !ok {
+					newVars := append([]string{}, csvVars...)
+					c.UserVariables.StrMap.addEntry(k, newVars)
+				}
+			}
+		} else {
+			log.Infof("Chara index %v: unknown character ID (%v) exist", index, c.ID)
+			const dummyUID = 0 // since empty character is disposed immediately, uid is aribitrary.
+			emptyC := newEmptyCharacter(dummyUID, csvM)
+			// restore not exist values from empty character
+			// copy() is not needed since empty character out of scope soon.
+			for k, vars := range emptyC.IntMap {
+				if _, ok := c.GetInt(k); !ok {
+					c.UserVariables.IntMap.addEntry(k, vars.Values)
+				}
+			}
+			for k, vars := range emptyC.StrMap {
+				if _, ok := c.GetStr(k); !ok {
+					c.UserVariables.StrMap.addEntry(k, vars.Values)
+				}
+			}
+		}
+
+		constants := csvM.Constants()
 		c.UserVariables.refine(constants)
 	}
 }
