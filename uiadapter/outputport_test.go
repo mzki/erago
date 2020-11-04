@@ -126,7 +126,22 @@ func TestBuildTextBar(t *testing.T) {
 		Fg, Bg   string
 		Expect   string
 	}{
+		// normal value
 		{3, 9, 5, "#", ".", "[#..]"},
+		{4, 7, 7, "#", ".", "[##...]"},
+		{13, 13, 7, "#", ".", "[#####]"},
+		// empty value
+		{0, 0, 5, "#", ".", "[...]"},
+		// negative value
+		{-1, 9, 5, "#", ".", "[...]"},
+		{3, -1, 5, "#", ".", "[...]"},
+		{-1, 1, 5, "#", ".", "[...]"},
+		// invalid width
+		{0, 0, 0, "#", ".", "[]"},
+		{0, 0, -1, "#", ".", "[]"},
+		// long symbol
+		{3, 9, 5, "####", ".", "[#..]"},
+		{3, 9, 5, "#", "....", "[#..]"},
 	} {
 		if got := buildTextBar(test.Now, test.Max, test.W, test.Fg, test.Bg); got != test.Expect {
 			t.Errorf("different text bar, got: %s, expect: %s", got, test.Expect)

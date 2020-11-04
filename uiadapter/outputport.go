@@ -193,36 +193,46 @@ func (p outputPort) VPrintButton(vname, caption, cmd string) error {
 
 func buildTextBar(now, max int64, w int, fg, bg string) string {
 	w -= 2 // remove frame width, ASCII characters "[" and "]".
-	if w <= 0 {
+	if w <= 1 {
 		return "[]"
 	}
 
 	// check fg and bg is valid utf8 symbol.
-	fg_r, _ := utf8.DecodeRuneInString(fg)
-	if fg_r == utf8.RuneError {
+	fgR, _ := utf8.DecodeRuneInString(fg)
+	if fgR == utf8.RuneError {
 		panic("buildTextBar: invalid utf8 string for fg")
 	}
-	bg_r, _ := utf8.DecodeRuneInString(bg)
-	if bg_r == utf8.RuneError {
+	bgR, _ := utf8.DecodeRuneInString(bg)
+	if bgR == utf8.RuneError {
 		panic("buildTextBar: invalid utf8 string for bg")
 	}
-
-	now_w := int(float64(w) * float64(now) / float64(max))
-	fg_w := width.RuneWidth(fg_r)
-	if fg_w == 0 {
+	fgW := width.RuneWidth(fgR)
+	if fgW == 0 {
 		panic("TextBar: zero width fg character")
 	}
-	result := "[" + strings.Repeat(string(fg_r), now_w/fg_w)
-
-	rest_w := w - now_w
-	if rest_w == 0 {
-		return result + "]"
-	}
-	bg_w := width.RuneWidth(bg_r)
-	if bg_w == 0 {
+	bgW := width.RuneWidth(bgR)
+	if bgW == 0 {
 		panic("TextBar: zero width bg character")
 	}
-	result += strings.Repeat(string(bg_r), rest_w/bg_w) + "]"
+
+	// edge cases for now, max
+	if max <= 0 {
+		return "[" + strings.Repeat(string(bgR), w) + "]"
+	}
+	if now < 0 {
+		now = 0
+	}
+	if now > max {
+		now = max
+	}
+	nowW := int(float64(w) * float64(now) / float64(max))
+	result := "[" + strings.Repeat(string(fgR), nowW/fgW)
+
+	restW := w - nowW
+	if restW == 0 {
+		return result + "]"
+	}
+	result += strings.Repeat(string(bgR), restW/bgW) + "]"
 	// TODO: if rest_w is odd and bg is a multibyte character,
 	// returned bar's width is w-1. it should be handled?
 	return result
