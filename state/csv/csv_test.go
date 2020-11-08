@@ -45,10 +45,10 @@ func TestCsvInitInvalidConfig(t *testing.T) {
 }
 
 var (
-	ValidVSpecs = variableSpecs{
+	ValidVSpecs = variableSpecInternalMap{
 		"Base": {scopeSystem, dTypeInt, "Base", "./../../stub/CSV/Base.csv", []int{100}},
 	}
-	InValidVSpecs = variableSpecs{
+	InValidVSpecs = variableSpecInternalMap{
 		"Base": {scopeSystem, dTypeInt, "Base", "Unkown/Dir/Base.csv", []int{100}},
 	}
 )

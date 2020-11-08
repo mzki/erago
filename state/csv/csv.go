@@ -71,11 +71,11 @@ type CsvManager struct {
 	CharaMap map[int64]*Character
 
 	// the spec of the allocating variables.
-	vspecs variableSpecs
+	vspecs variableSpecInternalMap
 
 	// these are cached since character variables are referenced frequently.
-	vspecsCharaInt variableSpecs
-	vspecsCharaStr variableSpecs
+	vspecsCharaInt variableSpecInternalMap
+	vspecsCharaStr variableSpecInternalMap
 
 	// some optional data, GameBase, Replace, and aliasMap,
 	// are loaded from _{filename}.csv to configure
@@ -154,6 +154,40 @@ const (
 	ScopeChara = VarScope(scopeChara)
 )
 
+// VariableSpec defines the spec of user defined varables.
+type VariableSpec struct {
+	VarName string
+	Scope   VarScope
+	Size    uint64
+}
+
+// IntVariableSpecs returns slice of VariableSpecs which mathces
+// given VarScope and data type Int.
+func (cm *CsvManager) IntVariableSpecs(where VarScope) []VariableSpec {
+	return cm.selectVariableSpecs(where, dTypeInt)
+}
+
+// StrVariableSpecs returns slice of VariableSpecs which mathces
+// given VarScope and data type Str.
+func (cm *CsvManager) StrVariableSpecs(where VarScope) []VariableSpec {
+	return cm.selectVariableSpecs(where, dTypeStr)
+}
+
+func (cm *CsvManager) selectVariableSpecs(where VarScope, dtype vspecIdent) []VariableSpec {
+	vs := cm.vspecs.selectByScopeAndDType(vspecIdent(where), dtype)
+	vspecs := make([]VariableSpec, len(vs))
+	var i int = 0
+	for _, v := range vs {
+		vspecs[i] = VariableSpec{
+			VarName: v.VarName,
+			Scope:   VarScope(v.Scope),
+			Size:    uint64(v.Size[0]),
+		}
+		i++
+	}
+	return vspecs
+}
+
 // return variable maps, which type are DataType string and
 // scope where, where = {System, Share}.
 // It allocates new valiables every call.
@@ -178,7 +212,7 @@ func (cm *CsvManager) BuildIntUserVars(where VarScope) map[string][]int64 {
 	}
 }
 
-func newIntMapByVSpecs(vspecs variableSpecs) map[string][]int64 {
+func newIntMapByVSpecs(vspecs variableSpecInternalMap) map[string][]int64 {
 	int_map := make(map[string][]int64, len(vspecs))
 	for _, vs := range vspecs {
 		int_map[vs.VarName] = make([]int64, vs.Size[0])
@@ -186,7 +220,7 @@ func newIntMapByVSpecs(vspecs variableSpecs) map[string][]int64 {
 	return int_map
 }
 
-func newStrMapByVSpecs(vspecs variableSpecs) map[string][]string {
+func newStrMapByVSpecs(vspecs variableSpecInternalMap) map[string][]string {
 	str_map := make(map[string][]string, len(vspecs))
 	for _, vs := range vspecs {
 		str_map[vs.VarName] = make([]string, vs.Size[0])
@@ -239,7 +273,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 
 	// load user specific variables.
 	{
-		var all_vspecs variableSpecs = make(variableSpecs)
+		var all_vspecs variableSpecInternalMap = make(variableSpecInternalMap)
 		var vspec_path = config.filepath(variableSpecFile)
 		if FileExists(vspec_path) {
 			if vs, err := readVariableSpecsFile(vspec_path); err != nil {
@@ -284,7 +318,7 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 	}
 
 	// fit variable size by Constant.Names one.
-	new_vspecs := cm.vspecs.Map(func(v variableSpec) variableSpec {
+	new_vspecs := cm.vspecs.Map(func(v variableSpecInternal) variableSpecInternal {
 		if v.Size[0] <= 0 {
 			v.Size[0] = cm.constants[v.VarName].Names.Len()
 		}
@@ -299,10 +333,10 @@ func (cm *CsvManager) Initialize(config Config) (err error) {
 }
 
 // initVariableSpecs build csv Constants from all the variableSpecs.
-func (cm *CsvManager) initVariableSpecs(all_vspecs variableSpecs) error {
+func (cm *CsvManager) initVariableSpecs(all_vspecs variableSpecInternalMap) error {
 	// exclude execeptional variable, Item, and ItemPrice,
 	// and built rest only.
-	ordinary_vspecs := all_vspecs.selectBy(func(v variableSpec) bool {
+	ordinary_vspecs := all_vspecs.selectBy(func(v variableSpecInternal) bool {
 		exception := v.VarName == exceptItemName || v.VarName == exceptItemPriceName
 		return !exception
 	})
@@ -314,7 +348,7 @@ func (cm *CsvManager) initVariableSpecs(all_vspecs variableSpecs) error {
 }
 
 // build Names of given variableSpecs
-func (cm *CsvManager) buildConstants(vspecs variableSpecs) error {
+func (cm *CsvManager) buildConstants(vspecs variableSpecInternalMap) error {
 	cm.constants = make(map[string]Constant, len(vspecs)*2)
 
 	for _, vs := range vspecs {

@@ -252,6 +252,7 @@ func TestUnmarshalUserDataShouldHaveCsvData(t *testing.T) {
 
 	// Drop existent key
 	const DropValueKey = "CStr"
+	const ShrinkValueKey = "Base"
 	if _, ok := gamestate.CSV.Constants()[DropValueKey]; !ok {
 		t.Fatalf("This test requires CSV to must have key %v", DropValueKey)
 	}
@@ -259,7 +260,12 @@ func TestUnmarshalUserDataShouldHaveCsvData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Drop specific field to suppose older data
 	delete(chara.UserVariables.StrMap, DropValueKey)
+	// Shrink specific field to suppose older data
+	shrinkData := chara.IntMap[ShrinkValueKey].Values
+	shrinkDataOriginalLen := len(shrinkData)
+	chara.IntMap.addEntry(ShrinkValueKey, shrinkData[:shrinkDataOriginalLen-1])
 
 	// marshal gamestate
 	if err := gamestate.SaveSystem(0); err != nil {
@@ -282,6 +288,11 @@ func TestUnmarshalUserDataShouldHaveCsvData(t *testing.T) {
 	if _, ok := chara.UserVariables.GetStr(DropValueKey); !ok {
 		t.Errorf("Loaded game chara should have csv defined value, but not exist key: %v", DropValueKey)
 	}
+	if v, ok := chara.UserVariables.GetInt(ShrinkValueKey); !ok {
+		t.Errorf("Loaded game chara should have csv defined value, but not eixst key: %v", ShrinkValueKey)
+	} else if len(v.Values) != shrinkDataOriginalLen {
+		t.Errorf("Loaded ShrinkData (%v) has diffrent length: %v, from csv defined: %v", ShrinkValueKey, len(v.Values), shrinkDataOriginalLen)
+	}
 }
 
 const (
@@ -289,6 +300,15 @@ const (
 	StrKey  = "s"
 	DataKey = "1"
 	VarLen  = 10
+)
+
+var (
+	testDataIntVSpecs = intVariableSpecs{
+		csv.VariableSpec{VarName: IntKey, Scope: csv.ScopeSystem, Size: VarLen},
+	}
+	testDataStrVSpecs = strVariableSpecs{
+		csv.VariableSpec{VarName: StrKey, Scope: csv.ScopeSystem, Size: VarLen},
+	}
 )
 
 func newTestUserVariable() UserVariables {
@@ -363,7 +383,7 @@ func TestUserVariableMarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 	// reuiring call refine() after unmarshal.
-	newUV.refine(uv.constantMap)
+	newUV.refine(uv.constantMap, testDataIntVSpecs, testDataStrVSpecs)
 
 	vars, _ = newUV.GetInt(IntKey)
 	if v, ok := vars.GetByStr(DataKey); !ok {

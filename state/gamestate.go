@@ -77,7 +77,9 @@ func (state *GameState) LoadShare() error {
 		return err
 	}
 	// require to recover unexported fields
-	state.ShareData.refine(state.CSV.Constants())
+	intVSpecs := intVariableSpecs(state.CSV.IntVariableSpecs(csv.ScopeShare))
+	strVSpecs := strVariableSpecs(state.CSV.StrVariableSpecs(csv.ScopeShare))
+	state.ShareData.refine(state.CSV.Constants(), intVSpecs, strVSpecs)
 	return nil
 }
 
@@ -114,6 +116,12 @@ func (v strParamMap) addEntry(k string, values []string) {
 	v[k] = strData{values}
 }
 
+// define types so that VariableSpec with specific data type has explicitly type safety.
+type intVariableSpecs []csv.VariableSpec
+type strVariableSpecs []csv.VariableSpec
+
+// UserVariables defines user defined values from csv data base.
+// Its contents are accessed via API such as GetInt(varname) or GetStr(varname).
 type UserVariables struct {
 	// exported to marshall/unmarshall object. user should not
 	// access this field directory
@@ -157,6 +165,14 @@ func newUserVariablesShare(cm *csv.CsvManager) UserVariables {
 	return newUserVariablesByMap(
 		cm.BuildIntUserVars(csv.ScopeShare),
 		cm.BuildStrUserVars(csv.ScopeShare),
+		cm.Constants(),
+	)
+}
+
+func newUserVariablesChara(cm *csv.CsvManager) UserVariables {
+	return newUserVariablesByMap(
+		cm.BuildIntUserVars(csv.ScopeChara),
+		cm.BuildStrUserVars(csv.ScopeChara),
 		cm.Constants(),
 	)
 }
@@ -225,8 +241,110 @@ func (uvars *UserVariables) dropExtra() {
 // This methods is used for technical reason:
 // UserVariables after unmarshaling has no constantMap since it is unexported,
 // therefore, requiring re-set csv relationship.
-func (usr_vars *UserVariables) refine(cmap map[string]csv.Constant) {
+func (usr_vars *UserVariables) refine(cmap map[string]csv.Constant, intVSpecs intVariableSpecs, strVSpecs strVariableSpecs) {
 	usr_vars.constantMap = cmap
+
+	for _, v := range intVSpecs {
+		key := v.VarName
+		ivalues, ok := usr_vars.IntMap[key]
+		var newValues []int64
+		switch {
+		case !ok:
+			// missing csv defined values
+			newValues = make([]int64, v.Size)
+		case uint64(len(ivalues.Values)) < v.Size:
+			// smaller than csv defined
+			tail := make([]int64, v.Size-uint64(len(ivalues.Values)))
+			newValues = append(ivalues.Values, tail...)
+		case uint64(len(ivalues.Values)) > v.Size:
+			// larger than csv defined
+			newValues = ivalues.Values[:v.Size]
+		default:
+			newValues = ivalues.Values
+		}
+		usr_vars.IntMap.addEntry(key, newValues)
+	}
+
+	for _, v := range strVSpecs {
+		key := v.VarName
+		svalues, ok := usr_vars.StrMap[key]
+		var newValues []string
+		switch {
+		case !ok:
+			// missing csv defined values
+			newValues = make([]string, v.Size)
+		case uint64(len(svalues.Values)) < v.Size:
+			// smaller than csv defined
+			tail := make([]string, v.Size-uint64(len(svalues.Values)))
+			newValues = append(svalues.Values, tail...)
+		case uint64(len(svalues.Values)) > v.Size:
+			// larger than csv defined
+			newValues = svalues.Values[:v.Size]
+		default:
+			newValues = svalues.Values
+		}
+		usr_vars.StrMap.addEntry(key, newValues)
+	}
+}
+
+// similar with refine() but use csv.Character as initialize source.
+func (usr_vars *UserVariables) refineByCsvChara(
+	cmap map[string]csv.Constant,
+	intVSpecs intVariableSpecs,
+	strVSpecs strVariableSpecs,
+	csvC *csv.Character,
+) {
+	usr_vars.constantMap = cmap
+
+	csvIntMap := csvC.GetIntMap()
+	csvStrMap := csvC.GetStrMap()
+
+	for _, v := range intVSpecs {
+		key := v.VarName
+		ivalues, ok := usr_vars.IntMap[key]
+		csvValues, csvOk := csvIntMap[key]
+		var newValues []int64
+		switch {
+		case !csvOk:
+			panic("inconsistent user value map for key(" + key + ")")
+		case !ok:
+			// missing csv defined values
+			newValues = append([]int64{}, csvValues...)
+		case uint64(len(ivalues.Values)) < v.Size:
+			// smaller than csv defined
+			newValues = append(ivalues.Values, csvValues[len(ivalues.Values):]...)
+		case uint64(len(ivalues.Values)) > v.Size:
+			// larger than csv defined
+			// TODO: Is it OK to shrink older data?
+			newValues = ivalues.Values[:v.Size]
+		default:
+			newValues = ivalues.Values
+		}
+		usr_vars.IntMap.addEntry(key, newValues)
+	}
+	for _, v := range strVSpecs {
+		key := v.VarName
+		svalues, ok := usr_vars.StrMap[key]
+		csvValues, csvOk := csvStrMap[key]
+		var newValues []string
+		switch {
+		case !csvOk:
+			panic("inconsistent user value map for key(" + key + ")")
+		case !ok:
+			// missing csv defined values
+			newValues = append([]string{}, csvValues...)
+		case uint64(len(svalues.Values)) < v.Size:
+			// smaller than csv defined
+			newValues = append(svalues.Values, csvValues[len(svalues.Values):]...)
+		case uint64(len(svalues.Values)) > v.Size:
+			// larger than csv defined
+			// TODO: Is it OK to shrink older data?
+			newValues = svalues.Values[:v.Size]
+		default:
+			newValues = svalues.Values
+		}
+		usr_vars.StrMap.addEntry(key, newValues)
+	}
 }
 
 // iteration of each int parameters.
@@ -301,7 +419,9 @@ func (sysdata *SystemData) refine(csvM *csv.CsvManager) {
 	// TODO: constants with only system scope is required for
 	// UserVariables existent test. But not perform since it's less occurs.
 	constants := csvM.Constants()
-	sysdata.UserVariables.refine(constants)
+	intVSpecs := intVariableSpecs(csvM.IntVariableSpecs(csv.ScopeSystem))
+	strVSpecs := strVariableSpecs(csvM.StrVariableSpecs(csv.ScopeSystem))
+	sysdata.UserVariables.refine(constants, intVSpecs, strVSpecs)
 }
 
 // SaveInfo has information isolated save and load.

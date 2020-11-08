@@ -12,8 +12,8 @@ import (
 	"github.com/mzki/erago/util/errutil"
 )
 
-// variableSpec defines the spec of user defined varables.
-type variableSpec struct {
+// variableSpecInternal defines the spec of user defined varables.
+type variableSpecInternal struct {
 	Scope    vspecIdent // where the variable is used.
 	DataType vspecIdent // type of the variable.
 	VarName  string     // name for the variable.
@@ -48,7 +48,7 @@ var parseDTypeMap = map[string]vspecIdent{
 	"Str": dTypeStr,
 }
 
-var builtinVSpecs = variableSpecs{
+var builtinVSpecs = variableSpecInternalMap{
 	// CSV scope, dType is not used and not allocated.
 	BuiltinTrainName:  {scopeCSV, dTypeStr, BuiltinTrainName, BuiltinTrainName + ".csv", []int{0}},
 	BuiltinSourceName: {scopeCSV, dTypeInt, BuiltinSourceName, BuiltinSourceName + ".csv", []int{0}},
@@ -71,7 +71,7 @@ var builtinVSpecs = variableSpecs{
 }
 
 // read new specs of user variables from file, "VariableSpec.csv".
-func readVariableSpecsFile(fname string) (variableSpecs, error) {
+func readVariableSpecsFile(fname string) (variableSpecInternalMap, error) {
 	fp, err := filesystem.Load(fname)
 	if err != nil {
 		return nil, err
@@ -82,8 +82,8 @@ func readVariableSpecsFile(fname string) (variableSpecs, error) {
 }
 
 // read new specs of user variables from io.Reader
-func readVariableSpecs(r io.Reader) (variableSpecs, error) {
-	vspecs := make(variableSpecs, len(builtinVSpecs)+16) // 16 is arbitrary value
+func readVariableSpecs(r io.Reader) (variableSpecInternalMap, error) {
+	vspecs := make(variableSpecInternalMap, len(builtinVSpecs)+16) // 16 is arbitrary value
 
 	err := ReadFunc(r, func(record []string) error {
 		vs, err := parseVariableSpec(record)
@@ -105,7 +105,7 @@ func readVariableSpecs(r io.Reader) (variableSpecs, error) {
 // Some buitin vspec are not appended if the variable name for these
 // already exist in the given vspec map.
 // It returns appended number of builtin variable spec and the maximum.
-func appendBuiltinVSpecs(vspecs variableSpecs) []string {
+func appendBuiltinVSpecs(vspecs variableSpecInternalMap) []string {
 	notApeendedKeys := make([]string, 0, 4)
 	for vname, v := range builtinVSpecs {
 		if _, has := vspecs[vname]; has {
@@ -117,8 +117,8 @@ func appendBuiltinVSpecs(vspecs variableSpecs) []string {
 	return notApeendedKeys
 }
 
-func parseVariableSpec(record []string) (variableSpec, error) {
-	vspec := variableSpec{}
+func parseVariableSpec(record []string) (variableSpecInternal, error) {
+	vspec := variableSpecInternal{}
 	if len(record) < 5 {
 		return vspec, errors.New(`Variables must be defined by at least 5 columns:
 		Scope, DataType, VarName, FileName, Size, (Size2, ...)].`)
@@ -152,7 +152,7 @@ func parseVariableSpec(record []string) (variableSpec, error) {
 		return vspec, err
 	}
 
-	return variableSpec{
+	return variableSpecInternal{
 		Scope:    scope,
 		DataType: dtype,
 		VarName:  record[2],
@@ -191,10 +191,10 @@ func basenameWithoutExt(fname string) string {
 }
 
 // define type that has a method selelct_by()
-type variableSpecs map[string]variableSpec
+type variableSpecInternalMap map[string]variableSpecInternal
 
-func (vspecs variableSpecs) selectBy(f func(variableSpec) bool) variableSpecs {
-	new_vspecs := make(variableSpecs, len(vspecs)/2)
+func (vspecs variableSpecInternalMap) selectBy(f func(variableSpecInternal) bool) variableSpecInternalMap {
+	new_vspecs := make(variableSpecInternalMap, len(vspecs)/2)
 	for k, v := range vspecs {
 		if f(v) {
 			new_vspecs[k] = v
@@ -203,19 +203,19 @@ func (vspecs variableSpecs) selectBy(f func(variableSpec) bool) variableSpecs {
 	return new_vspecs
 }
 
-func (vspecs variableSpecs) selectByScopeAndDType(scope, dtype vspecIdent) variableSpecs {
-	return vspecs.selectBy(func(vs variableSpec) bool {
+func (vspecs variableSpecInternalMap) selectByScopeAndDType(scope, dtype vspecIdent) variableSpecInternalMap {
+	return vspecs.selectBy(func(vs variableSpecInternal) bool {
 		return vs.Scope == scope && vs.DataType == dtype
 	})
 }
 
-func (vspecs variableSpecs) find(vname string) (vspec variableSpec, ok bool) {
+func (vspecs variableSpecInternalMap) find(vname string) (vspec variableSpecInternal, ok bool) {
 	v, ok := vspecs[vname]
 	return v, ok
 }
 
-func (vspecs variableSpecs) Map(f func(variableSpec) variableSpec) variableSpecs {
-	new_vs := make(variableSpecs, len(vspecs))
+func (vspecs variableSpecInternalMap) Map(f func(variableSpecInternal) variableSpecInternal) variableSpecInternalMap {
+	new_vs := make(variableSpecInternalMap, len(vspecs))
 	for k, v := range vspecs {
 		new_vs[k] = f(v)
 	}
