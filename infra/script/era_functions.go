@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 
 	attr "github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/scene"
@@ -196,6 +196,9 @@ func (ft functor) loadSystem(L *lua.LState) int {
 	no := L.CheckInt(1)
 	err := ft.state.LoadSystem(no)
 	raiseErrorIf(L, err)
+	// re-register loaded values, which may be changed its structure
+	registerSystemParams(L, ft.state)
+	registerCharaParams(L, ft.state)
 	return 0
 }
 
@@ -238,6 +241,8 @@ func (ft functor) saveShare(L *lua.LState) int {
 func (ft functor) loadShare(L *lua.LState) int {
 	err := ft.state.LoadShare()
 	raiseErrorIf(L, err)
+	// re-register loaded values, which may be changed its structure
+	registerSystemParams(L, ft.state)
 	return 0
 }
 
@@ -982,6 +987,9 @@ func (ft functor) saveScene(L *lua.LState) int {
 func (ft functor) loadScene(L *lua.LState) int {
 	err := ft.game.DoLoadGameScene()
 	if err == scene.ErrorSceneNext {
+		// re-register loaded values, which may be changed its structure
+		registerSystemParams(L, ft.state)
+		registerCharaParams(L, ft.state)
 		L.Error(lua.LString(ScriptGoToNextSceneMessage), 0)
 		return 0
 	}

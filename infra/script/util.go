@@ -1,6 +1,6 @@
 package script
 
-import "github.com/yuin/gopher-lua"
+import lua "github.com/yuin/gopher-lua"
 
 // // UserData and MetaTable utils
 
@@ -11,6 +11,15 @@ func newMetatable(L *lua.LState, mt_name string, fields map[string]lua.LValue) *
 		mt.RawSetString(key, lv)
 	}
 	return mt
+}
+
+// get Metatable with mtName if exist and return it,
+// if not exist create new Metatable with name and field values.
+func getOrNewMetatable(L *lua.LState, mtName string, fields map[string]lua.LValue) *lua.LTable {
+	if mt, ok := L.GetTypeMetatable(mtName).(*lua.LTable); ok {
+		return mt
+	}
+	return newMetatable(L, mtName, fields)
 }
 
 // return registered index and newindex metatable.

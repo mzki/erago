@@ -3,9 +3,8 @@ package script
 import (
 	"fmt"
 
-	"github.com/yuin/gopher-lua"
-
 	"github.com/mzki/erago/state"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const (
@@ -23,14 +22,11 @@ const (
 // register Chara data, method, metatables.
 func registerCharaParams(L *lua.LState, gamestate *state.GameState) {
 	era_module := mustGetEraModule(L)
-	if lv := era_module.RawGetString(luaCharaListName); lua.LVAsBool(lv) {
-		return // already exists
-	}
 
 	registerCharaMeta(L) // must be first
 
 	{ // register chara list
-		chara_list_meta := newMetatable(L, luaCharaListMetaName, map[string]lua.LValue{
+		chara_list_meta := getOrNewMetatable(L, luaCharaListMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(getCharaListFields),
 			"__len":       L.NewFunction(lenScalable),
 			"__metatable": metaProtectObj,
@@ -43,7 +39,7 @@ func registerCharaParams(L *lua.LState, gamestate *state.GameState) {
 
 	{ // register chara refereces
 		get_set_func := L.NewFunction(getSetCharaReferences)
-		chara_refs_meta := newMetatable(L, luaCharaRefsMetaName, map[string]lua.LValue{
+		chara_refs_meta := getOrNewMetatable(L, luaCharaRefsMetaName, map[string]lua.LValue{
 			"__index":     get_set_func,
 			"__newindex":  get_set_func,
 			"__len":       L.NewFunction(lenScalable),
@@ -226,11 +222,7 @@ func getSetCharaReferences(L *lua.LState) int {
 // // lua character
 
 func registerCharaMeta(L *lua.LState) {
-	if lv := L.GetTypeMetatable(luaCharacterMetaName); lua.LVAsBool(lv) {
-		return // already exists
-	}
-
-	_ = newMetatable(L, luaCharacterMetaName, map[string]lua.LValue{
+	_ = getOrNewMetatable(L, luaCharacterMetaName, map[string]lua.LValue{
 		"__index":     L.NewFunction(getCharaFields),
 		"__newindex":  L.NewFunction(setCharaFields),
 		"__metatable": metaProtectObj,

@@ -14,11 +14,16 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-var globalInterpreter *Interpreter
+var (
+	globalInterpreter          *Interpreter
+	globalOlderDataInterpreter *Interpreter
+)
 
 func TestMain(m *testing.M) {
 	globalInterpreter = newInterpreter()
 	defer globalInterpreter.Quit()
+	globalOlderDataInterpreter = newOlderDataInterpreter()
+	defer globalOlderDataInterpreter.Quit()
 
 	os.Exit(m.Run())
 }
@@ -37,6 +42,14 @@ func newConfig() Config {
 
 func newInterpreter() *Interpreter {
 	state, err := stub.GetGameState()
+	if err != nil {
+		panic(err)
+	}
+	return NewInterpreter(state, stub.NewScriptGameController(), newConfig())
+}
+
+func newOlderDataInterpreter() *Interpreter {
+	state, err := stub.GetOlderGameState()
 	if err != nil {
 		panic(err)
 	}
@@ -68,6 +81,29 @@ func TestInterpreterDoFiles(t *testing.T) {
 		}
 	}
 
+}
+
+func TestInterpreterOlderDataLoadTest(t *testing.T) {
+	ip := globalInterpreter
+	olderIpr := globalOlderDataInterpreter
+
+	// Do on the older data context
+	const olderSubDir = "on_olderdata"
+	for _, file := range []string{
+		"savedata.lua",
+	} {
+		if err := olderIpr.DoFile(filepath.Join(scriptDir, olderSubDir, file)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Do on the newer data context
+	for _, file := range []string{
+		"loaddata.lua",
+	} {
+		if err := ip.DoFile(filepath.Join(scriptDir, file)); err != nil {
+			t.Error(err)
+		}
+	}
 }
 
 func TestInterpreterLoadDataOnSandbox(t *testing.T) {

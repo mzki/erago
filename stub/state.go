@@ -10,21 +10,26 @@ import (
 	"github.com/mzki/erago/state/csv"
 )
 
-// __FILE__
+// GetCurrentFile is same as __FILE__ in c macro
 func GetCurrentFile() string {
 	_, filename, _, _ := runtime.Caller(1)
 	return filename
 }
 
-// __DIR__
+// GetCurrentDir is same as __DIR__ in c macro
 func GetCurrentDir() string {
 	fname := GetCurrentFile()
 	return path.Dir(fname)
 }
 
-var csvDB *csv.CsvManager
+var (
+	csvDB      *csv.CsvManager
+	olderCsvDB *csv.CsvManager
+)
 
-// return global test csv manager which contains
+const olderSubDir = "olderData"
+
+// GetCSV returns global test csv manager which contains
 // some values already.
 func GetCSV() (*csv.CsvManager, error) {
 	if csvDB == nil {
@@ -38,9 +43,25 @@ func GetCSV() (*csv.CsvManager, error) {
 	return csvDB, nil
 }
 
-var gameState *state.GameState
+// GetOlderCSV returns global test csv manager with older data schema.
+func GetOlderCSV() (*csv.CsvManager, error) {
+	if olderCsvDB == nil {
+		olderCsvDB = &csv.CsvManager{}
+		err := olderCsvDB.Initialize(csv.Config{
+			Dir:          filepath.Join(GetCurrentDir(), olderSubDir, "CSV"),
+			CharaPattern: "Chara/Chara*",
+		})
+		return olderCsvDB, err
+	}
+	return olderCsvDB, nil
+}
 
-// return global test game state which contains
+var (
+	gameState      *state.GameState
+	olderGameState *state.GameState
+)
+
+// GetGameState returns global test game state which contains
 // some values already.
 func GetGameState() (*state.GameState, error) {
 	csvm, err := GetCSV()
@@ -55,4 +76,22 @@ func GetGameState() (*state.GameState, error) {
 		gameState = state.NewGameState(csvm, repo.NewFileRepository(csvm, config))
 	}
 	return gameState, nil
+}
+
+// GetOlderGameState returns global test game state which contains
+// older data schema.
+func GetOlderGameState() (*state.GameState, error) {
+	csvm, err := GetOlderCSV()
+	if err != nil {
+		return nil, err
+	}
+
+	if olderGameState == nil {
+		config := repo.Config{
+			// same as normal save data directory so that older and newer save data are shared on this point.
+			SaveFileDir: filepath.Join(GetCurrentDir(), "sav"),
+		}
+		olderGameState = state.NewGameState(csvm, repo.NewFileRepository(csvm, config))
+	}
+	return olderGameState, nil
 }

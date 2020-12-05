@@ -2,9 +2,10 @@ package script
 
 import (
 	"fmt"
+
 	"github.com/mzki/erago/state"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // // register System Paramters
@@ -20,19 +21,13 @@ const (
 )
 
 func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
-	era_module, ok := L.GetGlobal(EraModuleName).(*lua.LTable)
-	if !ok {
-		panic(EraModuleName + " is not found")
-	}
-	if v := era_module.RawGetString(systemParamsModuleName); lua.LVAsBool(v) {
-		return // already registered
-	}
+	era_module := mustGetEraModule(L)
 
 	len_func := L.NewFunction(lenScalable)
 	next_int_func := L.NewFunction(lnextIntPair)
 	next_str_func := L.NewFunction(lnextStrPair)
 	pairs_func := L.NewFunction(lintstrIteratorMetaPairs)
-	intparam_meta := newMetatable(L, intParamMetaName, map[string]lua.LValue{
+	intparam_meta := getOrNewMetatable(L, intParamMetaName, map[string]lua.LValue{
 		"__index":     L.NewFunction(intParamMetaIndex),
 		"__newindex":  L.NewFunction(intParamMetaNewIndex),
 		"__len":       len_func,
@@ -44,7 +39,7 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 	L.SetFuncs(intparam_meta, intParamMethods)
 	L.SetGlobal(intParamMetaName, intparam_meta)
 
-	strparam_meta := newMetatable(L, strParamMetaName, map[string]lua.LValue{
+	strparam_meta := getOrNewMetatable(L, strParamMetaName, map[string]lua.LValue{
 		"__index":     L.NewFunction(strParamMetaIndex),
 		"__newindex":  L.NewFunction(strParamMetaNewIndex),
 		"__len":       len_func,
