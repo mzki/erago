@@ -32,7 +32,7 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 	LLenFunction := L.NewFunction(lenScalable)
 	LNextIntFunction := L.NewFunction(lnextIntPair)
 	LNextStrFunction := L.NewFunction(lnextStrPair)
-	LPairsFunction := L.NewFunction(lintstrIteratorMetaPairs)
+	LPairsFunction := L.NewFunction(lpairsWithMetaNext)
 	{ // register csv names
 		csv_module := L.NewTable()
 		L.SetMetatable(csv_module, getStrictTableMetatable(L))

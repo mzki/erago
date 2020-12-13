@@ -1,7 +1,7 @@
 package script
 
 import (
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // references to [ lua-users wiki: Sand Boxes ] http://lua-users.org/wiki/SandBoxes
@@ -158,7 +158,7 @@ func lnextStrPair(L *lua.LState) int {
 	}
 }
 
-func lintstrIteratorMetaPairs(L *lua.LState) int {
+func lpairsWithMetaNext(L *lua.LState) int {
 	ud := L.CheckUserData(1)
 	nextOp := L.GetMetaField(ud, "__next")
 	if nextOp == lua.LNil {

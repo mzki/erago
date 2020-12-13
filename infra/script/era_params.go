@@ -26,7 +26,7 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 	len_func := L.NewFunction(lenScalable)
 	next_int_func := L.NewFunction(lnextIntPair)
 	next_str_func := L.NewFunction(lnextStrPair)
-	pairs_func := L.NewFunction(lintstrIteratorMetaPairs)
+	pairs_func := L.NewFunction(lpairsWithMetaNext)
 	intparam_meta := getOrNewMetatable(L, intParamMetaName, map[string]lua.LValue{
 		"__index":     L.NewFunction(intParamMetaIndex),
 		"__newindex":  L.NewFunction(intParamMetaNewIndex),

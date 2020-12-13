@@ -172,6 +172,38 @@ i, v = nextop(t, i)
 assert(i == 1)
 assert(v == 100)
 
+-- character pairs
+for i = 0, 1 do
+	local added = era.chara:add(1)
+	era.target[i] = added
+	era.master[i] = added
+	era.assi[i] = added
+	era.player[i] = added
+end
+
+for i, list in ipairs {
+	era.chara,
+	era.target,
+	era.master,
+	era.assi,
+	era.player,
+} do
+	local n = 0
+	for j, c in ipairs(list) do
+		n = n + 1
+		assert(c, "current loop:"..j)
+	end
+	assert(n > 0, "current loop:"..i)
+
+	n = 0
+	for j, c in pairs(list) do
+		assert(c, "current loop:"..j)
+		n = n + 1
+	end
+	assert(n > 0, "current loop:"..i)
+end
+
+
 -- check pairs loops infinity?
 local table = {}
 table[0] = 1

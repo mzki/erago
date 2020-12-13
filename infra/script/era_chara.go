@@ -25,10 +25,15 @@ func registerCharaParams(L *lua.LState, gamestate *state.GameState) {
 
 	registerCharaMeta(L) // must be first
 
+	metaPairs := L.NewFunction(lpairsWithMetaNext)
+
 	{ // register chara list
 		chara_list_meta := getOrNewMetatable(L, luaCharaListMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(getCharaListFields),
 			"__len":       L.NewFunction(lenScalable),
+			"__next":      L.NewFunction(charaListMetaNext),
+			"__ipairs":    metaPairs,
+			"__pairs":     metaPairs,
 			"__metatable": metaProtectObj,
 		})
 		chara_list := newLuaCharaList(L, gamestate.SystemData.Chara)
@@ -43,6 +48,9 @@ func registerCharaParams(L *lua.LState, gamestate *state.GameState) {
 			"__index":     get_set_func,
 			"__newindex":  get_set_func,
 			"__len":       L.NewFunction(lenScalable),
+			"__next":      L.NewFunction(charaRefsMetaNext),
+			"__ipairs":    metaPairs,
+			"__pairs":     metaPairs,
 			"__metatable": metaProtectObj,
 		})
 
@@ -156,6 +164,23 @@ func charaListClear(L *lua.LState) int {
 	return 0
 }
 
+// Meta method, used internal and not documented
+// // +gendoc "Characters"
+// // * next_index, next_chara = chara:next([index])
+func charaListMetaNext(L *lua.LState) int {
+	charas := checkLuaCharaList(L, 1)
+	idx := L.OptInt(2, -1)
+	nextIdx := idx + 1
+	theChara := charas.Characters.Get(nextIdx)
+	if theChara == nil {
+		return 0
+	}
+	ud := newUserDataWithMt(L, theChara, L.GetTypeMetatable(luaCharacterMetaName))
+	L.Push(lua.LNumber(nextIdx))
+	L.Push(ud)
+	return 2
+}
+
 // get character in the list or method for chara list.
 func getCharaListFields(L *lua.LState) int {
 	charas := checkLuaCharaList(L, 1)
@@ -217,6 +242,21 @@ func getSetCharaReferences(L *lua.LState) int {
 	ud := newUserDataWithMt(L, c, L.GetTypeMetatable(luaCharacterMetaName))
 	L.Push(ud)
 	return 1
+}
+
+// Meta method, used internal and not documented
+func charaRefsMetaNext(L *lua.LState) int {
+	refs := checkCharaRefereces(L, 1)
+	idx := L.OptInt(2, -1)
+	nextIdx := idx + 1
+	theChara := refs.GetChara(nextIdx)
+	if theChara == nil {
+		return 0
+	}
+	ud := newUserDataWithMt(L, theChara, L.GetTypeMetatable(luaCharacterMetaName))
+	L.Push(lua.LNumber(nextIdx))
+	L.Push(ud)
+	return 2
 }
 
 // // lua character
