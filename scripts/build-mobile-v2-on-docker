@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eu
+
+source scripts/common
+
+docker run --rm -t \
+  -v ${REPO_ROOT}:${DIR_ON_DOCKER} \
+  -v ${DOCKER_VOLUME_NAME_GOPKG}:/go/pkg \
+  -w ${DIR_ON_DOCKER}/mobile/model/v2 \
+  $DOCKER_IMAGE_NAME_MOBILE \
+  /bin/bash build.sh

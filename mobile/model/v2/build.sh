@@ -1,0 +1,11 @@
+# build and copy to shared dir.
+
+set -eu
+
+PRODUCT="erago-model-v2.aar"
+
+BUILD_FLAGS="-gcflags=-trimpath=${GOPATH}"
+TARGET_FLAGS=android # can use "android/arm,android/amd64" to shrink data size
+
+echo "building ${PRODUCT}..."
+gomobile bind ${BUILD_FLAGS} -target ${TARGET_FLAGS} -o ${PRODUCT} . || exit 1
