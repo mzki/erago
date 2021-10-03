@@ -1,9 +1,8 @@
-package publisher
+package pubdata
 
 import (
 	"bytes"
 	"encoding/json"
-	"image/color"
 	"testing"
 )
 
@@ -21,8 +20,8 @@ func TestParagraph_JsonDump(t *testing.T) {
 								},
 								TextData{
 									Text:    "abcdefghij",
-									FgColor: color.RGBA{0x0, 0x0, 0x0, 0xff},    // Black
-									BgColor: color.RGBA{0xff, 0xff, 0xff, 0xff}, // White
+									FgColor: 0x000000, // Black
+									BgColor: 0xffffff, // White
 								},
 							},
 						},
@@ -31,6 +30,7 @@ func TestParagraph_JsonDump(t *testing.T) {
 				},
 			},
 		},
+		Alignment: AlignmentCenter,
 	}
 
 	buf := new(bytes.Buffer)

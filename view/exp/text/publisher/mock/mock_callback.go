@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	publisher "github.com/mzki/erago/view/exp/text/publisher"
+	pubdata "github.com/mzki/erago/view/exp/text/pubdata"
 )
 
 // MockCallback is a mock of Callback interface.
@@ -35,7 +35,7 @@ func (m *MockCallback) EXPECT() *MockCallbackMockRecorder {
 }
 
 // OnPublish mocks base method.
-func (m *MockCallback) OnPublish(arg0 *publisher.Paragraph) error {
+func (m *MockCallback) OnPublish(arg0 *pubdata.Paragraph) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnPublish", arg0)
 	ret0, _ := ret[0].(error)
@@ -49,7 +49,7 @@ func (mr *MockCallbackMockRecorder) OnPublish(arg0 interface{}) *gomock.Call {
 }
 
 // OnPublishTemporary mocks base method.
-func (m *MockCallback) OnPublishTemporary(arg0 *publisher.Paragraph) error {
+func (m *MockCallback) OnPublishTemporary(arg0 *pubdata.Paragraph) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnPublishTemporary", arg0)
 	ret0, _ := ret[0].(error)

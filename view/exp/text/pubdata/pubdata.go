@@ -1,61 +1,45 @@
-package publisher
+// package pubdata intended for exporting data structure for
+// other platforms such as mobile, wasm and so on.
+// All of type of exported struct field and function signature should be
+// restricted by the restriction of platform conversion.
+// e.g. mobile type restrinction is found at
+// https://pkg.go.dev/golang.org/x/mobile/cmd/gobind?utm_source=godoc#hdr-Type_restrictions
+package pubdata
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"image/color"
 	"reflect"
 
 	"github.com/mzki/erago/attribute"
 )
 
-// ContentType indicate what content type is this Box
-type ContentType uint8
+const (
+	ContentTypeText       = "text"
+	ContentTypeTextButton = "text_button"
+)
 
 const (
-	ContentTypeNone ContentType = iota
-	ContentTypeText
-	ContentTypeTextButton
+	AlignmentNone   = "none"
+	AlignmentLeft   = "left"
+	AlignmentCenter = "center"
+	AlignmentRight  = "right"
 )
 
-var contentTypeToStringMap = map[ContentType]string{
-	ContentTypeNone:       "none",
-	ContentTypeText:       "text",
-	ContentTypeTextButton: "text_button",
+var attrAlignmentToStrAlignmentMap = map[attribute.Alignment]string{
+	attribute.AlignmentLeft:   AlignmentLeft,
+	attribute.AlignmentCenter: AlignmentCenter,
+	attribute.AlignmentRight:  AlignmentRight,
 }
 
-// implement json.Mashaller interface.
-func (ct ContentType) MarshalJSON() ([]byte, error) {
-	str, ok := contentTypeToStringMap[ct]
-	if !ok {
-		str = "unknown"
+func AlignmentString(align attribute.Alignment) string {
+	str, ok := attrAlignmentToStrAlignmentMap[align]
+	if ok {
+		return str
+	} else {
+		return AlignmentNone
 	}
-	return json.Marshal(str)
-}
-
-// Alignment is alias for attribute.Alignment.
-type Alignment attribute.Alignment
-
-var (
-	AlignmentLeft   = Alignment(attribute.AlignmentLeft)
-	AlignmentCenter = Alignment(attribute.AlignmentCenter)
-	AlignmentRight  = Alignment(attribute.AlignmentRight)
-)
-
-var alignmentToStringMap = map[Alignment]string{
-	AlignmentLeft:   "left",
-	AlignmentCenter: "center",
-	AlignmentRight:  "right",
-}
-
-// implement json.Mashaller interface.
-func (align Alignment) MarshalJSON() ([]byte, error) {
-	str, ok := alignmentToStringMap[align]
-	if !ok {
-		str = "unknown"
-	}
-	return json.Marshal(str)
 }
 
 // Box is abstract content. It holds nomal text, unsplitable text and images and so on.
@@ -66,8 +50,8 @@ func (align Alignment) MarshalJSON() ([]byte, error) {
 //
 // The Box type can be validated by type assertion or ContentType().
 type Box interface {
-	RuneWidth() int           // return box's width in runewidth.
-	ContentType() ContentType // return box's content type
+	RuneWidth() int      // return box's width in runewidth.
+	ContentType() string // return box's content type
 
 	BoxDataUnion // BoxDataUnion is interface for getting data depending on box type.
 }
@@ -75,15 +59,15 @@ type Box interface {
 // BoxCommon implements Box interface.
 // Data() should be implemented by the derived types.
 type BoxCommon struct {
-	CommonRuneWidth   int         `json:"rune_width"`
-	CommonContentType ContentType `json:"content_type"`
+	CommonRuneWidth   int    `json:"rune_width"`
+	CommonContentType string `json:"content_type"`
 
 	// Implement BoxDataUnion interface.
 	BoxDataUnionImpl
 }
 
-func (b *BoxCommon) RuneWidth() int           { return b.CommonRuneWidth }
-func (b *BoxCommon) ContentType() ContentType { return b.CommonContentType }
+func (b *BoxCommon) RuneWidth() int      { return b.CommonRuneWidth }
+func (b *BoxCommon) ContentType() string { return b.CommonContentType }
 
 // BoxDataUnion is a union data structure for Box implementers.
 type BoxDataUnion interface {
@@ -101,10 +85,10 @@ func (BoxDataUnionImpl) TextButtonData() *TextButtonData { panic("Not implemente
 type TextData struct {
 	// text content should not contain hard return.
 	Text string `json:"text"`
-	// Foreground color represents 32bit RGBA used to font face color
-	FgColor color.RGBA `json:"fgcolor"`
-	// Background color represents 32bit RGBA used to background on text.
-	BgColor color.RGBA `json:"bgcolor"`
+	// Foreground color represents 32bit RGB used to font face color
+	FgColor int `json:"fgcolor"`
+	// Background color represents 32bit RGB used to background on text.
+	BgColor int `json:"bgcolor"`
 }
 
 // TextBox represents normal text.
@@ -158,7 +142,7 @@ func (bs *Boxes) UnmarshalJSON(b []byte) error {
 	if bytes.Equal(b, []byte("null")) {
 		return nil
 	}
-	return fmt.Errorf("publisher.Boxes does not support unmarshal json. %w",
+	return fmt.Errorf("pubdata.Boxes does not support unmarshal json. %w",
 		error(&json.InvalidUnmarshalError{Type: reflect.TypeOf(bs)}))
 
 	/*
@@ -221,6 +205,6 @@ func (ls *Lines) UnmarshalJSON(b []byte) error {
 
 // Paragraph is a block of content divided by hard return (\n).
 type Paragraph struct {
-	Lines     Lines     `json:"lines"`
-	Alignment Alignment `json:"alignment"`
+	Lines     Lines  `json:"lines"`
+	Alignment string `json:"alignment"`
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/view/exp/text/publisher"
 	mock_publisher "github.com/mzki/erago/view/exp/text/publisher/mock"
 )
@@ -110,7 +111,7 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 			"newline\nnewline\n",
 			func(s string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
-				cb.EXPECT().OnPublish(gomock.Any()).Times(2).DoAndReturn(func(p *publisher.Paragraph) error {
+				cb.EXPECT().OnPublish(gomock.Any()).Times(2).DoAndReturn(func(p *pubdata.Paragraph) error {
 					if v := p.Lines.Len(); v != 1 {
 						t.Logf("%#v", p)
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
@@ -121,9 +122,9 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 						t.Fatalf("Line should have 1 box but not. want: %v, got: %v", 1, v)
 					}
 					box := line.Boxes.Get(0)
-					if v := box.ContentType(); v != publisher.ContentTypeText {
+					if v := box.ContentType(); v != pubdata.ContentTypeText {
 						t.Logf("%#v", box)
-						t.Fatalf("Box should have ContentTypeText but not. want: %v, got: %v", publisher.ContentTypeText, v)
+						t.Fatalf("Box should have ContentTypeText but not. want: %v, got: %v", pubdata.ContentTypeText, v)
 					}
 					data := box.TextData()
 					if data.Text != "newline" {
@@ -223,7 +224,7 @@ func TestEditorSync(t *testing.T) {
 		{
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
-				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*publisher.Paragraph) error {
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
 					doneCh <- struct{}{}
 					return nil
 				})
@@ -262,7 +263,7 @@ func TestEditorSyncTimeout(t *testing.T) {
 		{
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
-				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*publisher.Paragraph) error {
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
 					<-doneCh // infinite loop
 					return nil
 				})
@@ -297,7 +298,7 @@ func TestEditorSyncError(t *testing.T) {
 		{
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
-				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*publisher.Paragraph) error {
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
 					doneCh <- struct{}{}
 					return errOnPublishTemporary
 				})
@@ -455,7 +456,7 @@ func TestEditor_SetColor(t *testing.T) {
 			newMockCallback: func(args args) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				// Print() expectation
-				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *publisher.Paragraph) error {
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
 					if v := p.Lines.Len(); v != 1 {
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
 					}
@@ -465,7 +466,7 @@ func TestEditor_SetColor(t *testing.T) {
 						t.Fatalf("Line should have 1 box but not. want: %v, got: %v", 1, v)
 					}
 					box := line.Boxes.Get(0)
-					expect := publisher.UIntRGBToColorRGBA(args.color)
+					expect := int(args.color)
 					if v := box.TextData().FgColor; v != expect {
 						t.Errorf("Published paragraph should have color by SetColor(). want: %v, got: %v", expect, v)
 					}
@@ -510,7 +511,7 @@ func TestEditor_GetColor(t *testing.T) {
 		{
 			name:      "FirstGetColor",
 			e:         editor,
-			wantColor: publisher.ColorRGBAToUIntRGB(publisher.ResetColor),
+			wantColor: publisher.ColorRGBAToUInt32RGB(publisher.ResetColor),
 			wantErr:   false,
 			setup:     func(e *publisher.Editor, wantColor uint32) {},
 		},
@@ -571,9 +572,9 @@ func TestEditor_ResetColor(t *testing.T) {
 			}
 			if got, err := tt.e.GetColor(); err != nil {
 				t.Fatal(err)
-			} else if got != publisher.ColorRGBAToUIntRGB(publisher.ResetColor) {
+			} else if got != publisher.ColorRGBAToUInt32RGB(publisher.ResetColor) {
 				t.Errorf("Editor.ResetColor() then GetColor() should return ResetColor. want: %v, got: %v",
-					publisher.ColorRGBAToUIntRGB(publisher.ResetColor), got)
+					publisher.ColorRGBAToUInt32RGB(publisher.ResetColor), got)
 			}
 		})
 	}
@@ -603,8 +604,8 @@ func TestEditor_SetAlignment(t *testing.T) {
 			newMockCallback: func(args args) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				// Print() expectation
-				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *publisher.Paragraph) error {
-					expect := publisher.Alignment(args.align)
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
+					expect := pubdata.AlignmentString(args.align)
 					if v := p.Alignment; v != expect {
 						t.Errorf("Published paragraph should have alignment by SetAlignment(). want: %v, got: %v", expect, v)
 					}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/view/exp/text"
+	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/width"
 )
 
@@ -165,7 +166,7 @@ func (e *Editor) SetViewSize(viewLineCount, viewLineRuneWidth int) error {
 	return e.send(e.ctx, msg)
 }
 
-func (e *Editor) createCurrentParagraph() *Paragraph {
+func (e *Editor) createCurrentParagraph() *pubdata.Paragraph {
 	var lastP *text.Paragraph = nil
 	for pp := e.frame.FirstParagraph(); pp != nil; pp = pp.Next(e.frame) {
 		lastP = pp
@@ -174,62 +175,63 @@ func (e *Editor) createCurrentParagraph() *Paragraph {
 		panic("Paragraph is not found")
 	}
 
-	lines := make([]Line, 0, lastP.LineCount(e.frame))
+	lines := make([]pubdata.Line, 0, lastP.LineCount(e.frame))
 	for ll := lastP.FirstLine(e.frame); ll != nil; ll = ll.Next(e.frame) {
-		boxes := make([]Box, 0, 2)
+		boxes := make([]pubdata.Box, 0, 2)
 		totalW := 0
 		for bb := ll.FirstBox(e.frame); bb != nil; bb = bb.Next(e.frame) {
 			newBB := e.createBox(bb)
 			boxes = append(boxes, newBB)
 			totalW += newBB.RuneWidth()
 		}
-		lines = append(lines, Line{
-			Boxes:     Boxes{boxes},
+		lines = append(lines, pubdata.Line{
+			Boxes:     pubdata.NewBoxes(boxes),
 			RuneWidth: totalW,
 		})
 	}
-	return &Paragraph{
-		Lines:     Lines{lines},
-		Alignment: Alignment(e.editor.GetAlignment()),
+	alignment := pubdata.AlignmentString(attribute.Alignment(e.editor.GetAlignment()))
+	return &pubdata.Paragraph{
+		Lines:     pubdata.NewLines(lines),
+		Alignment: alignment,
 	}
 }
 
-func (e *Editor) createBox(bb text.Box) Box {
-	bcommon := BoxCommon{
+func (e *Editor) createBox(bb text.Box) pubdata.Box {
+	bcommon := pubdata.BoxCommon{
 		CommonRuneWidth: bb.RuneWidth(e.frame),
 	}
 	switch typed_bb := bb.(type) {
 	case text.ButtonBox:
-		bcommon.CommonContentType = ContentTypeTextButton
-		return &TextButtonBox{
+		bcommon.CommonContentType = pubdata.ContentTypeTextButton
+		return &pubdata.TextButtonBox{
 			BoxCommon: bcommon,
-			BoxData: TextButtonData{
-				TextData: TextData{
+			BoxData: pubdata.TextButtonData{
+				TextData: pubdata.TextData{
 					Text:    typed_bb.Text(e.frame),
-					FgColor: typed_bb.FgColor(),
-					BgColor: text.ResetColor,
+					FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
+					BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
 				},
 				Command: typed_bb.Command(),
 			},
 		}
 	case text.TextBox:
-		bcommon.CommonContentType = ContentTypeText
-		return &TextBox{
+		bcommon.CommonContentType = pubdata.ContentTypeText
+		return &pubdata.TextBox{
 			BoxCommon: bcommon,
-			BoxData: TextData{
+			BoxData: pubdata.TextData{
 				Text:    typed_bb.Text(e.frame),
-				FgColor: typed_bb.FgColor(),
-				BgColor: text.ResetColor,
+				FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
+				BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
 			},
 		}
 	case text.LineBox:
-		bcommon.CommonContentType = ContentTypeText
-		return &TextBox{
+		bcommon.CommonContentType = pubdata.ContentTypeText
+		return &pubdata.TextBox{
 			BoxCommon: bcommon,
-			BoxData: TextData{
+			BoxData: pubdata.TextData{
 				Text:    typed_bb.Text(e.frame),
-				FgColor: typed_bb.FgColor(),
-				BgColor: text.ResetColor,
+				FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
+				BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
 			},
 		}
 	default:
@@ -358,14 +360,14 @@ func (e *Editor) printLineInternal(sym string) error {
 // Set and Get Color using 0xRRGGBB for 24bit color
 func (e *Editor) SetColor(color uint32) error {
 	msg := e.createAsyncTask(func() {
-		e.editor.Color = UIntRGBToColorRGBA(color)
+		e.editor.Color = Int32RGBToColorRGBA(int32(color))
 	})
 	return e.send(e.ctx, msg)
 }
 
 func (e *Editor) GetColor() (color uint32, err error) {
 	msg := e.createSyncTask(func() {
-		color = ColorRGBAToUIntRGB(e.editor.Color)
+		color = uint32(ColorRGBAToInt32RGB(e.editor.Color))
 	})
 	err = e.sendAndWait(e.ctx, msg)
 	return

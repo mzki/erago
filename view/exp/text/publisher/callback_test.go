@@ -3,13 +3,15 @@ package publisher
 import (
 	"errors"
 	"testing"
+
+	"github.com/mzki/erago/view/exp/text/pubdata"
 )
 
 var testCallbackFuncErrorValue = errors.New("callback func should return this.")
 
 func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 	type args struct {
-		p *Paragraph
+		p *pubdata.Paragraph
 		n int
 	}
 	tests := []struct {
@@ -22,7 +24,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnPublish",
 			cb: &CallbackDefault{
-				OnPublishFunc: func(*Paragraph) error { return testCallbackFuncErrorValue },
+				OnPublishFunc: func(*pubdata.Paragraph) error { return testCallbackFuncErrorValue },
 			},
 			args:     args{p: nil},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnPublish(args.p) },
@@ -31,7 +33,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnPublishTemporary",
 			cb: &CallbackDefault{
-				OnPublishTemporaryFunc: func(*Paragraph) error { return testCallbackFuncErrorValue },
+				OnPublishTemporaryFunc: func(*pubdata.Paragraph) error { return testCallbackFuncErrorValue },
 			},
 			args:     args{p: nil},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnPublishTemporary(args.p) },
