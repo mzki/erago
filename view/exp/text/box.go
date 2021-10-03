@@ -75,6 +75,7 @@ type TextBox interface {
 
 	Text(*Frame) string
 	Bytes(*Frame) []byte
+	FgColor() color.RGBA
 }
 
 // normal text. Only TextBox can be split with its contents.
@@ -131,6 +132,8 @@ func (tb textBox) TrimmedBytes(f *Frame) []byte {
 	return s
 }
 
+func (tb *textBox) FgColor() color.RGBA { return tb.color }
+
 // implements Box interface.
 func (tb *textBox) Draw(d *font.Drawer, v *View) {
 	if tb.color.A == 0 {
@@ -145,6 +148,11 @@ func (tb *textBox) Draw(d *font.Drawer, v *View) {
 // which means labelBox is always move to entire its content.
 type labelBox struct {
 	textBox
+}
+
+type ButtonBox interface {
+	TextBox
+	Command() string
 }
 
 // clickable button which emits a command,
@@ -175,6 +183,14 @@ func (bb *buttonBox) Draw(d *font.Drawer, v *View) {
 		cmd:      bb.cmd,
 		position: bbPos,
 	})
+}
+
+func (bb *buttonBox) Command() string { return bb.cmd }
+
+type LineBox interface {
+	Text(*Frame) string
+	Symbol() string
+	FgColor() color.RGBA
 }
 
 // text line as like: ==========================
@@ -208,3 +224,12 @@ func (l *lineBox) Draw(d *font.Drawer, v *View) {
 	}
 	d.DrawString(strings.Repeat(l.symbol, repeat))
 }
+
+func (l *lineBox) Text(f *Frame) string {
+	n := f.maxRuneWidth / l.runewidth
+	txtLine := strings.Repeat(l.symbol, n)
+	return txtLine
+}
+
+func (l *lineBox) Symbol() string      { return l.symbol }
+func (l *lineBox) FgColor() color.RGBA { return l.color }
