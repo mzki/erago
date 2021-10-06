@@ -208,4 +208,5 @@ type Paragraph struct {
 	ID        int    `json:"id"`
 	Lines     Lines  `json:"lines"`
 	Alignment string `json:"alignment"`
+	Fixed     bool   `json:"fixed"`
 }

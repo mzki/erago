@@ -119,6 +119,10 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 					}
 					publishedCount++
 
+					if v := p.Fixed; v != true {
+						t.Errorf("Paragraph should have been fixed. want: %v, got:%v", true, v)
+					}
+
 					if v := p.Lines.Len(); v != 1 {
 						t.Logf("%#v", p)
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
@@ -234,6 +238,9 @@ func TestEditorSync(t *testing.T) {
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
 					if p.ID != 0 {
 						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.ID)
+					}
+					if v := p.Fixed; v != false {
+						t.Errorf("Sync() returns non-fixed Paragraph. want:%v, got:%v", false, v)
 					}
 					doneCh <- struct{}{}
 					return nil

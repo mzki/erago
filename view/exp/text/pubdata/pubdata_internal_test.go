@@ -32,6 +32,7 @@ func TestParagraph_JsonDump(t *testing.T) {
 			},
 		},
 		Alignment: AlignmentCenter,
+		Fixed:     true,
 	}
 
 	buf := new(bytes.Buffer)

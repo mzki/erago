@@ -166,7 +166,7 @@ func (e *Editor) SetViewSize(viewLineCount, viewLineRuneWidth int) error {
 	return e.send(e.ctx, msg)
 }
 
-func (e *Editor) createCurrentParagraph() *pubdata.Paragraph {
+func (e *Editor) createCurrentParagraph(fixed bool) *pubdata.Paragraph {
 	var lastP *text.Paragraph = nil
 	for pp := e.frame.FirstParagraph(); pp != nil; pp = pp.Next(e.frame) {
 		lastP = pp
@@ -194,6 +194,7 @@ func (e *Editor) createCurrentParagraph() *pubdata.Paragraph {
 		ID:        int(e.publishedCount % math.MaxInt32),
 		Lines:     pubdata.NewLines(lines),
 		Alignment: alignment,
+		Fixed:     fixed,
 	}
 }
 
@@ -247,7 +248,7 @@ func (e *Editor) createBox(bb text.Box) pubdata.Box {
 func (e *Editor) Sync() error {
 	var taskErr error = nil
 	msg := e.createSyncTask(func() {
-		p := e.createCurrentParagraph()
+		p := e.createCurrentParagraph(false)
 		taskErr = e.callback.OnPublishTemporary(p)
 	})
 	if err := e.sendAndWait(e.ctx, msg); err != nil {
@@ -291,7 +292,7 @@ func (e *Editor) printInternal(s string) error {
 }
 
 func (e *Editor) publishParagraph() error {
-	p := e.createCurrentParagraph()
+	p := e.createCurrentParagraph(true)
 	if err := e.callback.OnPublish(p); err != nil {
 		return err
 	}
