@@ -1,4 +1,4 @@
-package model_v2
+package model
 
 import (
 	"github.com/mzki/erago/view/exp/text/pubdata"
