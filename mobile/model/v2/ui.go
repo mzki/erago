@@ -1,12 +1,8 @@
 package model
 
-import (
-	"github.com/mzki/erago/view/exp/text/pubdata"
-)
-
 // erago.UI for java bind.
 type UI interface {
-	Callback
+	CallbackJson
 
 	// it is called when mobile.app requires inputting
 	// user's command.
@@ -20,13 +16,10 @@ type UI interface {
 	OnInputRequestClosed()
 }
 
-// Re-define struct to export to gomobile.
-type Paragraph pubdata.Paragraph
-
-// Re-define publisher.Callback interface to export gomobile
-type Callback interface {
-	OnPublish(*Paragraph) error
-	OnPublishTemporary(*Paragraph) error
+// Callbacks with json message if use complex structure.
+type CallbackJson interface {
+	OnPublishJson(string) error
+	OnPublishJsonTemporary(string) error
 	OnRemove(nParagraph int) error
 	OnRemoveAll() error
 }

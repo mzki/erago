@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/view/exp/text/pubdata"
@@ -25,10 +26,18 @@ func newUIAdapter(ctx context.Context, ui UI) (*uiAdapter, error) {
 	}
 	if err := editor.SetCallback(&publisher.CallbackDefault{
 		OnPublishFunc: func(p *pubdata.Paragraph) error {
-			return ui.OnPublish((*Paragraph)(p))
+			bs, err := json.Marshal(p)
+			if err != nil {
+				return err
+			}
+			return ui.OnPublishJson(string(bs))
 		},
 		OnPublishTemporaryFunc: func(p *pubdata.Paragraph) error {
-			return ui.OnPublishTemporary((*Paragraph)(p))
+			bs, err := json.Marshal(p)
+			if err != nil {
+				return err
+			}
+			return ui.OnPublishJsonTemporary(string(bs))
 		},
 		OnRemoveFunc:    ui.OnRemove,
 		OnRemoveAllFunc: ui.OnRemoveAll,
