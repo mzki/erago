@@ -13,7 +13,7 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
 	golang.org/x/exp v0.0.0-20201008143054-e3b2a7f2fdc7
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5
-	golang.org/x/mobile v0.0.0-20200801112145-973feb4309de
+	golang.org/x/mobile v0.0.0-20210924032853-1c027f395ef7
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	golang.org/x/text v0.3.3
 )

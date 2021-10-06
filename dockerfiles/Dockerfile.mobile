@@ -1,4 +1,4 @@
-FROM golang:1.15.2-buster
+FROM golang:1.17.1-buster
 
 LABEL maintainer mzki
 LABEL image-tag  gomobile-bind
@@ -48,7 +48,15 @@ RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager \
   'ndk-bundle'
 
 # Get gomobile
-RUN go get -u golang.org/x/mobile/cmd/gomobile \
+# Workaround: gomobile init always fails due to missing version for go install command.
+# To fix it, patch source code and reinstall gomobile.   
+# https://github.com/golang/mobile/blob/6d8ad35e460371e979b330d80492cba19676f933/cmd/gomobile/init.go#L81
+RUN git clone https://github.com/golang/mobile.git mobile \
+  && cd mobile/cmd/gomobile \
+  && sed -i -e 's|"\(golang.org/x/mobile/cmd/gobind\)"|"\1@latest"|g' init.go \
+  && go install . \
+  && cd - \
+  && rm -rf gomobile \ 
   && gomobile init 
 
 CMD ["gomobile", "version"]
