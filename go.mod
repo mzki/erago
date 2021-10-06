@@ -1,6 +1,6 @@
 module github.com/mzki/erago
 
-go 1.15
+go 1.17
 
 require (
 	github.com/BurntSushi/toml v0.3.1
@@ -16,4 +16,11 @@ require (
 	golang.org/x/mobile v0.0.0-20200801112145-973feb4309de
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	golang.org/x/text v0.3.3
+)
+
+require (
+	dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 // indirect
+	github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802 // indirect
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4 // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 )
