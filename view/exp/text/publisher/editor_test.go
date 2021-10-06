@@ -103,6 +103,8 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 	ctrl := gs.ctrl
 	defer gs.cancel()
 
+	publishedCount := 0
+
 	for _, testcase := range []struct {
 		text            string
 		newMockCallback func(s string) publisher.Callback
@@ -112,6 +114,11 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 			func(s string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(2).DoAndReturn(func(p *pubdata.Paragraph) error {
+					if v := p.ID; v != publishedCount {
+						t.Errorf("Paragraph have invalid ID. want: %v, got: %v", publishedCount, v)
+					}
+					publishedCount++
+
 					if v := p.Lines.Len(); v != 1 {
 						t.Logf("%#v", p)
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
@@ -224,7 +231,23 @@ func TestEditorSync(t *testing.T) {
 		{
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
-				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
+					if p.ID != 0 {
+						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.ID)
+					}
+					doneCh <- struct{}{}
+					return nil
+				})
+				return cb
+			},
+		},
+		{
+			func() publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
+					if p.ID != 0 {
+						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.ID)
+					}
 					doneCh <- struct{}{}
 					return nil
 				})

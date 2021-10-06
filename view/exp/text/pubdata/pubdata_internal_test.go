@@ -8,6 +8,7 @@ import (
 
 func TestParagraph_JsonDump(t *testing.T) {
 	p := Paragraph{
+		ID: 100,
 		Lines: Lines{
 			[]Line{
 				{

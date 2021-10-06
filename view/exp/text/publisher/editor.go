@@ -191,6 +191,7 @@ func (e *Editor) createCurrentParagraph() *pubdata.Paragraph {
 	}
 	alignment := pubdata.AlignmentString(attribute.Alignment(e.editor.GetAlignment()))
 	return &pubdata.Paragraph{
+		ID:        int(e.publishedCount % math.MaxInt32),
 		Lines:     pubdata.NewLines(lines),
 		Alignment: alignment,
 	}

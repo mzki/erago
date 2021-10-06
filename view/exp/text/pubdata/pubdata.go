@@ -205,6 +205,7 @@ func (ls *Lines) UnmarshalJSON(b []byte) error {
 
 // Paragraph is a block of content divided by hard return (\n).
 type Paragraph struct {
+	ID        int    `json:"id"`
 	Lines     Lines  `json:"lines"`
 	Alignment string `json:"alignment"`
 }
