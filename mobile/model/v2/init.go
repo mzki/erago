@@ -8,6 +8,7 @@ import (
 
 func init() {
 	fixTimezone()
+	setDefaultTextWidth()
 }
 
 // ref: https://github.com/golang/go/issues/20455#issuecomment-342287698
