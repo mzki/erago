@@ -22,6 +22,8 @@ _ = era.windowLineCount()
 _ = era.currentStrWidth()
 _ = era.lineCount()
 
+_ = era.textWidth("こんにちは、世界")
+
 local input = ""
 input = era.input()
 input = era.inputNum()

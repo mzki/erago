@@ -9,6 +9,7 @@ import (
 	attr "github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/scene"
 	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/width"
 )
 
 const (
@@ -72,6 +73,7 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"windowLineCount": ft.windowLineCount,
 		"currentStrWidth": ft.currentStrWidth,
 		"lineCount":       ft.lineCount,
+		"textWidth":       ft.textWidth,
 		// "lastLineCount":
 		"vprint":        ft.vprint,
 		"vprintl":       ft.vprintL,
@@ -657,6 +659,21 @@ func (ft functor) lineCount(L *lua.LState) int {
 	if err != nil {
 		L.RaiseError("script.lineCount(): %v", err)
 	}
+	L.Push(lua.LNumber(count))
+	return 1
+}
+
+// +gendoc "Era Module"
+// * width = era.textWidth(text)
+//
+// Return string width of given text.
+// A single byte character is counted as 1, a multibyte one as 2.
+//
+// 引数として渡された文字列 text の文字幅を返します。
+// 半角1文字を1、全角1文字を2として数えます。
+func (ft functor) textWidth(L *lua.LState) int {
+	text := L.CheckString(1)
+	count := width.StringWidth(text) // TODO: use width.Condition istance to avoid global state?
 	L.Push(lua.LNumber(count))
 	return 1
 }
