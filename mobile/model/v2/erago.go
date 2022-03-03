@@ -9,6 +9,7 @@ import (
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/uiadapter/event/input"
+	"github.com/mzki/erago/util/log"
 )
 
 // because reference cycle is not allowed and
@@ -39,13 +40,15 @@ func Init(ui UI, baseDir string) error {
 	// load config file
 	configPath, err := mobileFS.ResolvePath(app.ConfigFile)
 	if err != nil {
-		return fmt.Errorf("Can not use base directory %v. err: %v", baseDir, err)
+		theErr := fmt.Errorf("can not use base directory %v. err: %w", baseDir, err)
+		return theErr
 	}
 	appConfig, err := app.LoadConfigOrDefault(configPath)
 	switch err {
 	case nil, app.ErrDefaultConfigGenerated:
 	default:
-		return fmt.Errorf("Config load error: %v", err)
+		theErr := fmt.Errorf("config load error: %w", err)
+		return theErr
 	}
 
 	// finalize handler
@@ -71,10 +74,13 @@ func Init(ui UI, baseDir string) error {
 		// set log level, destinations
 		closeFunc, err := app.SetLogConfig(appConfig)
 		if err != nil {
-			return fmt.Errorf("Log configure error: %v", err)
+			theErr := fmt.Errorf("log configure error: %w", err)
+			return theErr
 		}
 		// just store it, called on Quit()
 		closeFuncs = append(closeFuncs, closeFunc)
+
+		// now, log destination is activated, and can be used.
 	}
 
 	// create game instance
@@ -85,10 +91,14 @@ func Init(ui UI, baseDir string) error {
 	theGame = erago.NewGame()
 	mobileUI, err = newUIAdapter(ctx, ui)
 	if err != nil {
-		return err
+		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)
+		log.Infof("%v", theErr)
+		return theErr
 	}
 	if err := theGame.Init(uiadapter.SingleUI{Printer: mobileUI}, appConfig.Game); err != nil {
-		return err
+		theErr := fmt.Errorf("game initialization failed: %w", err)
+		log.Infof("%v", theErr)
+		return theErr
 	}
 	theGame.RegisterAllRequestObserver(mobileUI)
 	initialized = true
@@ -117,6 +127,10 @@ func Main(appContext AppContext) {
 	go func() {
 		// start game engine
 		err := theGame.Main()
+		if err != nil {
+			theErr := fmt.Errorf("Game.Main() failed: %w", err)
+			log.Infof("%v", theErr)
+		}
 		appContext.NotifyQuit(err)
 	}()
 }
