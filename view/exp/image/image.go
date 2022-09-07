@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/golang/groupcache/lru"
+	"golang.org/x/image/draw"
 )
 
 // Pool holds image caches.
@@ -88,4 +89,45 @@ func AutoLoad(r io.Reader, ext string) (image.Image, error) {
 	default:
 		return nil, fmt.Errorf("unsupported file type(%s)", ext)
 	}
+}
+
+// LoadOptions is options for image loading.
+type LoadOptions struct {
+	ResizedSize image.Point // size of resized image. Empty this means no resized.
+}
+
+// It is almost same as Get(), except that it accepts options for loaded image property.
+func (p *Pool) GetWithOptions(file string, opt LoadOptions) (image.Image, error) {
+	key := createImageKey(file, opt)
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// attempt cache
+	v, ok := p.cache.Get(key)
+	if ok {
+		return v.(image.Image), nil
+	}
+	// new arrival key, construct new image.
+	m, err := AutoLoadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	// resize original image
+	if opt.ResizedSize != (image.Point{}) {
+		m = resizeImage(m, opt)
+	}
+	p.cache.Add(key, m)
+	return m, nil
+}
+
+func createImageKey(file string, opt LoadOptions) string {
+	key := file + "_" + fmt.Sprintf("%dx%d", opt.ResizedSize.X, opt.ResizedSize.Y)
+	return key
+}
+
+func resizeImage(src image.Image, opt LoadOptions) image.Image {
+	dst := image.NewRGBA(image.Rectangle{Min: image.Point{}, Max: opt.ResizedSize})
+	draw.BiLinear.Scale(dst, dst.Bounds(), src, src.Bounds(), draw.Over, nil)
+	return dst
 }
