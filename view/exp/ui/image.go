@@ -34,7 +34,7 @@ type ImageView struct {
 	z *iconvg.Rasterizer
 }
 
-var globalImagePool = limage.NewPool(limage.DefaultPoolSize)
+var globalImagePool = limage.NewLoader(limage.DefaultCacheSize)
 
 func NewImageView(filename string) *ImageView {
 	var z *iconvg.Rasterizer

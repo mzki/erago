@@ -14,23 +14,23 @@ import (
 	"golang.org/x/image/draw"
 )
 
-// Pool holds image caches.
+// Loader holds image caches.
 // concurrent use is OK.
-type Pool struct {
+type Loader struct {
 	mu    *sync.Mutex
 	cache *lru.Cache // under mutex because cache is not safe for concurrently.
 }
 
-const DefaultPoolSize = 10
+const DefaultCacheSize = 10
 
-// Pool has cachedSize cache entries. the oldest image
+// Loader has cachedSize cache entries. the oldest image
 // is removed from cache using LRU.
-// use DefaultPoolSize if cachedSize <= 0.
-func NewPool(cachedSize int) *Pool {
+// use DefaultCacheSize if cachedSize <= 0.
+func NewLoader(cachedSize int) *Loader {
 	if cachedSize <= 0 {
-		cachedSize = DefaultPoolSize
+		cachedSize = DefaultCacheSize
 	}
-	return &Pool{
+	return &Loader{
 		mu:    new(sync.Mutex),
 		cache: lru.New(cachedSize),
 	}
@@ -40,10 +40,10 @@ func NewPool(cachedSize int) *Pool {
 // if not found, load image data from file
 // and return loaded image with loading error.
 // error nil means loaded image found.
-func (p *Pool) Get(file string) (image.Image, error) {
-	p.mu.Lock()
-	v, ok := p.cache.Get(file)
-	p.mu.Unlock()
+func (l *Loader) Get(file string) (image.Image, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	v, ok := l.cache.Get(file)
 	if ok {
 		return v.(image.Image), nil
 	}
@@ -53,9 +53,7 @@ func (p *Pool) Get(file string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.mu.Lock()
-	p.cache.Add(file, m)
-	p.mu.Unlock()
+	l.cache.Add(file, m)
 	return m, nil
 }
 
@@ -65,7 +63,7 @@ func (p *Pool) Get(file string) (image.Image, error) {
 func AutoLoadFile(file string) (image.Image, error) {
 	ext := filepath.Ext(file)
 	if len(ext) == 0 {
-		return nil, fmt.Errorf("file must have the extension like .png, .jpeg, or .jpg.")
+		return nil, fmt.Errorf("file must have the extension like .png, .jpeg, or .jpg")
 	}
 	ext = ext[1:] // remove first characater "."
 
@@ -97,14 +95,14 @@ type LoadOptions struct {
 }
 
 // It is almost same as Get(), except that it accepts options for loaded image property.
-func (p *Pool) GetWithOptions(file string, opt LoadOptions) (image.Image, error) {
+func (l *Loader) GetWithOptions(file string, opt LoadOptions) (image.Image, error) {
 	key := createImageKey(file, opt)
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	// attempt cache
-	v, ok := p.cache.Get(key)
+	v, ok := l.cache.Get(key)
 	if ok {
 		return v.(image.Image), nil
 	}
@@ -117,7 +115,7 @@ func (p *Pool) GetWithOptions(file string, opt LoadOptions) (image.Image, error)
 	if opt.ResizedSize != (image.Point{}) {
 		m = resizeImage(m, opt)
 	}
-	p.cache.Add(key, m)
+	l.cache.Add(key, m)
 	return m, nil
 }
 

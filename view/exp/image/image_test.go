@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	testImageData img.Image = loadTestImageData()
-	testImagePool Pool      = *NewPool(4)
+	testImageData   img.Image = loadTestImageData()
+	testImageLoader Loader    = *NewLoader(4)
 )
 
 func loadTestImageData() img.Image {
@@ -47,7 +47,7 @@ func dumpPngImage(file string, src img.Image) error {
 	return nil
 }
 
-func TestNewPool(t *testing.T) {
+func TestNewLoader(t *testing.T) {
 	type args struct {
 		cachedSize int
 	}
@@ -62,35 +62,35 @@ func TestNewPool(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewPool(tt.args.cachedSize); tt.wantNil && got != nil {
-				t.Errorf("NewPool() = %v, wantNil = %v", got, tt.wantNil)
+			if got := NewLoader(tt.args.cachedSize); tt.wantNil && got != nil {
+				t.Errorf("NewLoader() = %v, wantNil = %v", got, tt.wantNil)
 			}
 		})
 	}
 }
 
-func TestPool_Get(t *testing.T) {
+func TestLoader_Get(t *testing.T) {
 	type args struct {
 		file string
 	}
 	tests := []struct {
 		name    string
-		p       *Pool
+		p       *Loader
 		args    args
 		want    img.Image
 		wantErr bool
 	}{
-		{"Get normal", &testImagePool, args{"testdata/color.png"}, testImageData, false},
+		{"Get normal", &testImageLoader, args{"testdata/color.png"}, testImageData, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.p.Get(tt.args.file)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Pool.Get() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Loader.Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Pool.Get() = %v, want %v", got, tt.want)
+				t.Errorf("Loader.Get() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -151,7 +151,7 @@ func TestAutoLoad(t *testing.T) {
 	}
 }
 
-func TestPool_GetWithOptions(t *testing.T) {
+func TestLoader_GetWithOptions(t *testing.T) {
 	wantImg, err := loadPngImage("testdata/color_resized.png")
 	if err != nil {
 		t.Fatal(err)
@@ -163,22 +163,22 @@ func TestPool_GetWithOptions(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		p       *Pool
+		p       *Loader
 		args    args
 		want    img.Image
 		wantErr bool
 	}{
-		{"Get normal", &testImagePool, args{"testdata/color.png", LoadOptions{img.Point{128, 64}}}, wantImg, false},
+		{"Get normal", &testImageLoader, args{"testdata/color.png", LoadOptions{img.Point{128, 64}}}, wantImg, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.p.GetWithOptions(tt.args.file, tt.args.opt)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Pool.GetWithOptions() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Loader.GetWithOptions() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Pool.GetWithOptions() = %v, want %v", got, tt.want)
+				t.Errorf("Loader.GetWithOptions() = %v, want %v", got, tt.want)
 			}
 
 			// dump data
