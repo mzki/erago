@@ -3,6 +3,7 @@ package text
 import (
 	"image"
 	"image/color"
+	"image/draw"
 	"strings"
 
 	"golang.org/x/image/font"
@@ -13,7 +14,8 @@ import (
 // so you need not to implements it.
 // The exported methods can be used to inspect it.
 type Box interface {
-	RuneWidth(*Frame) int // return box's width in runewidth.
+	RuneWidth(*Frame) int     // return box's width in runewidth.
+	LineCountHint(*Frame) int // return box's line count hint, which is used optionally.
 
 	// return next Box, if not found return nil
 	Next(*Frame) Box
@@ -35,8 +37,9 @@ type baseBox struct {
 	next, prev int32
 }
 
-func (b baseBox) Width(*Frame) int     { return 0 }
-func (b baseBox) RuneWidth(*Frame) int { return 0 }
+func (b baseBox) Width(*Frame) int         { return 0 }
+func (b baseBox) RuneWidth(*Frame) int     { return 0 }
+func (b baseBox) LineCountHint(*Frame) int { return 1 }
 
 func (b baseBox) Next(f *Frame) Box {
 	return f.box(b.next)
@@ -233,3 +236,39 @@ func (l *lineBox) Text(f *Frame) string {
 
 func (l *lineBox) Symbol() string      { return l.symbol }
 func (l *lineBox) FgColor() color.RGBA { return l.color }
+
+// image box. It often has LineCountHint() > 2. This means
+// it should be treated as special case.
+type imageBox struct {
+	labelBox
+
+	src           string // source image path
+	dstWidthInRW  int    // in rune width
+	dstHeightInLC int    // in line count
+	// TODO: Add more image option, which may be in attribute package?
+}
+
+func (box *imageBox) RuneWidth(*Frame) int     { return box.dstWidthInRW }
+func (box *imageBox) LineCountHint(*Frame) int { return box.dstHeightInLC }
+func (box *imageBox) Source() string           { return box.src }
+
+func (box *imageBox) Draw(d *font.Drawer, v *View) {
+	toImagePoint := func(fp fixed.Point26_6) image.Point {
+		return image.Point{
+			X: fp.X.Round(),
+			Y: fp.Y.Round(),
+		}
+	}
+
+	// d.Dot points text baseline but image should starts with left top of blank space.
+	leftTopDot := d.Dot.Add(fixed.Point26_6{X: 0, Y: -v.faceAscent})
+	srcImg, fpSize := v.GetImage(box.src, box.dstWidthInRW, box.dstHeightInLC)
+	r := image.Rectangle{
+		Min: toImagePoint(leftTopDot),
+		Max: toImagePoint(leftTopDot.Add(fpSize)),
+	}
+	draw.Draw(d.Dst, r, srcImg, image.Point{}, draw.Over)
+
+	// advance d.Dot.X by width of image drawn region
+	d.Dot.X += fpSize.X
+}

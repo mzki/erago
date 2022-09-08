@@ -2,7 +2,9 @@ package text
 
 import (
 	"errors"
+	"fmt"
 	"image/color"
+	"path"
 	"strings"
 	"unicode/utf8"
 
@@ -217,6 +219,25 @@ func (e *Editor) WriteButton(text, cmd string) (n int, err error) {
 
 	err = e.appendText(text[:i], &buttonBox{cmd: cmd})
 	n = i
+	return
+}
+
+// WriteImage writes image into text frame with size of widthInRW x heightInLC.
+// widthInRW stands for width in Rune Width and stands for height in Line Count.
+func (e *Editor) WriteImage(imgFile string, widthInRW, heightInLC int) (err error) {
+	if widthInRW <= 0 {
+		return fmt.Errorf("widthInRW must be greater than zero, but %d", widthInRW)
+	}
+
+	e.frame.mu.Lock()
+	defer e.frame.mu.Unlock()
+
+	imgText := fmt.Sprintf("<img src=%q width=%d height=%d >", path.Base(imgFile), widthInRW, heightInLC)
+	err = e.appendText(imgText, &imageBox{
+		src:           imgFile,
+		dstWidthInRW:  widthInRW,
+		dstHeightInLC: heightInLC,
+	})
 	return
 }
 

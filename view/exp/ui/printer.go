@@ -48,6 +48,13 @@ func (p Printer) PrintButton(caption, cmd string) {
 	}
 }
 
+// implements erago/uiadapter/UI.
+func (p Printer) PrintImage(file string, widthInRW, heightInLC int) {
+	if err := p.e.WriteImage(file, widthInRW, heightInLC); err != nil {
+		panic(err) // TODO return error?
+	}
+}
+
 // implemnts erago/uiadapter/UI.
 func (p Printer) PrintLine(sym string) {
 	_, err := p.e.WriteLine(sym)

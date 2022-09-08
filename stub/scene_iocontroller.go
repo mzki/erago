@@ -75,6 +75,12 @@ func (ui sceneIOController) PrintBar(int64, int64, int, string, string) error {
 func (ui sceneIOController) TextBar(int64, int64, int, string, string) (string, error) {
 	return "[#..]", nil
 }
+
+func (ui sceneIOController) PrintImage(string, int, int) error {
+	ui.Print("<img>")
+	return nil
+}
+
 func (ui sceneIOController) VPrint(vname, s string) error {
 	ui.Print(s)
 	return nil

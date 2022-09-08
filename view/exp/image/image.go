@@ -91,7 +91,13 @@ func AutoLoad(r io.Reader, ext string) (image.Image, error) {
 
 // LoadOptions is options for image loading.
 type LoadOptions struct {
-	ResizedSize image.Point // size of resized image. Empty this means no resized.
+	// Size of resized image. Empty this means no resized.
+	// If either X or Y of size is zero, auto filled it by calculating
+	// from the other with keep aspect ratio.
+	// For example, Let source image size (W, H) = (1920, 1080) and resized size
+	// (RW, RH) = (960, 0) then auto-filled resized size (RW', RH') = (960, 540)
+	// since 1920:1080 = 960:540.
+	ResizedSize image.Point
 }
 
 // It is almost same as Get(), except that it accepts options for loaded image property.
@@ -113,6 +119,10 @@ func (l *Loader) GetWithOptions(file string, opt LoadOptions) (image.Image, erro
 	}
 	// resize original image
 	if opt.ResizedSize != (image.Point{}) {
+		// auto-fill resized size if either X or Y is zero.
+		if opt.ResizedSize.X == 0 || opt.ResizedSize.Y == 0 {
+			opt.ResizedSize = fixedAspectRateSize(m.Bounds().Size(), opt.ResizedSize)
+		}
 		m = resizeImage(m, opt)
 	}
 	l.cache.Add(key, m)
@@ -122,6 +132,27 @@ func (l *Loader) GetWithOptions(file string, opt LoadOptions) (image.Image, erro
 func createImageKey(file string, opt LoadOptions) string {
 	key := file + "_" + fmt.Sprintf("%dx%d", opt.ResizedSize.X, opt.ResizedSize.Y)
 	return key
+}
+
+func fixedAspectRateSize(srcSize image.Point, resizedSize image.Point) image.Point {
+	if srcSize.X == 0 || srcSize.Y == 0 {
+		return resizedSize // can not calculate aspect ratio
+	}
+
+	aspectRateXY := float64(srcSize.X) / float64(srcSize.Y)
+	if resizedSize.X == 0 {
+		return image.Point{
+			X: int(float64(resizedSize.Y) * aspectRateXY),
+			Y: resizedSize.Y,
+		}
+	} else if resizedSize.Y == 0 {
+		return image.Point{
+			X: resizedSize.X,
+			Y: int(float64(resizedSize.X) / aspectRateXY),
+		}
+	} else {
+		return resizedSize // Have user requested value. Not needed to fixed aspect
+	}
 }
 
 func resizeImage(src image.Image, opt LoadOptions) image.Image {

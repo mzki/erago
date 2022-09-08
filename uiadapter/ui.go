@@ -31,6 +31,10 @@ type Printer interface {
 	// given sym #, output line is: ############...
 	PrintLine(sym string) error
 
+	// Print image from file path.
+	// Image is exceptional case, which may draw image region exceed over 1 line.
+	PrintImage(file string, widthInRW, heightInLC int) error
+
 	// Set and Get Color using 0xRRGGBB for 24bit color
 	SetColor(color uint32) error
 	GetColor() (color uint32, err error)

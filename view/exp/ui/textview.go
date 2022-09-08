@@ -236,6 +236,12 @@ func (v *TextView) PrintLine(sym string) error {
 	return nil
 }
 
+func (v *TextView) PrintImage(file string, widthInRW, heightInLC int) error {
+	v.Printer.PrintImage(file, widthInRW, heightInLC)
+	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
+}
+
 func (v *TextView) NewPage() error {
 	v.Printer.NewPage()
 	v.sender.Mark(v, node.MarkNeedsPaintBase)

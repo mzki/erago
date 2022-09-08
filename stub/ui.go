@@ -29,6 +29,12 @@ func (ui gameUIStub) PrintLine(sym string) error {
 	_, err := fmt.Println(sym + sym + sym)
 	return err
 }
+
+func (ui gameUIStub) PrintImage(file string, widthInRW, heigthInLC int) error {
+	_, err := fmt.Printf("<img src=%q width=%d height=%d >", file, widthInRW, heigthInLC)
+	return err
+}
+
 func (ui gameUIStub) SetColor(color uint32) error           { return nil }
 func (ui gameUIStub) GetColor() (uint32, error)             { return 0x000000, nil }
 func (ui gameUIStub) ResetColor() error                     { return nil }

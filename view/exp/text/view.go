@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
+	"github.com/mzki/erago/util/log"
 	"github.com/mzki/erago/view/exp/theme"
 )
 
@@ -47,6 +48,9 @@ type View struct {
 	highlightButton clickableButton   // conserves a clickable button to highlight.
 
 	accumulatedMoveY float64 // accumulation of mouse moving Y.
+
+	// Image holder
+	imgLoader *TextScaleImageLoader
 }
 
 // clickableButton holds its command and position to indicate clicking it.
@@ -60,9 +64,22 @@ func (f *Frame) View() *View {
 	return newView(f)
 }
 
+// TODO set from config file?
+const viewImageCacheSize = 32
+
+var (
+	defaultViewFontHeight      = fixed.I(14)
+	defaultViewFontSingleWidth = fixed.I(8)
+)
+
 func newView(f *Frame) *View {
 	return &View{
 		frame: f,
+		imgLoader: NewTextScaleImageLoader(
+			viewImageCacheSize,
+			defaultViewFontHeight,
+			defaultViewFontSingleWidth,
+		),
 	}
 }
 
@@ -91,6 +108,8 @@ func (v *View) SetFace(face font.Face) error {
 	v.faceDescent = m.Descent
 	v.faceHeight = v.faceAscent + v.faceDescent
 	v.faceSingleWidth = x_adv
+	// update text scale of Image loader, and invalidate its cache.
+	v.imgLoader = NewTextScaleImageLoader(DefaultCachedImageSize, v.faceHeight, v.faceSingleWidth)
 
 	v.relayout()
 	return nil
@@ -470,5 +489,38 @@ func extractLinesFromStartPAndL(v *View, handler func(l *Line)) {
 		for l := p.FirstLine(f); l != nil; l = l.Next(f) {
 			handler(l)
 		}
+	}
+}
+
+// GetImage returns image from view's repository.
+// A image is specified by file path and its load options.
+// It returns loaded image if file and options matches repository
+// or returns fallback image if file and options does not match.
+// So it never returns empty nor nil image.
+func (v *View) GetImage(file string, resizedWidthInRW, resizedHeightInLC int) (image.Image, fixed.Point26_6) {
+	img, tsSize, err := v.imgLoader.GetResized(file, resizedWidthInRW, resizedHeightInLC)
+	if err == nil {
+		return img, v.calcFixedPointImageSize(tsSize)
+	} else {
+		log.Debugf("Failed to image load: %v", file)
+		log.Debug("Replace to fallback image")
+		// TODO: Replace fallback image
+
+		// NOTE: Assumes resizedWidth must be > 0, otherwise use constant width
+		// NOTE: Use 1:1 aspect ratio black image now.
+		if resizedWidthInRW == 0 {
+			resizedWidthInRW = 10
+		}
+		resizedW := int26_6_Mul(fixed.I(resizedWidthInRW), v.faceSingleWidth).Ceil()
+		resizedH := resizedW
+		img := image.NewRGBA(image.Rect(0, 0, resizedW, resizedH))
+		return img, v.calcFixedPointImageSize(TextScaleSize{10, 10})
+	}
+}
+
+func (v *View) calcFixedPointImageSize(tsSize TextScaleSize) fixed.Point26_6 {
+	return fixed.Point26_6{
+		X: int26_6_Mul(fixed.I(tsSize.Width), v.faceSingleWidth),
+		Y: int26_6_Mul(fixed.I(tsSize.Height), v.faceHeight),
 	}
 }

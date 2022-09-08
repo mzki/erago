@@ -1008,3 +1008,54 @@ func TestEditor_LineCount(t *testing.T) {
 		})
 	}
 }
+
+func TestEditor_PrintImage(t *testing.T) {
+	gs := setupGlobals(t)
+	editor := gs.editor
+	defer gs.cancel()
+
+	type args struct {
+		file       string
+		widthInRW  int
+		heightInLC int
+	}
+	tests := []struct {
+		name    string
+		e       *publisher.Editor
+		args    args
+		wantErr bool
+		setup   func(*publisher.Editor)
+	}{
+		{
+			name:    "First case",
+			e:       editor,
+			wantErr: false,
+			args:    args{"/path/to/image/file", 10, 11},
+		},
+		{
+			name:    "Succesive image",
+			e:       editor,
+			wantErr: false,
+			args:    args{"/path/to/image/file2", 15, 20},
+		},
+		{
+			name:    "text after image",
+			e:       editor,
+			wantErr: false,
+			args:    args{"/path/to/image/file3", 0, 0},
+			setup: func(e *publisher.Editor) {
+				e.Print("some text")
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if setup := tt.setup; setup != nil {
+				setup(tt.e)
+			}
+			if err := tt.e.PrintImage(tt.args.file, tt.args.widthInRW, tt.args.heightInLC); (err != nil) != tt.wantErr {
+				t.Errorf("Editor.PrintImage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

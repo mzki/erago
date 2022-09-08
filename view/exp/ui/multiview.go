@@ -277,6 +277,11 @@ func (mv *MultipleView) PrintLine(sym string) error {
 	return nil
 }
 
+func (mv *MultipleView) PrintImage(file string, widthInRW, heightInLC int) error {
+	mv.viewManager.currentView().PrintImage(file, widthInRW, heightInLC)
+	return nil
+}
+
 func (mv *MultipleView) SetColor(color uint32) error {
 	return mv.viewManager.currentView().SetColor(color)
 }

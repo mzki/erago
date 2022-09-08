@@ -23,6 +23,10 @@ func newUIAdapter(ui UI) *uiAdapter {
 	}
 }
 
+func (a *uiAdapter) PrintImage(string, int, int) error {
+	panic("Not implemented")
+}
+
 // implement uiadapter.RequestChangedListener
 func (a *uiAdapter) OnRequestChanged(req uiadapter.InputRequestType) {
 	switch req {

@@ -169,6 +169,8 @@ func TestLoader_GetWithOptions(t *testing.T) {
 		wantErr bool
 	}{
 		{"Get normal", &testImageLoader, args{"testdata/color.png", LoadOptions{img.Point{128, 64}}}, wantImg, false},
+		{"zero resizedX", &testImageLoader, args{"testdata/color.png", LoadOptions{img.Point{0, 64}}}, wantImg, false},
+		{"zero resizedY", &testImageLoader, args{"testdata/color.png", LoadOptions{img.Point{128, 0}}}, wantImg, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

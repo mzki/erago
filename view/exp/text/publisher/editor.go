@@ -359,6 +359,18 @@ func (e *Editor) printLineInternal(sym string) error {
 	return nil
 }
 
+// Print image from file path.
+// Image is exceptional case, which may draw image region exceed over 1 line.
+func (e *Editor) PrintImage(file string, widthInRW, heightInLC int) error {
+	msg := e.createAsyncTask(func() {
+		if err := e.editor.WriteImage(file, widthInRW, heightInLC); err != nil {
+			e.setAsyncErr(err)
+			e.looper.Close()
+		}
+	})
+	return e.send(e.ctx, msg)
+}
+
 // Set and Get Color using 0xRRGGBB for 24bit color
 func (e *Editor) SetColor(color uint32) error {
 	msg := e.createAsyncTask(func() {
