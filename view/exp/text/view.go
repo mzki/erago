@@ -492,15 +492,16 @@ func extractLinesFromStartPAndL(v *View, handler func(l *Line)) {
 	}
 }
 
-// GetImage returns image from view's repository.
+// GetImage returns image and its size in fixed-point from view's repository.
+// The third returned value indicates whether image is successfully loaded or not.
 // A image is specified by file path and its load options.
 // It returns loaded image if file and options matches repository
 // or returns fallback image if file and options does not match.
 // So it never returns empty nor nil image.
-func (v *View) GetImage(file string, resizedWidthInRW, resizedHeightInLC int) (image.Image, fixed.Point26_6) {
+func (v *View) GetImage(file string, resizedWidthInRW, resizedHeightInLC int) (image.Image, fixed.Point26_6, bool) {
 	img, tsSize, err := v.imgLoader.GetResized(file, resizedWidthInRW, resizedHeightInLC)
 	if err == nil {
-		return img, v.calcFixedPointImageSize(tsSize)
+		return img, v.calcFixedPointImageSize(tsSize), true
 	} else {
 		log.Debugf("Failed to image load: %v", file)
 		log.Debug("Replace to fallback image")
@@ -514,7 +515,7 @@ func (v *View) GetImage(file string, resizedWidthInRW, resizedHeightInLC int) (i
 		resizedW := int26_6_Mul(fixed.I(resizedWidthInRW), v.faceSingleWidth).Ceil()
 		resizedH := resizedW
 		img := image.NewRGBA(image.Rect(0, 0, resizedW, resizedH))
-		return img, v.calcFixedPointImageSize(TextScaleSize{10, 10})
+		return img, v.calcFixedPointImageSize(TextScaleSize{10, 10}), false
 	}
 }
 
@@ -523,4 +524,11 @@ func (v *View) calcFixedPointImageSize(tsSize TextScaleSize) fixed.Point26_6 {
 		X: int26_6_Mul(fixed.I(tsSize.Width), v.faceSingleWidth),
 		Y: int26_6_Mul(fixed.I(tsSize.Height), v.faceHeight),
 	}
+}
+
+// MeasureTextScaleImageSize returns image size in text scale specified by file, resized width and height.
+// This function's arguments are same as GetImage() and should returned consistent result.
+func (v *View) MeasureTextScaleImageSize(file string, resizedWidthInRW, resizedHeightInLC int) (TextScaleSize, error) {
+	_, tsSize, err := v.imgLoader.GetResized(file, resizedWidthInRW, resizedHeightInLC)
+	return tsSize, err
 }

@@ -242,6 +242,15 @@ func (v *TextView) PrintImage(file string, widthInRW, heightInLC int) error {
 	return nil
 }
 
+func (v *TextView) MeasureImageSize(file string, widthInRW, heightInLC int) (width, height int, err error) {
+	imageSize, err := v.v.MeasureTextScaleImageSize(file, widthInRW, heightInLC)
+	if err != nil {
+		return 0, 0, err
+	} else {
+		return imageSize.Width, imageSize.Height, err
+	}
+}
+
 func (v *TextView) NewPage() error {
 	v.Printer.NewPage()
 	v.sender.Mark(v, node.MarkNeedsPaintBase)

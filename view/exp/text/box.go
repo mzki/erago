@@ -262,7 +262,7 @@ func (box *imageBox) Draw(d *font.Drawer, v *View) {
 
 	// d.Dot points text baseline but image should starts with left top of blank space.
 	leftTopDot := d.Dot.Add(fixed.Point26_6{X: 0, Y: -v.faceAscent})
-	srcImg, fpSize := v.GetImage(box.src, box.dstWidthInRW, box.dstHeightInLC)
+	srcImg, fpSize, _ := v.GetImage(box.src, box.dstWidthInRW, box.dstHeightInLC)
 	r := image.Rectangle{
 		Min: toImagePoint(leftTopDot),
 		Max: toImagePoint(leftTopDot.Add(fpSize)),

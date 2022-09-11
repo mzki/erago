@@ -35,6 +35,12 @@ type Printer interface {
 	// Image is exceptional case, which may draw image region exceed over 1 line.
 	PrintImage(file string, widthInRW, heightInLC int) error
 
+	// Measure Image size in text scale, width in rune-width and height in line-count.
+	// This is useful when PrintImage will call with either widthInRW or heightInLC is zero,
+	// the drawn image size shall be auto determined but client want to know determined size
+	// before calling PrintImage.
+	MeasureImageSize(file string, widthInRW, heightInLC int) (width, height int, err error)
+
 	// Set and Get Color using 0xRRGGBB for 24bit color
 	SetColor(color uint32) error
 	GetColor() (color uint32, err error)

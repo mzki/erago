@@ -81,6 +81,10 @@ func (ui sceneIOController) PrintImage(string, int, int) error {
 	return nil
 }
 
+func (ui sceneIOController) MeasureImageSize(string, int, int) (int, int, error) {
+	return 10, 10, nil
+}
+
 func (ui sceneIOController) VPrint(vname, s string) error {
 	ui.Print(s)
 	return nil

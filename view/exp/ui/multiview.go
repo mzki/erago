@@ -282,6 +282,10 @@ func (mv *MultipleView) PrintImage(file string, widthInRW, heightInLC int) error
 	return nil
 }
 
+func (mv *MultipleView) MeasureImageSize(file string, widthInRW, heightInLC int) (int, int, error) {
+	return mv.viewManager.currentView().MeasureImageSize(file, widthInRW, heightInLC)
+}
+
 func (mv *MultipleView) SetColor(color uint32) error {
 	return mv.viewManager.currentView().SetColor(color)
 }

@@ -58,23 +58,24 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"resetColor": ft.resetColor,
 
 		// output functions
-		"print":           ft.print,
-		"printl":          ft.printL,
-		"printc":          ft.printC,
-		"printw":          ft.printW,
-		"printLine":       ft.printLine,
-		"printBar":        ft.printBar,
-		"textBar":         ft.textBar,
-		"printButton":     ft.printButton,
-		"printImage":      ft.printImage,
-		"newPage":         ft.newPage,
-		"clearLineAll":    ft.clearLineAll,
-		"clearLine":       ft.clearLine,
-		"windowStrWidth":  ft.windowStrWidth,
-		"windowLineCount": ft.windowLineCount,
-		"currentStrWidth": ft.currentStrWidth,
-		"lineCount":       ft.lineCount,
-		"textWidth":       ft.textWidth,
+		"print":            ft.print,
+		"printl":           ft.printL,
+		"printc":           ft.printC,
+		"printw":           ft.printW,
+		"printLine":        ft.printLine,
+		"printBar":         ft.printBar,
+		"textBar":          ft.textBar,
+		"printButton":      ft.printButton,
+		"printImage":       ft.printImage,
+		"measureImageSize": ft.measureImageSize,
+		"newPage":          ft.newPage,
+		"clearLineAll":     ft.clearLineAll,
+		"clearLine":        ft.clearLine,
+		"windowStrWidth":   ft.windowStrWidth,
+		"windowLineCount":  ft.windowLineCount,
+		"currentStrWidth":  ft.currentStrWidth,
+		"lineCount":        ft.lineCount,
+		"textWidth":        ft.textWidth,
 		// "lastLineCount":
 		"vprint":        ft.vprint,
 		"vprintl":       ft.vprintL,
@@ -755,13 +756,49 @@ func (ft functor) textBar(L *lua.LState) int {
 //   era.printImage("path/to/image2.png", 30, 30)
 //
 func (ft functor) printImage(L *lua.LState) int {
-	imgPath := L.CheckString(1)
-	widthInTW := L.CheckInt(2)
-	heightInLC := L.OptInt(3, 0)
+	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
+	err := ft.game.PrintImage(imgPath, widthInTW, heightInLC)
+	if err != nil {
+		L.RaiseError("script.printImage(): %v", err)
+	}
+	return 0
+}
+
+// +gendoc "Era Module"
+// * w, h = era.measureImageSize(image_path, width_in_tw, [height_in_lc])
+//
+// image_path で指定した画像データの表示サイズを取得します。
+// 返却された表示サイズ w, h の単位はそれぞれテキストの幅、行数です。
+// この関数に渡すパラメータは printImage() と同じ仕様です。
+// この関数は、例えば height_in_lc を省略した場合、自動的に計算された height がいくつになるのかを
+// 知りたい場合に使用できます。
+//
+//   w, h = era.measureImageSize(image_path, width_in_tw)
+//   era.printImage(image_path, width_in_tw)
+//   -- 画像表示分だけ改行して、次の文字表示位置を画像の下の行に合わせる。
+//   for i = 1, w do
+//     era.printl("")
+//   end
+//
+func (ft functor) measureImageSize(L *lua.LState) int {
+	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
+	retW, retH, err := ft.game.MeasureImageSize(imgPath, widthInTW, heightInLC)
+	if err != nil {
+		L.RaiseError("script.printImage(): %v", err)
+	}
+	L.Push(lua.LNumber(retW))
+	L.Push(lua.LNumber(retH))
+	return 2
+}
+
+func checkImageParams(L *lua.LState, startPos int) (imgPath string, widthInTW, heightInLC int) {
+	imgPath = L.CheckString(startPos)
+	widthInTW = L.CheckInt(startPos + 1)
+	heightInLC = L.OptInt(startPos+2, 0)
 
 	imgPath, err := scriptPath(L, imgPath)
 	if err != nil {
-		L.ArgError(1, err.Error())
+		L.ArgError(startPos, err.Error())
 	}
 	if widthInTW < 0 {
 		widthInTW = 0
@@ -769,12 +806,7 @@ func (ft functor) printImage(L *lua.LState) int {
 	if heightInLC < 0 {
 		heightInLC = 0
 	}
-
-	err = ft.game.PrintImage(imgPath, widthInTW, heightInLC)
-	if err != nil {
-		L.RaiseError("script.printImage(): %v", err)
-	}
-	return 0
+	return
 }
 
 // // Input functions

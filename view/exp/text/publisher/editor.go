@@ -371,6 +371,17 @@ func (e *Editor) PrintImage(file string, widthInRW, heightInLC int) error {
 	return e.send(e.ctx, msg)
 }
 
+// Measure Image size in text scale, width in rune-width and height in line-count.
+// This is useful when PrintImage will call with either widthInRW or heightInLC is zero,
+// the drawn image size shall be auto determined but client want to know determined size
+// before calling PrintImage.
+func (e *Editor) MeasureImageSize(file string, widthInRW, heightInLC int) (int, int, error) {
+	// TODO: add imgLoader at member.
+	// PubData has []byte but editor provide ImageFetchOptions to client, for considering
+	// that PubData's []byte is image and typically very large data size.
+	panic("Not implemented yet")
+}
+
 // Set and Get Color using 0xRRGGBB for 24bit color
 func (e *Editor) SetColor(color uint32) error {
 	msg := e.createAsyncTask(func() {

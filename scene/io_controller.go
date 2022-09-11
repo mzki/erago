@@ -82,6 +82,7 @@ type OutputPort interface {
 	PrintBar(now, max int64, width int, fg, bg string) error
 	TextBar(now, max int64, width int, fg, bg string) (string, error)
 	PrintImage(file string, widthInRW, heightInLC int) error
+	MeasureImageSize(file string, widthInRW, heightInLC int) (width, height int, err error)
 
 	NewPage() error
 	ClearLine(nline int) error

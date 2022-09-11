@@ -35,6 +35,10 @@ func (ui gameUIStub) PrintImage(file string, widthInRW, heigthInLC int) error {
 	return err
 }
 
+func (ui gameUIStub) MeasureImageSize(file string, widthInRW, heigthInLC int) (int, int, error) {
+	return 10, 10, nil
+}
+
 func (ui gameUIStub) SetColor(color uint32) error           { return nil }
 func (ui gameUIStub) GetColor() (uint32, error)             { return 0x000000, nil }
 func (ui gameUIStub) ResetColor() error                     { return nil }
