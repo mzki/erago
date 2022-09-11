@@ -97,7 +97,6 @@ func TestLoader_Get(t *testing.T) {
 }
 
 func TestAutoLoadFile(t *testing.T) {
-	t.Skip("Not implemented")
 	type args struct {
 		file string
 	}
@@ -107,7 +106,7 @@ func TestAutoLoadFile(t *testing.T) {
 		want    img.Image
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{"load test image", args{"testdata/color.png"}, testImageData, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -6,11 +6,11 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/golang/groupcache/lru"
+	"github.com/mzki/erago/filesystem"
 	"golang.org/x/image/draw"
 )
 
@@ -67,7 +67,7 @@ func AutoLoadFile(file string) (image.Image, error) {
 	}
 	ext = ext[1:] // remove first characater "."
 
-	fp, err := os.Open(file)
+	fp, err := filesystem.Load(file)
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +80,9 @@ func AutoLoadFile(file string) (image.Image, error) {
 // error contains unsupported extension.
 func AutoLoad(r io.Reader, ext string) (image.Image, error) {
 	switch ext {
-	case "png":
+	case "png", "PNG":
 		return png.Decode(r)
-	case "jpeg", "jpg":
+	case "jpeg", "jpg", "JPEG", "JPG":
 		return jpeg.Decode(r)
 	default:
 		return nil, fmt.Errorf("unsupported file type(%s)", ext)
