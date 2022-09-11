@@ -66,6 +66,7 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"printBar":        ft.printBar,
 		"textBar":         ft.textBar,
 		"printButton":     ft.printButton,
+		"printImage":      ft.printImage,
 		"newPage":         ft.newPage,
 		"clearLineAll":    ft.clearLineAll,
 		"clearLine":       ft.clearLine,
@@ -734,6 +735,46 @@ func (ft functor) textBar(L *lua.LState) int {
 	}
 	L.Push(lua.LString(res))
 	return 1
+}
+
+// +gendoc "Era Module"
+// * era.printImage(image_path, width_in_tw, [height_in_lc])
+//
+// image_path で指定した画像データを表示します。
+// image_path は スクリプト *.lua を配置するディレクトリからの相対パスで指定します。
+// *.lua を配置するディレクトリより上の階層を指定した場合エラーとなります。
+// サポートしている画像フォーマットは .png, .jpeg です。
+// 存在しないファイルパスを指定した場合、異常を示す画像が変わりに表示されます。
+// 画面上で画像が表示されるサイズを TextWidth分の幅、LineCount 分の高さで指定します。
+// height_in_lc を 0 または省略した場合、width_in_tw に対して、元の画像のアスペクト比を
+// 保った高さに自動調整されます。
+//
+//   -- 幅 TextWidth 30、高さアスペクト比追従で、 image.png を表示。
+//   era.printImage("path/to/image.png", 30)
+//   -- 30x30 のサイズで image2.png を表示。元画像のアスペクト比が 1:1 出ない場合、縦横いずれかに引き伸ばされて表示。
+//   era.printImage("path/to/image2.png", 30, 30)
+//
+func (ft functor) printImage(L *lua.LState) int {
+	imgPath := L.CheckString(1)
+	widthInTW := L.CheckInt(2)
+	heightInLC := L.OptInt(3, 0)
+
+	imgPath, err := scriptPath(L, imgPath)
+	if err != nil {
+		L.ArgError(1, err.Error())
+	}
+	if widthInTW < 0 {
+		widthInTW = 0
+	}
+	if heightInLC < 0 {
+		heightInLC = 0
+	}
+
+	err = ft.game.PrintImage(imgPath, widthInTW, heightInLC)
+	if err != nil {
+		L.RaiseError("script.printImage(): %v", err)
+	}
+	return 0
 }
 
 // // Input functions

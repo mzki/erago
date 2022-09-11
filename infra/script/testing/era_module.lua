@@ -13,6 +13,7 @@ era.printw "test"
 era.printLine "test"
 era.printBar(0, 10, 5)
 _ = era.textBar(0, 10, 5)
+era.printImage("path/to/test.png", 10)
 
 era.clearLineAll()
 era.clearLine(3)
