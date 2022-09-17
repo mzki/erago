@@ -18,6 +18,7 @@ import (
 const (
 	ContentTypeText       = "text"
 	ContentTypeTextButton = "text_button"
+	ContentTypeImage      = "image"
 )
 
 const (
@@ -59,20 +60,23 @@ type Box interface {
 // BoxCommon implements Box interface.
 // Data() should be implemented by the derived types.
 type BoxCommon struct {
-	CommonRuneWidth   int    `json:"rune_width"`
-	CommonContentType string `json:"content_type"`
+	CommonRuneWidth     int    `json:"rune_width"`
+	CommonLineCountHint int    `json:"line_count_hint"`
+	CommonContentType   string `json:"content_type"`
 
 	// Implement BoxDataUnion interface.
 	BoxDataUnionImpl
 }
 
 func (b *BoxCommon) RuneWidth() int      { return b.CommonRuneWidth }
+func (b *BoxCommon) LineCountHint() int  { return b.CommonLineCountHint }
 func (b *BoxCommon) ContentType() string { return b.CommonContentType }
 
 // BoxDataUnion is a union data structure for Box implementers.
 type BoxDataUnion interface {
 	TextData() *TextData
 	TextButtonData() *TextButtonData
+	ImageData() *ImageData
 }
 
 // BoxDataUnionImpl implements BoxDataUnion interface.
@@ -80,6 +84,7 @@ type BoxDataUnionImpl struct{}
 
 func (BoxDataUnionImpl) TextData() *TextData             { panic("Not implemented") }
 func (BoxDataUnionImpl) TextButtonData() *TextButtonData { panic("Not implemented") }
+func (BoxDataUnionImpl) ImageData() *ImageData           { panic("Not implemented") }
 
 // TextData is data for ContentTypeText.
 type TextData struct {
@@ -114,6 +119,43 @@ type TextButtonBox struct {
 
 // TextButtonData returns *TextButtonData.
 func (t *TextButtonBox) TextButtonData() *TextButtonData { return &t.BoxData }
+
+// ImageFetchType indicates how image pixels to be included in ImageData.Data.
+// This type is aliases for int since it may be encoded to the json format.
+type ImageFetchType = int
+
+const (
+	// ImageFetchNone indicates no image pixel data in ImageData.
+	// Client use URI of image to fetch pixels manually.
+	ImageFetchNone ImageFetchType = iota
+	// ImageFetchRawRGBA indicates image pixels stored in raw RGBA bytes in
+	// ImageData.
+	ImageFetchRawRGBA
+	// ImageFetchEncodedPNG indicates image pixels stored in png encoded bytes in
+	// ImageData.
+	ImageFetchEncodedPNG
+)
+
+// ImageData is data for ContentTypeImage.
+type ImageData struct {
+	Source          string `json:"source"`
+	WidthPx         int    `json:"width_px"`
+	HeightPx        int    `json:"height_px"`
+	WidthTextScale  int    `json:"width_text_scale"`
+	HeightTextScale int    `json:"height_text_scale"`
+
+	Data          []byte         `json:"data"`
+	DataFetchType ImageFetchType `json:"data_fetch_type"`
+}
+
+// ImageBox holds image data.
+type ImageBox struct {
+	BoxCommon
+	BoxData ImageData `json:"data"`
+}
+
+// TextButtonData returns *TextButtonData.
+func (t *ImageBox) ImageData() *ImageData { return &t.BoxData }
 
 // Boxes is intermediation for []Box, used for gomobile export.
 type Boxes struct {

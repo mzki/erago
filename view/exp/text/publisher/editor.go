@@ -1,22 +1,35 @@
 package publisher
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"image"
+	"image/png"
 	"math"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/util/log"
 	"github.com/mzki/erago/view/exp/text"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/width"
+	"golang.org/x/image/math/fixed"
 )
 
 // ResetColor is imported from text.ResetColor so that
 // user need not to import text package explicitly.
 var ResetColor = text.ResetColor
+
+// DefaultCachedImageSize is used as a number of cached images.
+var DefaultCachedImageSize = text.DefaultCachedImageSize
+
+type EditorOptions struct {
+	// ImageFetchType indicates how does image pixels fetched by Editor.
+	ImageFetchType pubdata.ImageFetchType
+}
 
 // Editor edits just one Paragraph
 // It only appends new content into Frame's last.
@@ -26,8 +39,11 @@ var ResetColor = text.ResetColor
 //
 // Multiple Editors do not share their states.
 type Editor struct {
-	frame  *text.Frame
-	editor *text.Editor // backend editer.
+	frame      *text.Frame
+	editor     *text.Editor // backend editer.
+	imgLoader  *text.TextScaleImageLoader
+	imgEncoder *png.Encoder
+	opt        EditorOptions
 
 	ctx           context.Context
 	looper        *MessageLooper
@@ -45,14 +61,24 @@ type Editor struct {
 	callback Callback
 }
 
-func NewEditor(ctx context.Context) *Editor {
+func NewEditor(ctx context.Context, opts ...EditorOptions) *Editor {
+	opt := EditorOptions{}
+	if len(opts) > 0 {
+		opt = opts[0]
+	}
 	f := text.NewFrame(&text.FrameOptions{
 		MaxParagraphs:     2,
 		MaxParagraphBytes: 4 * 512, // 512 character for 4-byte.
 	})
 	e := &Editor{
-		frame:         f,
-		editor:        f.Editor(),
+		frame:  f,
+		editor: f.Editor(),
+		imgLoader: text.NewTextScaleImageLoader(
+			DefaultCachedImageSize,
+			fixed.I(14),
+			fixed.I(8),
+		), // temporary height/width
+		opt:           opt,
 		ctx:           ctx,
 		looper:        NewMessageLooper(ctx),
 		currentSyncID: 0,
@@ -166,6 +192,21 @@ func (e *Editor) SetViewSize(viewLineCount, viewLineRuneWidth int) error {
 	return e.send(e.ctx, msg)
 }
 
+// SetTextUnitPx sets text unit size in px.
+// The text unit size means pixel region of drawn half character on UI.
+// This setting affects calculation of image size in Editor.
+func (e *Editor) SetTextUnitPx(textUnitPx image.Point) error {
+	msg := e.createAsyncTask(func() {
+		// create new loader instance to invalid internal cache.
+		e.imgLoader = text.NewTextScaleImageLoader(
+			DefaultCachedImageSize,
+			fixed.I(textUnitPx.Y),
+			fixed.I(textUnitPx.X),
+		)
+	})
+	return e.send(e.ctx, msg)
+}
+
 func (e *Editor) createCurrentParagraph(fixed bool) *pubdata.Paragraph {
 	var lastP *text.Paragraph = nil
 	for pp := e.frame.FirstParagraph(); pp != nil; pp = pp.Next(e.frame) {
@@ -200,9 +241,13 @@ func (e *Editor) createCurrentParagraph(fixed bool) *pubdata.Paragraph {
 
 func (e *Editor) createBox(bb text.Box) pubdata.Box {
 	bcommon := pubdata.BoxCommon{
-		CommonRuneWidth: bb.RuneWidth(e.frame),
+		CommonRuneWidth:     bb.RuneWidth(e.frame),
+		CommonLineCountHint: bb.LineCountHint(e.frame),
 	}
 	switch typed_bb := bb.(type) {
+	case text.ImageBox:
+		bcommon.CommonContentType = pubdata.ContentTypeImage
+		return e.createImageBox(bcommon, typed_bb)
 	case text.ButtonBox:
 		bcommon.CommonContentType = pubdata.ContentTypeTextButton
 		return &pubdata.TextButtonBox{
@@ -238,6 +283,74 @@ func (e *Editor) createBox(bb text.Box) pubdata.Box {
 		}
 	default:
 		panic("unknown text.Box type")
+	}
+}
+
+func (e *Editor) createImageBox(bcommon pubdata.BoxCommon, imgBox text.ImageBox) *pubdata.ImageBox {
+	imgData, tsSize, err := e.imgLoader.GetResized(imgBox.SourceImage(), bcommon.RuneWidth(), bcommon.LineCountHint())
+	var imgSize image.Point
+	if err == nil {
+		imgSize = e.imgLoader.CalcImageSize(tsSize.Width, tsSize.Height)
+		/* imgData = is not changed */
+	} else {
+		log.Debugf("Failed to image load: %v", err)
+		log.Debug("Replace to fallback image")
+
+		// TODO: Replace fallback image
+
+		// NOTE: Assumes width must be > 0, otherwise use constant width
+		// NOTE: Use 1:1 aspect ratio black image now.
+		if tsSize.Width == 0 {
+			tsSize.Width = 10
+		}
+		tsSize.Height = tsSize.Width
+		imgSize = e.imgLoader.CalcImageSize(tsSize.Width, tsSize.Height)
+		imgData = image.NewRGBA(image.Rect(0, 0, imgSize.X, imgSize.Y))
+	}
+	// replace by resolved image size.
+	bcommon.CommonRuneWidth = tsSize.Width
+	bcommon.CommonLineCountHint = tsSize.Height
+	// create image bytes
+	imgBytes, fetchType := e.createImageBytes(imgData)
+
+	return &pubdata.ImageBox{
+		BoxCommon: bcommon,
+		BoxData: pubdata.ImageData{
+			Source:          imgBox.SourceImage(),
+			WidthPx:         imgSize.X,
+			HeightPx:        imgSize.Y,
+			WidthTextScale:  bcommon.RuneWidth(),
+			HeightTextScale: bcommon.LineCountHint(),
+			Data:            imgBytes,
+			DataFetchType:   fetchType,
+		}}
+}
+
+func (e *Editor) createImageBytes(img image.Image) ([]byte, pubdata.ImageFetchType) {
+	switch e.opt.ImageFetchType {
+	case pubdata.ImageFetchRawRGBA:
+		if rgba, ok := img.(*image.RGBA); ok {
+			return rgba.Pix, e.opt.ImageFetchType
+		} else {
+			log.Debug("expect RGBA image internally but somohow not")
+			return nil, pubdata.ImageFetchNone
+		}
+	case pubdata.ImageFetchEncodedPNG:
+		if e.imgEncoder == nil {
+			// lazy creation since other ImageFetchType is not needed the encoder.
+			e.imgEncoder = &png.Encoder{CompressionLevel: png.BestSpeed}
+		}
+		buf := &bytes.Buffer{}
+		err := e.imgEncoder.Encode(buf, img)
+		if err != nil {
+			log.Debugf("image encode failed: %v", err)
+			return nil, pubdata.ImageFetchNone
+		}
+		return buf.Bytes(), e.opt.ImageFetchType
+	case pubdata.ImageFetchNone:
+		fallthrough
+	default:
+		return nil, e.opt.ImageFetchType
 	}
 }
 

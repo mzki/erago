@@ -237,6 +237,16 @@ func (l *lineBox) Text(f *Frame) string {
 func (l *lineBox) Symbol() string      { return l.symbol }
 func (l *lineBox) FgColor() color.RGBA { return l.color }
 
+// ImageBox holds image source and TextBox facility.
+type ImageBox interface {
+	// ImageBox's text content may be a debug information.
+	// RuneWidth and LineCountHint shows image size in text scale.
+	TextBox
+	// SourceImage returns source path for image content. The byte
+	// content of image is not included.
+	SourceImage() string
+}
+
 // image box. It often has LineCountHint() > 2. This means
 // it should be treated as special case.
 type imageBox struct {
@@ -250,7 +260,7 @@ type imageBox struct {
 
 func (box *imageBox) RuneWidth(*Frame) int     { return box.dstWidthInRW }
 func (box *imageBox) LineCountHint(*Frame) int { return box.dstHeightInLC }
-func (box *imageBox) Source() string           { return box.src }
+func (box *imageBox) SourceImage() string      { return box.src }
 
 func (box *imageBox) Draw(d *font.Drawer, v *View) {
 	toImagePoint := func(fp fixed.Point26_6) image.Point {

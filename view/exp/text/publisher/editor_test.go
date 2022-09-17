@@ -3,6 +3,7 @@ package publisher_test
 import (
 	"context"
 	"errors"
+	"image"
 	"reflect"
 	"strings"
 	"testing"
@@ -20,14 +21,17 @@ type globals struct {
 	cancel context.CancelFunc
 }
 
-func setupGlobals(t *testing.T) struct {
+func setupGlobals(t *testing.T, opts ...publisher.EditorOptions) struct {
 	editor *publisher.Editor
 	ctrl   *gomock.Controller
 	cancel context.CancelFunc
 } {
 	ctx, cancel := context.WithCancel(context.Background())
-	editor := publisher.NewEditor(ctx)
+	editor := publisher.NewEditor(ctx, opts...)
 	if err := editor.SetViewSize(10, 100); err != nil {
+		t.Fatal(err)
+	}
+	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
 		t.Fatal(err)
 	}
 	ctrl := gomock.NewController(t)
@@ -1058,4 +1062,236 @@ func TestEditor_PrintImage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEditor_PrintImage_Published(t *testing.T) {
+	testImagePath := "../../image/testdata/color.png"
+
+	mustImageBoxFunc := func(theP *pubdata.Paragraph) *pubdata.ImageBox {
+		t.Helper()
+		if got, expect := theP.Lines.Len(), 1; got != expect {
+			t.Fatalf("different line count, expect: %v, got: %v", expect, got)
+		}
+		theL := theP.Lines.Get(0)
+		if got, expect := theL.Boxes.Len(), 2; got < expect {
+			t.Fatalf("different box count, expect: >=%v, got: %v", expect, got)
+		}
+		theB := theL.Boxes.Get(1)
+		imgB, ok := theB.(*pubdata.ImageBox)
+		if !ok {
+			t.Fatalf("unexpected box type: expect: ImageBox, but %T", theB)
+		}
+		return imgB
+	}
+
+	for _, testcase := range []struct {
+		name            string
+		img             string
+		opt             publisher.EditorOptions
+		newMockCallback func(ctrl *gomock.Controller, img string) publisher.Callback
+	}{
+		{
+			"img_fetch_none",
+			testImagePath,
+			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchNone},
+			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
+					imgB := mustImageBoxFunc(theP)
+					if imgB.BoxData.Data != nil {
+						t.Error("image data should be nil but not")
+					}
+					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
+					}
+					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchNone; got != expect {
+						t.Errorf("image fetch type should be ImageFetchNone(%v) but got %v", expect, got)
+					}
+					return nil
+				})
+				// Sync() expectation
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				return cb
+			},
+		},
+		{
+			"img_fetch_raw_rgba",
+			testImagePath,
+			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchRawRGBA},
+			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
+					imgB := mustImageBoxFunc(theP)
+					if imgB.BoxData.Data == nil {
+						t.Error("image data should not be nil but nil")
+					}
+					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
+					}
+					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchRawRGBA; got != expect {
+						t.Errorf("image fetch type should be ImageFetchRawRGBA(%v) but got %v", expect, got)
+					}
+					var sum uint64 = 0
+					for _, b := range imgB.BoxData.Data {
+						sum += uint64(b)
+					}
+					if got, expect := sum, 0; got == uint64(expect) {
+						t.Errorf("image content is all zero, expect: >%v, got data sum: %v", expect, got)
+					}
+					return nil
+				})
+				// Sync() expectation
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				return cb
+			},
+		},
+		{
+			"img_fetch_png_encoded",
+			testImagePath,
+			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchEncodedPNG},
+			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
+					imgB := mustImageBoxFunc(theP)
+					if imgB.BoxData.Data == nil {
+						t.Error("image data should not be nil but nil")
+					}
+					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
+					}
+					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchEncodedPNG; got != expect {
+						t.Errorf("image fetch type should be ImageFetchEncodedPNG(%v) but got %v", expect, got)
+					}
+					pngMagic := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+					if got, expect := len(imgB.BoxData.Data), len(pngMagic); got < expect {
+						t.Fatalf("image data length shorter than png magic bytes, expect: >=%v, got: %v", expect, got)
+					}
+					var magicMatched = true
+					for i, m := range pngMagic {
+						magicMatched = magicMatched && (imgB.BoxData.Data[i] == m)
+					}
+					if got, expect := magicMatched, true; got != expect {
+						t.Errorf("image magic not matched, expect: %v, got: %v", pngMagic, imgB.BoxData.Data[:len(pngMagic)])
+					}
+					return nil
+				})
+				// Sync() expectation
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				return cb
+			},
+		},
+		{
+			"img_fetch_raw_rgba_but_not_found",
+			"path/to/not/exist",
+			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchRawRGBA},
+			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
+					imgB := mustImageBoxFunc(theP)
+					if imgB.BoxData.Data == nil {
+						t.Error("image data should not be nil but nil")
+					}
+					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
+					}
+					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchRawRGBA; got != expect {
+						t.Errorf("image fetch type should be ImageFetchRawRGBA(%v) but got %v", expect, got)
+					}
+					var sum uint64 = 0
+					for _, b := range imgB.BoxData.Data {
+						sum += uint64(b)
+					}
+					if got, expect := sum, 0; got > uint64(expect) {
+						t.Errorf("image content should be all zero, but got data sum: %v", got)
+					}
+					return nil
+				})
+				// Sync() expectation
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				return cb
+			},
+		},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			gs := setupGlobals(t, testcase.opt)
+			editor := gs.editor
+			ctrl := gs.ctrl
+			defer gs.cancel()
+
+			imgPath := testcase.img
+			cb := testcase.newMockCallback(ctrl, imgPath)
+			if err := editor.SetCallback(cb); err != nil {
+				t.Fatalf("Can not set callbakc: %v", err)
+			}
+			if err := editor.PrintImage(imgPath, 10, 0); err != nil {
+				t.Fatalf("Can not print image: %v", err)
+			}
+			// trigger publish
+			if err := editor.Print("\n"); err != nil {
+				t.Fatalf("Can not publish line with image: %v", err)
+			}
+			// Wait for completion
+			if err := editor.Sync(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func BenchmarkPrintOnlyText(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	editor := publisher.NewEditor(ctx)
+	defer editor.Close()
+	if err := editor.SetViewSize(10, 100); err != nil {
+		b.Fatal(err)
+	}
+	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+		b.Fatal(err)
+	}
+
+	someText := `abcdefghijklmnopqrstuvwxyz`
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		editor.Print(someText)
+		editor.Print("\n")
+		editor.Sync()
+	}
+}
+
+func benchmarkHelperPrintOnlyImage(b *testing.B, opt publisher.EditorOptions) {
+	b.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	editor := publisher.NewEditor(ctx, opt)
+	defer editor.Close()
+	if err := editor.SetViewSize(10, 100); err != nil {
+		b.Fatal(err)
+	}
+	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+		b.Fatal(err)
+	}
+
+	testImagePath := "../../image/testdata/color.png"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		editor.PrintImage(testImagePath, 10, 0)
+		editor.Print("\n")
+		editor.Sync()
+	}
+}
+
+func BenchmarkPrintOnlyImageNone(b *testing.B) {
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchNone})
+}
+
+func BenchmarkPrintOnlyImageRawRGBA(b *testing.B) {
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchRawRGBA})
+}
+
+func BenchmarkPrintOnlyImageEncodedPNG(b *testing.B) {
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchEncodedPNG})
 }

@@ -16,8 +16,9 @@ func TestParagraph_JsonDump(t *testing.T) {
 						[]Box{
 							&TextBox{
 								BoxCommon{
-									CommonRuneWidth:   10,
-									CommonContentType: ContentTypeText,
+									CommonRuneWidth:     10,
+									CommonLineCountHint: 1,
+									CommonContentType:   ContentTypeText,
 								},
 								TextData{
 									Text:    "abcdefghij",
@@ -25,9 +26,25 @@ func TestParagraph_JsonDump(t *testing.T) {
 									BgColor: 0xffffff, // White
 								},
 							},
+							&ImageBox{
+								BoxCommon{
+									CommonRuneWidth:     10,
+									CommonLineCountHint: 10,
+									CommonContentType:   ContentTypeImage,
+								},
+								ImageData{
+									Source:          "/path/to/image.png",
+									WidthPx:         100,
+									HeightPx:        100,
+									WidthTextScale:  15,
+									HeightTextScale: 10,
+									Data:            []byte{0x0, 0x1, 0x2},
+									DataFetchType:   0,
+								},
+							},
 						},
 					},
-					RuneWidth: 10,
+					RuneWidth: 10 + 10,
 				},
 			},
 		},
