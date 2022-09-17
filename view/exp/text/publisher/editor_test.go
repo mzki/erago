@@ -1249,6 +1249,9 @@ func BenchmarkPrintOnlyText(b *testing.B) {
 	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
 		b.Fatal(err)
 	}
+	if err := editor.Sync(); err != nil {
+		b.Fatal(err)
+	}
 
 	someText := `abcdefghijklmnopqrstuvwxyz`
 
@@ -1271,6 +1274,9 @@ func benchmarkHelperPrintOnlyImage(b *testing.B, opt publisher.EditorOptions) {
 		b.Fatal(err)
 	}
 	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+		b.Fatal(err)
+	}
+	if err := editor.Sync(); err != nil {
 		b.Fatal(err)
 	}
 

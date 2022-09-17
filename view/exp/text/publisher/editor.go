@@ -1,22 +1,18 @@
 package publisher
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"image"
-	"image/png"
 	"math"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/mzki/erago/attribute"
-	"github.com/mzki/erago/util/log"
 	"github.com/mzki/erago/view/exp/text"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/width"
-	"golang.org/x/image/math/fixed"
 )
 
 // ResetColor is imported from text.ResetColor so that
@@ -39,11 +35,10 @@ type EditorOptions struct {
 //
 // Multiple Editors do not share their states.
 type Editor struct {
-	frame      *text.Frame
-	editor     *text.Editor // backend editer.
-	imgLoader  *text.TextScaleImageLoader
-	imgEncoder *png.Encoder
-	opt        EditorOptions
+	frame     *text.Frame
+	editor    *text.Editor // backend editer.
+	imgLoader *ImageBytesLoader
+	opt       EditorOptions
 
 	ctx           context.Context
 	looper        *MessageLooper
@@ -73,11 +68,13 @@ func NewEditor(ctx context.Context, opts ...EditorOptions) *Editor {
 	e := &Editor{
 		frame:  f,
 		editor: f.Editor(),
-		imgLoader: text.NewTextScaleImageLoader(
+		imgLoader: NewImageBytesLoader(
 			DefaultCachedImageSize,
-			fixed.I(14),
-			fixed.I(8),
-		), // temporary height/width
+			// temporary width/height
+			8,
+			14,
+			opt.ImageFetchType,
+		),
 		opt:           opt,
 		ctx:           ctx,
 		looper:        NewMessageLooper(ctx),
@@ -198,10 +195,11 @@ func (e *Editor) SetViewSize(viewLineCount, viewLineRuneWidth int) error {
 func (e *Editor) SetTextUnitPx(textUnitPx image.Point) error {
 	msg := e.createAsyncTask(func() {
 		// create new loader instance to invalid internal cache.
-		e.imgLoader = text.NewTextScaleImageLoader(
+		e.imgLoader = NewImageBytesLoader(
 			DefaultCachedImageSize,
-			fixed.I(textUnitPx.Y),
-			fixed.I(textUnitPx.X),
+			textUnitPx.X,
+			textUnitPx.Y,
+			e.opt.ImageFetchType,
 		)
 	})
 	return e.send(e.ctx, msg)
@@ -287,71 +285,22 @@ func (e *Editor) createBox(bb text.Box) pubdata.Box {
 }
 
 func (e *Editor) createImageBox(bcommon pubdata.BoxCommon, imgBox text.ImageBox) *pubdata.ImageBox {
-	imgData, tsSize, err := e.imgLoader.GetResized(imgBox.SourceImage(), bcommon.RuneWidth(), bcommon.LineCountHint())
-	var imgSize image.Point
-	if err == nil {
-		imgSize = e.imgLoader.CalcImageSize(tsSize.Width, tsSize.Height)
-		/* imgData = is not changed */
-	} else {
-		log.Debugf("Failed to image load: %v", err)
-		log.Debug("Replace to fallback image")
-
-		// TODO: Replace fallback image
-
-		// NOTE: Assumes width must be > 0, otherwise use constant width
-		// NOTE: Use 1:1 aspect ratio black image now.
-		if tsSize.Width == 0 {
-			tsSize.Width = 10
-		}
-		tsSize.Height = tsSize.Width
-		imgSize = e.imgLoader.CalcImageSize(tsSize.Width, tsSize.Height)
-		imgData = image.NewRGBA(image.Rect(0, 0, imgSize.X, imgSize.Y))
-	}
+	loadResult := e.imgLoader.LoadBytes(imgBox.SourceImage(), bcommon.RuneWidth(), bcommon.LineCountHint())
 	// replace by resolved image size.
-	bcommon.CommonRuneWidth = tsSize.Width
-	bcommon.CommonLineCountHint = tsSize.Height
-	// create image bytes
-	imgBytes, fetchType := e.createImageBytes(imgData)
-
+	bcommon.CommonRuneWidth = loadResult.TsSize.Width
+	bcommon.CommonLineCountHint = loadResult.TsSize.Height
+	// create image box
 	return &pubdata.ImageBox{
 		BoxCommon: bcommon,
 		BoxData: pubdata.ImageData{
 			Source:          imgBox.SourceImage(),
-			WidthPx:         imgSize.X,
-			HeightPx:        imgSize.Y,
+			WidthPx:         loadResult.PxSize.X,
+			HeightPx:        loadResult.PxSize.Y,
 			WidthTextScale:  bcommon.RuneWidth(),
 			HeightTextScale: bcommon.LineCountHint(),
-			Data:            imgBytes,
-			DataFetchType:   fetchType,
+			Data:            loadResult.Bytes,
+			DataFetchType:   loadResult.FetchType,
 		}}
-}
-
-func (e *Editor) createImageBytes(img image.Image) ([]byte, pubdata.ImageFetchType) {
-	switch e.opt.ImageFetchType {
-	case pubdata.ImageFetchRawRGBA:
-		if rgba, ok := img.(*image.RGBA); ok {
-			return rgba.Pix, e.opt.ImageFetchType
-		} else {
-			log.Debug("expect RGBA image internally but somohow not")
-			return nil, pubdata.ImageFetchNone
-		}
-	case pubdata.ImageFetchEncodedPNG:
-		if e.imgEncoder == nil {
-			// lazy creation since other ImageFetchType is not needed the encoder.
-			e.imgEncoder = &png.Encoder{CompressionLevel: png.BestSpeed}
-		}
-		buf := &bytes.Buffer{}
-		err := e.imgEncoder.Encode(buf, img)
-		if err != nil {
-			log.Debugf("image encode failed: %v", err)
-			return nil, pubdata.ImageFetchNone
-		}
-		return buf.Bytes(), e.opt.ImageFetchType
-	case pubdata.ImageFetchNone:
-		fallthrough
-	default:
-		return nil, e.opt.ImageFetchType
-	}
 }
 
 // ===== uiadapter.Printer interface APIs ======
