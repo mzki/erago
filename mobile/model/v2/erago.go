@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"image"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/app"
@@ -11,6 +10,7 @@ import (
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/uiadapter/event/input"
 	"github.com/mzki/erago/util/log"
+	"golang.org/x/image/math/fixed"
 )
 
 // because reference cycle is not allowed and
@@ -185,9 +185,12 @@ func SetViewSize(lineCount, lineRuneWidth int) error {
 	return mobileUI.editor.SetViewSize(lineCount, lineRuneWidth)
 }
 
-func SetTextUnitPx(textUnitWidthPx, textUnitHeightPx int) error {
+func SetTextUnitPx(textUnitWidthPx, textUnitHeightPx float64) error {
 	if !initialized {
 		panic("SetViewSize(): Init() must be called firstly")
 	}
-	return mobileUI.editor.SetTextUnitPx(image.Point{X: textUnitWidthPx, Y: textUnitHeightPx})
+	return mobileUI.editor.SetTextUnitPx(fixed.Point26_6{
+		X: floatToFixedInt(textUnitWidthPx),
+		Y: floatToFixedInt(textUnitHeightPx),
+	})
 }

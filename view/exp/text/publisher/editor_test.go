@@ -3,7 +3,6 @@ package publisher_test
 import (
 	"context"
 	"errors"
-	"image"
 	"math"
 	"reflect"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/view/exp/text/publisher"
 	mock_publisher "github.com/mzki/erago/view/exp/text/publisher/mock"
+	"golang.org/x/image/math/fixed"
 )
 
 type globals struct {
@@ -32,7 +32,7 @@ func setupGlobals(t *testing.T, opts ...publisher.EditorOptions) struct {
 	if err := editor.SetViewSize(10, 100); err != nil {
 		t.Fatal(err)
 	}
-	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+	if err := editor.SetTextUnitPx(fixed.Point26_6{X: fixed.I(8), Y: fixed.I(14)}); err != nil {
 		t.Fatal(err)
 	}
 	ctrl := gomock.NewController(t)
@@ -1292,7 +1292,7 @@ func BenchmarkPrintOnlyText(b *testing.B) {
 	if err := editor.SetViewSize(10, 100); err != nil {
 		b.Fatal(err)
 	}
-	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+	if err := editor.SetTextUnitPx(fixed.Point26_6{X: fixed.I(8), Y: fixed.I(14)}); err != nil {
 		b.Fatal(err)
 	}
 	if err := editor.Sync(); err != nil {
@@ -1319,7 +1319,7 @@ func benchmarkHelperPrintOnlyImage(b *testing.B, opt publisher.EditorOptions) {
 	if err := editor.SetViewSize(10, 100); err != nil {
 		b.Fatal(err)
 	}
-	if err := editor.SetTextUnitPx(image.Point{8, 14}); err != nil {
+	if err := editor.SetTextUnitPx(fixed.Point26_6{X: fixed.I(8), Y: fixed.I(14)}); err != nil {
 		b.Fatal(err)
 	}
 	if err := editor.Sync(); err != nil {

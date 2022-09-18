@@ -29,15 +29,15 @@ const internalImageLoaderCacheSize = 1
 
 func NewImageBytesLoader(
 	cacheSize int,
-	fontSingleWidthPx, fontHeightPx int,
+	fontSingleWidthPx, fontHeightPx fixed.Int26_6,
 	fetchType pubdata.ImageFetchType,
 ) *ImageBytesLoader {
 	return &ImageBytesLoader{
 		cache: lru.New(cacheSize),
 		loader: text.NewTextScaleImageLoader(
 			internalImageLoaderCacheSize,
-			fixed.I(fontHeightPx),
-			fixed.I(fontSingleWidthPx),
+			fontHeightPx,
+			fontSingleWidthPx,
 		),
 		// encoder instanciate later since it may not used.
 		fetchType: fetchType,

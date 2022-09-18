@@ -3,7 +3,6 @@ package publisher
 import (
 	"context"
 	"errors"
-	"image"
 	"math"
 	"strings"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	"github.com/mzki/erago/view/exp/text"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/width"
+	"golang.org/x/image/math/fixed"
 )
 
 // ResetColor is imported from text.ResetColor so that
@@ -192,7 +192,7 @@ func (e *Editor) SetViewSize(viewLineCount, viewLineRuneWidth int) error {
 // SetTextUnitPx sets text unit size in px.
 // The text unit size means pixel region of drawn half character on UI.
 // This setting affects calculation of image size in Editor.
-func (e *Editor) SetTextUnitPx(textUnitPx image.Point) error {
+func (e *Editor) SetTextUnitPx(textUnitPx fixed.Point26_6) error {
 	msg := e.createAsyncTask(func() {
 		// create new loader instance to invalid internal cache.
 		e.imgLoader = NewImageBytesLoader(
