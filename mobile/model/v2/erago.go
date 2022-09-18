@@ -28,7 +28,7 @@ var (
 	initialized    = false
 )
 
-func Init(ui UI, baseDir string) error {
+func Init(ui UI, baseDir string, imageFetchType int) error {
 	if initialized {
 		panic("game already initialized")
 	}
@@ -90,7 +90,7 @@ func Init(ui UI, baseDir string) error {
 	closeFuncs = append(closeFuncs, cancel)
 
 	theGame = erago.NewGame()
-	mobileUI, err = newUIAdapter(ctx, ui)
+	mobileUI, err = newUIAdapter(ctx, ui, imageFetchType)
 	if err != nil {
 		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)
 		log.Infof("%v", theErr)

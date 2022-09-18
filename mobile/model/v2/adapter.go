@@ -18,8 +18,17 @@ type uiAdapter struct {
 	mobileUI UI
 }
 
-func newUIAdapter(ctx context.Context, ui UI) (*uiAdapter, error) {
-	editor := publisher.NewEditor(ctx)
+var (
+	// Export ImageFetchType as int for mobile client.
+	ImageFetchNone       int = pubdata.ImageFetchNone
+	ImageFetchRawRGBA    int = pubdata.ImageFetchRawRGBA
+	ImageFetchEncodedPNG int = pubdata.ImageFetchEncodedPNG
+)
+
+func newUIAdapter(ctx context.Context, ui UI, imageFetchType pubdata.ImageFetchType) (*uiAdapter, error) {
+	editor := publisher.NewEditor(ctx, publisher.EditorOptions{
+		ImageFetchType: imageFetchType,
+	})
 	// set default
 	if err := editor.SetViewSize(20, 40); err != nil {
 		return nil, err
