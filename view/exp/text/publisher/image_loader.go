@@ -54,13 +54,13 @@ type ImageFetchResult struct {
 	FetchType pubdata.ImageFetchType
 }
 
-func (loader *ImageBytesLoader) LoadBytes(src string, widthInRW, heigthInLC int) ImageFetchResult {
-	cacheKey := loader.imageKey(src, widthInRW, heigthInLC)
+func (loader *ImageBytesLoader) LoadBytes(src string, widthInRW, heightInLC int) ImageFetchResult {
+	cacheKey := loader.imageKey(src, widthInRW, heightInLC)
 	if entry, ok := loader.cache.Get(cacheKey); ok {
 		return entry.(ImageFetchResult)
 	}
 	// cache miss hit. create image fetch result.
-	img, tsSize := loader.loadInternal(src, widthInRW, heigthInLC)
+	img, tsSize := loader.loadInternal(src, widthInRW, heightInLC)
 	imgBytes, fetchType := loader.createImageBytes(img)
 	pxSize := loader.loader.CalcImageSize(tsSize.Width, tsSize.Height)
 	ret := ImageFetchResult{
@@ -77,8 +77,8 @@ func (loader *ImageBytesLoader) imageKey(src string, widthInRW, heightInLC int) 
 	return lru.Key(fmt.Sprintf("%s-%dx%d-%d", src, widthInRW, heightInLC, loader.fetchType))
 }
 
-func (loader *ImageBytesLoader) loadInternal(src string, widthInRW, heigthInLC int) (image.Image, text.TextScaleSize) {
-	imgData, tsSize, err := loader.loader.GetResized(src, widthInRW, heigthInLC)
+func (loader *ImageBytesLoader) loadInternal(src string, widthInRW, heightInLC int) (image.Image, text.TextScaleSize) {
+	imgData, tsSize, err := loader.loader.GetResized(src, widthInRW, heightInLC)
 	if err != nil {
 		log.Debugf("Failed to image load: %v", err)
 		log.Debug("Replace to fallback image")

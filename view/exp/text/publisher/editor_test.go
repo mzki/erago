@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -1059,6 +1060,51 @@ func TestEditor_PrintImage(t *testing.T) {
 			}
 			if err := tt.e.PrintImage(tt.args.file, tt.args.widthInRW, tt.args.heightInLC); (err != nil) != tt.wantErr {
 				t.Errorf("Editor.PrintImage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestEditor_MeasureImageSize(t *testing.T) {
+	gs := setupGlobals(t)
+	editor := gs.editor
+	defer gs.cancel()
+
+	const testImagePath = "../../image/testdata/color.png"
+	const printWidth = 10
+	const textUnitW = 8
+	const textUnitH = 14
+	const printWPx = printWidth * textUnitW
+	const expectW = printWidth
+	var expectH = int(math.Ceil(float64(256) * float64(printWPx) / float64(512) / float64(textUnitH))) // 512x256 size
+
+	type args struct {
+		file       string
+		widthInRW  int
+		heightInLC int
+	}
+	tests := []struct {
+		name     string
+		e        *publisher.Editor
+		args     args
+		wantRetW int
+		wantRetH int
+		wantErr  bool
+	}{
+		{"measure test", editor, args{testImagePath, printWidth, 0}, expectW, expectH, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRetW, gotRetH, err := tt.e.MeasureImageSize(tt.args.file, tt.args.widthInRW, tt.args.heightInLC)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Editor.MeasureImageSize() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotRetW != tt.wantRetW {
+				t.Errorf("Editor.MeasureImageSize() gotRetW = %v, want %v", gotRetW, tt.wantRetW)
+			}
+			if gotRetH != tt.wantRetH {
+				t.Errorf("Editor.MeasureImageSize() gotRetH = %v, want %v", gotRetH, tt.wantRetH)
 			}
 		})
 	}

@@ -437,11 +437,14 @@ func (e *Editor) PrintImage(file string, widthInRW, heightInLC int) error {
 // This is useful when PrintImage will call with either widthInRW or heightInLC is zero,
 // the drawn image size shall be auto determined but client want to know determined size
 // before calling PrintImage.
-func (e *Editor) MeasureImageSize(file string, widthInRW, heightInLC int) (int, int, error) {
-	// TODO: add imgLoader at member.
-	// PubData has []byte but editor provide ImageFetchOptions to client, for considering
-	// that PubData's []byte is image and typically very large data size.
-	panic("Not implemented yet")
+func (e *Editor) MeasureImageSize(file string, widthInRW, heightInLC int) (retW, retH int, err error) {
+	msg := e.createSyncTask(func() {
+		ret := e.imgLoader.LoadBytes(file, widthInRW, heightInLC)
+		retW = ret.TsSize.Width
+		retH = ret.TsSize.Height
+	})
+	err = e.sendAndWait(e.ctx, msg)
+	return
 }
 
 // Set and Get Color using 0xRRGGBB for 24bit color
