@@ -56,12 +56,13 @@ func NewMessageLooper(ctx context.Context) *MessageLooper {
 }
 
 func (looper *MessageLooper) start(ctx context.Context) {
+message_loop:
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			break message_loop
 		case <-looper.closeCh:
-			break
+			break message_loop
 		case msg, ok := <-looper.messageCh:
 			if !ok {
 				break

@@ -7,7 +7,7 @@ import (
 	"github.com/mzki/erago/view/exp/text/pubdata"
 )
 
-var testCallbackFuncErrorValue = errors.New("callback func should return this.")
+var errTestCallbackFuncErrorValue = errors.New("callback func should return this")
 
 func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 	type args struct {
@@ -24,7 +24,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnPublish",
 			cb: &CallbackDefault{
-				OnPublishFunc: func(*pubdata.Paragraph) error { return testCallbackFuncErrorValue },
+				OnPublishFunc: func(*pubdata.Paragraph) error { return errTestCallbackFuncErrorValue },
 			},
 			args:     args{p: nil},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnPublish(args.p) },
@@ -33,7 +33,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnPublishTemporary",
 			cb: &CallbackDefault{
-				OnPublishTemporaryFunc: func(*pubdata.Paragraph) error { return testCallbackFuncErrorValue },
+				OnPublishTemporaryFunc: func(*pubdata.Paragraph) error { return errTestCallbackFuncErrorValue },
 			},
 			args:     args{p: nil},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnPublishTemporary(args.p) },
@@ -42,7 +42,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnRemove",
 			cb: &CallbackDefault{
-				OnRemoveFunc: func(int) error { return testCallbackFuncErrorValue },
+				OnRemoveFunc: func(int) error { return errTestCallbackFuncErrorValue },
 			},
 			args:     args{n: 10},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnRemove(args.n) },
@@ -51,7 +51,7 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 		{
 			name: "OnRemoveAll",
 			cb: &CallbackDefault{
-				OnRemoveAllFunc: func() error { return testCallbackFuncErrorValue },
+				OnRemoveAllFunc: func() error { return errTestCallbackFuncErrorValue },
 			},
 			args:     args{},
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnRemoveAll() },
