@@ -77,7 +77,11 @@ func (ls *lineSyncer) SyncText() error {
 func (ls *lineSyncer) SyncLine() error {
 	// TODO if !ls.LineBuffered { return nil } // no operation
 
-	return ls.s.Sync()
+	// NOTE: disabled due to image print animation.
+	// syncing line affect image painting with one line per frame, it means
+	// image showed very slowly from user.
+	// return ls.s.Sync()
+	return nil
 }
 
 // SyncWait should be called when program waiting for any user input.
