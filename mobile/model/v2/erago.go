@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"image"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/app"
@@ -182,4 +183,11 @@ func SetViewSize(lineCount, lineRuneWidth int) error {
 		panic("SetViewSize(): Init() must be called firstly")
 	}
 	return mobileUI.editor.SetViewSize(lineCount, lineRuneWidth)
+}
+
+func SetTextUnitPx(textUnitWidthPx, textUnitHeightPx int) error {
+	if !initialized {
+		panic("SetViewSize(): Init() must be called firstly")
+	}
+	return mobileUI.editor.SetTextUnitPx(image.Point{X: textUnitWidthPx, Y: textUnitHeightPx})
 }
