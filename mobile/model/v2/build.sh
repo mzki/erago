@@ -8,4 +8,6 @@ BUILD_FLAGS="-gcflags=-trimpath=${GOPATH}"
 TARGET_FLAGS=android # can use "android/arm,android/amd64" to shrink data size
 
 echo "building ${PRODUCT}..."
-gomobile bind ${BUILD_FLAGS} -target ${TARGET_FLAGS} -o ${PRODUCT} . || exit 1
+# needs -androidapi 19 to use modern android SDK and NDK
+# See https://github.com/golang/go/issues/52470.
+gomobile bind ${BUILD_FLAGS} -androidapi 19 -target ${TARGET_FLAGS} -o ${PRODUCT} . || exit 1
