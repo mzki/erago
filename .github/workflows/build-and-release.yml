@@ -21,6 +21,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # for all history and tags
 
       - name: Set up Go
         uses: actions/setup-go@v3
@@ -60,6 +62,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # for all history and tags
 
       - name: Create archive path
         run: mkdir -p ./build
