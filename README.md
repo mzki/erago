@@ -73,7 +73,7 @@ bash build.sh
 ```
 
 You can prepare the build environment using Docker and Dockerfile.
-See `erago/dockerfiles/Dockerfiles.mobile` .
+See `erago/dockerfiles/mobile/Dockerfile`. **Warning: This docker image is large, up to 3.6GB** 
 
 
 ## License
