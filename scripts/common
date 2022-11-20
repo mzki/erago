@@ -37,6 +37,12 @@ function archive_path() {
   echo "$OUTPUT_BIN_DIR/archive/$VERSION"
 }
 
+function absolute_dir_path() {
+  local REL_DIR=$1
+  local FULL_DIR=$(cd $REL_DIR && pwd)
+  echo "$FULL_DIR"
+}
+
 # set no path conversion for windows <-> POSIX filesystem for 
 # Git for windows environment, which supplies invalid path to docker.
 export MSYS_NO_PATHCONV=1 

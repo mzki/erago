@@ -1,0 +1,5 @@
+#!/bin/bash
+set -eu
+
+source scripts/common
+cd mobile/model/v2 && bash build.sh
