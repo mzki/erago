@@ -14,6 +14,7 @@ ARCHIVE_SRC_LINUX=`find ${OUTPUTDIR} -name "erago*_linux_*"   -a -not -name "*.t
 #ARCHIVE_SRC_DARWIN=`find ${OUTPUTDIR} -name "erago*_darwin_*"  -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
 ARCHIVE_SRC_DARWIN="" # empty
 ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 | xargs basename`
+ARCHIVE_SRC_ANDROID=`find ${OUTPUTDIR} -name "erago*_android_*.aar" | head -n 1 | xargs basename`
 
 # setting for dst
 
@@ -24,6 +25,7 @@ ARCHIVE_DIR=`absolute_archive_path ${OUTPUTDIR} ${VERSION}`
 ARCHIVE_DST_LINUX=${ARCHIVE_DIR}/${ARCHIVE_SRC_LINUX}.tar.gz
 ARCHIVE_DST_DARWIN=${ARCHIVE_DIR}/${ARCHIVE_SRC_DARWIN}.tar.gz
 ARCHIVE_DST_WINDOWS=${ARCHIVE_DIR}/${ARCHIVE_SRC_WINDOWS//.exe/.zip}
+ARCHIVE_DST_ANDROID=${ARCHIVE_DIR}/${ARCHIVE_SRC_ANDROID//.aar/.zip}
 
 # -----------------------
 # do packing
@@ -44,6 +46,11 @@ fi
 if [ -n "${ARCHIVE_SRC_WINDOWS}" ]; then
   : "packing for windows..." && \
     zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+fi
+if [ -n "${ARCHIVE_SRC_ANDROID}" ]; then
+  # .aar is internally already zipped, so just copy here
+  : "packing for android library..." && \
+    zip -T ${ARCHIVE_DST_ANDROID} ${ARCHIVE_SRC_ANDROID} ${ARCHIVE_MISC} 
 fi
 
 cd - # return top 

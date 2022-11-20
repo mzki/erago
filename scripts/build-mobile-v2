@@ -2,4 +2,7 @@
 set -eu
 
 source scripts/common
-cd mobile/model/v2 && bash build.sh
+
+OUTPUTDIR=${1:-./}
+OUTPUTDIR=`absolute_dir_path $OUTPUTDIR` 
+cd mobile/model/v2 && bash build.sh -d $OUTPUTDIR

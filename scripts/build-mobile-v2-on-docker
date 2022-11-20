@@ -3,9 +3,11 @@ set -eu
 
 source scripts/common
 
+OUTPUTDIR=${1:-./}
+
 docker run --rm -t \
   -v ${REPO_ROOT}:${DIR_ON_DOCKER} \
   -v ${DOCKER_VOLUME_NAME_GOPKG}:/go/pkg \
   -w ${DIR_ON_DOCKER} \
   $DOCKER_IMAGE_NAME_MOBILE \
-  /bin/bash scripts/build-mobile-v2
+  /bin/bash scripts/build-mobile-v2 $OUTPUTDIR
