@@ -1,0 +1,14 @@
+name: "Go mobile build"
+description: "Build mobile library with gomobile"
+inputs:
+  output-dir:
+    description: "output binary directory"
+    required: true
+    default: "build"
+runs:
+  using: 'docker'
+  image: ../../../dockerfiles/mobile/Dockerfile
+  entrypoint: scripts/gh-action-entrypoint.sh
+  args:
+    - scripts/build-mobile-v2 # this is main script.
+    - ${{ inputs.output-dir }}
