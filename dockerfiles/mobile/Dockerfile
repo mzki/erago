@@ -59,12 +59,15 @@ RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager "ndk;$NDK_VER"
 # RUN ln -sf $ANDROID_HOME/ndk/$NDK_VER $ANDROID_HOME/ndk-bundle
 
 # Get gomobile and initialize with android NDK
+# After initialization, remove gomobile repository and its dependency
 RUN git clone https://github.com/golang/mobile.git mobile \
   && cd mobile \
   && git checkout 43a0384520996c8376bfb8637390f12b44773e65 \
   && cd cmd/gomobile \
   && go install . \
-  && cd - \
+  && go clean -cache -modcache . \
+  && cd - && cd ../ \
+  && rm -rf mobile \
   && gomobile init 
 
 CMD ["gomobile", "version"]
