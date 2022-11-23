@@ -1,4 +1,4 @@
-FROM golang:1.17.1-buster
+FROM golang:1.19-bullseye
 
 LABEL maintainer mzki
 LABEL image-tag  gomobile-bind
@@ -8,7 +8,7 @@ ENV SHELL /bin/bash
 
 # install dependency tools
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y unzip openjdk-11-jdk \
+  && apt-get install --no-install-recommends -y unzip openjdk-17-jdk \
   && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
