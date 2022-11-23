@@ -1,2 +1,4 @@
 *.txt
+*.md
 *.code-snippets
+gendoc/

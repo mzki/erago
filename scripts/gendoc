@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -eu
+
+target_pkgs="./scene ./infra/script"
+outputdir=./build/document
+
+while getopts o: opt; do
+	case "$opt" in
+		o)
+			outputdir="$OPTARG"
+			;;
+		\?)
+			echo "Usage: gendoc [-o OUTPUTDIR]"
+			exit 1
+			;;
+	esac
+done
+shift $((OPTIND - 1))
+
+go generate $target_pkgs
+mkdir -p $outputdir
+
+# aggregate generated document into a direcotry 
+for pkg in $target_pkgs; do
+  cp -t $outputdir $pkg/gendoc/*
+done

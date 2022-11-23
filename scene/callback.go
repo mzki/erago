@@ -10,7 +10,7 @@ type Scripter interface {
 	HasEraValue(string) bool
 }
 
-//go:generate go run gen_callback_doc.go
+//go:generate go run gen_callback_doc.go --outputdir ./gendoc
 const (
 	// separator for the script function name
 	ScrSep = "_"

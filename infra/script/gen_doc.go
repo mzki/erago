@@ -4,12 +4,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -88,14 +90,22 @@ var sortingOrder = []string{
 }
 
 func main() {
-	if err := ParseAST("./"); err != nil {
+	var outputDir string
+	flag.StringVar(&outputDir, "outputdir", "./", "output directory for generated documents")
+	flag.Parse()
+
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		panic("Can not create output direcotory: " + err.Error())
+	}
+
+	if err := ParseAST("./", outputDir); err != nil {
 		panic(err)
 	}
 }
 
 const parsingPkgName = "script"
 
-func ParseAST(dir string) error {
+func ParseAST(dir string, outputDir string) error {
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
 	if err != nil {
@@ -108,11 +118,13 @@ func ParseAST(dir string) error {
 	}
 	// manual order. Section names are not auto collected.
 	sections := sort_by(docMap, sortingOrder)
-	err = writeTxt("document.txt", sections)
+
+	// output documents
+	err = writeTxt(filepath.Join(outputDir, "erago-lua-api-document.md"), sections)
 	if err != nil {
 		return fmt.Errorf("Failed writeTxt(): %w", err)
 	}
-	err = writeVSCodeSnippet("era-lua.json.code-snippets", sections)
+	err = writeVSCodeSnippet(filepath.Join(outputDir, "erago-lua.json.code-snippets"), sections)
 	if err != nil {
 		return fmt.Errorf("Failed writeVSCodeSnippet(): %w", err)
 	}

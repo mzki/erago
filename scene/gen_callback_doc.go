@@ -1,9 +1,11 @@
+//go:build ignore
 // +build ignore
 
 package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -11,6 +13,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -87,13 +90,21 @@ func (decl funcDecl) Definition() string {
 }
 
 func main() {
-	if err := ParseAST("./"); err != nil {
+	var outputDir string
+	flag.StringVar(&outputDir, "outputdir", "./", "output directory for generated documents")
+	flag.Parse()
+
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		panic("Can not create output direcotory: " + err.Error())
+	}
+
+	if err := ParseAST("./", outputDir); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func ParseAST(dir string) error {
+func ParseAST(dir string, outputDir string) error {
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
 	if err != nil {
@@ -114,7 +125,7 @@ func ParseAST(dir string) error {
 		return err
 	}
 
-	err = writeAsMarkdown("callback_list.md", callbacks, keys)
+	err = writeAsMarkdown(filepath.Join(outputDir, "erago-system-callbacks.md"), callbacks, keys)
 	return err
 }
 
