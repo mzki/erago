@@ -36,27 +36,52 @@ ARCHIVE_DST_DOC=${ARCHIVE_DIR}/document.zip
 set -x
 mkdir -p ${ARCHIVE_DIR} 
 cp -r ${ARCHIVE_MISC} ${OUTPUTDIR}
-cd ${OUTPUTDIR} 
+pushd ${OUTPUTDIR} 
 
-if [ -n "${ARCHIVE_SRC_LINUX}" ]; then
-  : "packing for linux..." && \
-    tar zcf ${ARCHIVE_DST_LINUX} ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC}
+if [ -f "${ARCHIVE_SRC_LINUX}" ]; then
+  : "packing for linux..."
+  PKG_DIR_BASE=$ARCHIVE_SRC_LINUX
+  mkdir -p tmp/${PKG_DIR_BASE}
+  cp -t ./tmp/${PKG_DIR_BASE}/ ${ARCHIVE_SRC_LINUX} ${ARCHIVE_MISC} 
+  pushd tmp
+  tar zcf ${ARCHIVE_DST_LINUX} ${PKG_DIR_BASE}/*
+  popd
+  rm -rf tmp
 fi
-if [ -n "${ARCHIVE_SRC_DARWIN}" ]; then
-  : "packing for darwin..." && \
-    tar zcf ${ARCHIVE_DST_DARWIN} ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC}
+if [ -f "${ARCHIVE_SRC_DARWIN}" ]; then
+  : "packing for darwin..."
+  PKG_DIR_BASE=$ARCHIVE_SRC_DARWIN
+  mkdir -p tmp/${PKG_DIR_BASE}
+  cp -t ./tmp/${PKG_DIR_BASE}/ ${ARCHIVE_SRC_DARWIN} ${ARCHIVE_MISC} 
+  pushd tmp
+  tar zcf ${ARCHIVE_DST_DARWIN} ${PKG_DIR_BASE}/*
+  popd
+  rm -rf tmp
 fi
-if [ -n "${ARCHIVE_SRC_WINDOWS}" ]; then
-  : "packing for windows..." && \
-    zip -T ${ARCHIVE_DST_WINDOWS} ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+if [ -f "${ARCHIVE_SRC_WINDOWS}" ]; then
+  : "packing for windows..."
+  PKG_DIR_BASE=${ARCHIVE_SRC_WINDOWS//.exe/}
+  mkdir -p tmp/${PKG_DIR_BASE}
+  cp -t ./tmp/${PKG_DIR_BASE}/ ${ARCHIVE_SRC_WINDOWS} ${ARCHIVE_MISC} 
+  pushd tmp
+  zip -T ${ARCHIVE_DST_WINDOWS} ${PKG_DIR_BASE}/*
+  popd
+  rm -rf tmp
 fi
-if [ -n "${ARCHIVE_SRC_ANDROID}" ]; then
-  : "packing for android library..." && \
-    zip -T ${ARCHIVE_DST_ANDROID} ${ARCHIVE_SRC_ANDROID} ${ARCHIVE_MISC} 
+if [ -f "${ARCHIVE_SRC_ANDROID}" ]; then
+  : "packing for android library..."
+  PKG_DIR_BASE=${ARCHIVE_SRC_ANDROID//.aar/}
+  mkdir -p tmp/${PKG_DIR_BASE}
+  cp -t ./tmp/${PKG_DIR_BASE}/ ${ARCHIVE_SRC_ANDROID} ${ARCHIVE_MISC}
+  pushd tmp
+  zip -T ${ARCHIVE_DST_ANDROID} ${PKG_DIR_BASE}/*
+  popd
+  rm -rf tmp
 fi
-if [ -e "${ARCHIVE_SRC_DOC}" ]; then
-  : "packing for document..." && \
-    zip -T ${ARCHIVE_DST_DOC} ${ARCHIVE_SRC_DOC}/* 
+if [ -d "${ARCHIVE_SRC_DOC}" ]; then
+  : "packing for document..."
+  # document is already direcotry, so not need create pkg directory and just do zip.
+  zip -T ${ARCHIVE_DST_DOC} ${ARCHIVE_SRC_DOC}/* 
 fi
 
-cd - # return top 
+popd # return top 
