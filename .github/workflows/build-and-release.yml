@@ -133,11 +133,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: cross-binaries
-          path: cross-binaries.tar.gz
+          path: ./
         
       # unpack into ./build/ directory
       - name: Unpack cross-binaries
         run: |
+          ls -l .
           tar zxf cross-binaries.tar.gz
 
       - name: Download mobile-binaries
