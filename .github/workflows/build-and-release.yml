@@ -46,11 +46,18 @@ jobs:
       - name: Run built binary to confirm it works
         run: find ./build -name "*_linux_*" -exec "{}" --version ";"
 
+      # Need to tar packing to maintain execute permissions.
+      # See https://github.com/actions/download-artifact#maintaining-file-permissions-and-case-sensitive-files
+      - name: Packing binary
+        run: |
+          chmod +x ./build/*
+          tar zcf ./cross-binaries.tar.gz ./build/*
+
       - name: Upload built binaries
         uses: actions/upload-artifact@v3
         with:
           name: cross-binaries
-          path: ./build/
+          path: ./cross-binaries.tar.gz
           retention-days: 7 # for 1 week
           if-no-files-found: error
 
@@ -126,7 +133,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: cross-binaries
-          path: build
+          path: cross-binaries.tar.gz
+        
+      # unpack into ./build/ directory
+      - name: Unpack cross-binaries
+        run: |
+          tar zxf cross-binaries.tar.gz
 
       - name: Download mobile-binaries
         uses: actions/download-artifact@v3
