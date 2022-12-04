@@ -117,10 +117,43 @@ jobs:
           retention-days: 7 # for 1 week
           if-no-files-found: error
 
+  # Build licenses of dependencies.
+  build-credits:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1 # just need HEAD files.
+
+      # needs Go since use go generate internally. 
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # needs Go since use go generate internally. 
+      - name: Set up go-licenses
+        run: go install github.com/google/go-licenses@v1.5.0
+          
+      - name: Generate credits
+        run: bash scripts/credits -o build
+
+      - name: Upload built credits
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-credits
+          path: ./build
+          retention-days: 7 # for 1 week
+          if-no-files-found: error
+
   # Release artifacts if push tags
   release: 
     runs-on: ubuntu-latest
-    needs: [build, build-mobile, build-document]
+    needs: [build, build-mobile, build-document, build-credits]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout
@@ -152,6 +185,12 @@ jobs:
         with:
           name: generated-document
           path: build/document
+
+      - name: Download generated credits
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-credits
+          path: build
 
       - name: Show download files
         run: echo `ls -R build`
