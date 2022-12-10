@@ -15,6 +15,7 @@ import (
 // it runs user script in the strict environment.
 //
 // typical usage:
+//
 //	ip := NewInterpreter(...)
 //	defer ip.Quit()
 type Interpreter struct {
@@ -130,18 +131,20 @@ func (ip *Interpreter) Quit() {
 
 // DoString runs given src text as script.
 func (ip Interpreter) DoString(src string) error {
-	err := ip.vm.DoString(src)
-	return checkSpecialError(err)
+	if fn, err := ip.vm.LoadString(src); err != nil {
+		return checkSpecialError(err)
+	} else {
+		err = ip.callByParam(fn, lua.MultRet)
+		return checkSpecialError(err)
+	}
 }
 
 // do given script on internal VM.
 func (ip *Interpreter) DoFile(file string) error {
-	// referenced from: github.com/yuin/gopher-lua/auxlib.go
 	if fn, err := ip.loadFileFromFS(file); err != nil {
 		return err
 	} else {
-		ip.vm.Push(fn)
-		err := ip.vm.PCall(0, lua.MultRet, nil)
+		err = ip.callByParam(fn, lua.MultRet)
 		return checkSpecialError(err)
 	}
 }
