@@ -20,6 +20,12 @@ type PathResolver interface {
 	ResolvePath(path string) (string, error)
 }
 
+// NopPathResolver implements PathResolver interface.
+type NopPathResolver struct{}
+
+// ResolvePath returns path as is and no error.
+func (NopPathResolver) ResolvePath(path string) (string, error) { return path, nil }
+
 // Loader is a platform depended file loader which searches file path and
 // return its content as io.Reader.
 type Loader interface {
@@ -85,4 +91,21 @@ func ResolvePathFS(fs FileSystem, path string) (string, error) {
 		return pr.ResolvePath(path)
 	}
 	return path, nil
+}
+
+// OpenWatcher creates Watcher interface from Default FileSystem.
+// If Default FileSystem not implements PathResolver interface, use NopPathResover for
+// create Watcher. Note that returned watcher must call Close() after use.
+func OpenWatcher() (Watcher, error) {
+	if pr, ok := Default.(PathResolver); ok {
+		return OpenWatcherPR(pr)
+	} else {
+		log.Debug("Default FileSystem not implement PathResolver. Use NopPathResolver instead of that.")
+		return newWatcher(NopPathResolver{})
+	}
+}
+
+// OpenWatcherPR creates Watcher interface from given PathResolver.
+func OpenWatcherPR(pr PathResolver) (Watcher, error) {
+	return newWatcher(pr)
 }

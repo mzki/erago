@@ -41,6 +41,10 @@ type OSFileSystem struct {
 	MaxFileSize int64 // in bytes
 }
 
+func (osfs *OSFileSystem) ResolvePath(fpath string) (string, error) {
+	return filepath.Clean(fpath), nil
+}
+
 func (osfs *OSFileSystem) Load(filepath string) (reader io.ReadCloser, err error) {
 	finfo, err := os.Stat(filepath)
 	if err != nil {
