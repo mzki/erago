@@ -32,20 +32,20 @@ func newCommandBuffer() *commandBuffer {
 }
 
 // not zero means macro is running.
-func (cbuf commandBuffer) MacroSize() int {
+func (cbuf *commandBuffer) MacroSize() int {
 	cbuf.mu.Lock()
 	defer cbuf.mu.Unlock()
 	return cbuf.macroQ.Size()
 }
 
-func (cbuf commandBuffer) StopMacro() {
+func (cbuf *commandBuffer) StopMacro() {
 	cbuf.mu.Lock()
 	defer cbuf.mu.Unlock()
 	cbuf.macroQ.Clear()
 }
 
 // send macro command and starts it.
-func (cbuf commandBuffer) StartMacro(m *macro.Macro) {
+func (cbuf *commandBuffer) StartMacro(m *macro.Macro) {
 	cbuf.mu.Lock()
 	defer cbuf.mu.Unlock()
 	cbuf.macroQ.SetMacro(m)
