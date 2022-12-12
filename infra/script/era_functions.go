@@ -26,7 +26,7 @@ const (
 // protect metatable by set it to table.__metatable.
 const metaProtectObj = lua.LString("protected")
 
-func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameController) *lua.LTable {
+func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameController, wdt *watchDogTimer) *lua.LTable {
 	if era_mod, ok := L.GetGlobal(EraModuleName).(*lua.LTable); ok {
 		return era_mod // already exist
 	}
@@ -36,7 +36,7 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 	L.SetGlobal(eraModuleRegistryName, era_module)
 
 	ft := &functor{game, gamestate}
-	L.SetFuncs(era_module, map[string]lua.LGFunction{
+	eraModFuncMap := map[string]lua.LGFunction{
 		// TODO: move to module
 		// state
 		"clearSystem": ft.clearSystem,
@@ -87,7 +87,8 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"vnewPage":      ft.vnewPage,
 		"vclearLineAll": ft.vclearLineAll,
 		"vclearLine":    ft.vclearLine,
-
+	}
+	eraModInputFuncMap := map[string]lua.LGFunction{
 		// input functions
 		"wait":        ft.wait,
 		"twait":       ft.twait,
@@ -99,10 +100,18 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"inputSelect": ft.inputNumSelect,
 		"rawInput":    ft.rawInput,
 		"trawInput":   ft.trawInput,
-	})
+	}
+	// Input functions keep alive WDT since these interact with the user.
+	for k, v := range eraModInputFuncMap {
+		eraModInputFuncMap[k] = wdt.WrapKeepAliveLG(v)
+	}
+	for k, v := range eraModInputFuncMap {
+		eraModFuncMap[k] = v
+	}
+	L.SetFuncs(era_module, eraModFuncMap)
 	L.SetMetatable(era_module, getStrictTableMetatable(L))
 
-	flowMod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
+	flowModFuncMap := map[string]lua.LGFunction{
 		// Module for controling game or scene flow.
 		"quit":          quitScript,
 		"longReturn":    longReturnScript,
@@ -111,11 +120,16 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"saveScene":     ft.saveScene,
 		"loadScene":     ft.loadScene,
 		"doTrains":      ft.doTrains,
-	})
+	}
+	// flow module need not to wrap keep alive WDT since it backs controll to
+	// platform side which stops WDT or just does additional subroutine which
+	// still have possibility of the infinite loop.
+	flowMod := L.SetFuncs(L.NewTable(), flowModFuncMap)
 	L.SetMetatable(flowMod, getStrictTableMetatable(L))
 	era_module.RawSetString(eraFlowModName, flowMod)
 
-	layoutMod := L.SetFuncs(L.NewTable(), map[string]lua.LGFunction{
+	// layout module will be deprecated.
+	layoutModFuncMap := map[string]lua.LGFunction{
 		// layouting
 		"setCurrentView": ft.setCurrentView,
 		"getCurrentView": ft.getCurrentViewName,
@@ -130,7 +144,8 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 		"flowVertical":   flowVerticalLayout,
 		"fixedSplit":     fixedSplitLayout,
 		"withValue":      withLayoutValue,
-	})
+	}
+	layoutMod := L.SetFuncs(L.NewTable(), layoutModFuncMap)
 	L.SetMetatable(layoutMod, getStrictTableMetatable(L))
 	era_module.RawSetString(eraLayoutModName, layoutMod)
 
@@ -430,7 +445,6 @@ func (ft functor) vprintL(L *lua.LState) int {
 // Note that the part of previous return code of text is only treated.
 // trailing string are ignored.
 //
-//
 // count数を満たすように、半角スペースを追加したテキストを、スクリーンにプリントします。
 // ここでの、countは、シングルバイト文字を1文字、マルチバイト文字を2文字として数えます。
 // countの指定は省略することが可能です。その場合、デフォルトで26を用います。
@@ -462,8 +476,8 @@ func (ft functor) vprintC(L *lua.LState) int {
 //
 // textを改行付きで出力し、ユーザーからの何らかの入力を待ちます。
 //
-//   era.printl(text)
-//   era.wait()
+//	era.printl(text)
+//	era.wait()
 //
 // と等価です。
 func (ft functor) printW(L *lua.LState) int {
@@ -518,9 +532,9 @@ func (ft functor) vprintLine(L *lua.LState) int {
 // captionを選択可能なテキストボタンとして出力します。
 // このボタンを選択した場合には、commandが入力されます。
 //
-//   era.printButton("こんにちは", "10")
-//   local input = era.input() -- "こんにちは"を選択
-//   input == "10"
+//	era.printButton("こんにちは", "10")
+//	local input = era.input() -- "こんにちは"を選択
+//	input == "10"
 func (ft functor) printButton(L *lua.LState) int {
 	caption := L.CheckString(1)
 	cmd := L.CheckString(2)
@@ -707,8 +721,8 @@ func checkBarParams(L *lua.LState, base_pos int) (ret struct {
 // width, fg, bgについて指定がなかった場合、
 // width=8, fg="#", bg="."をデフォルトで使用します。
 //
-//   era.printBar(10, 30)	             -- "[##....]"と出力
-//   era.printBar(10, 30, 5, "=", " ") -- "[=  ]"と出力
+//	era.printBar(10, 30)	             -- "[##....]"と出力
+//	era.printBar(10, 30, 5, "=", " ") -- "[=  ]"と出力
 func (ft functor) printBar(L *lua.LState) int {
 	p := checkBarParams(L, 1)
 	ft.game.PrintBar(p.now, p.max, p.width, p.fg, p.bg)
@@ -750,11 +764,10 @@ func (ft functor) textBar(L *lua.LState) int {
 // height_in_lc を 0 または省略した場合、width_in_tw に対して、元の画像のアスペクト比を
 // 保った高さに自動調整されます。
 //
-//   -- 幅 TextWidth 30、高さアスペクト比追従で、 image.png を表示。
-//   era.printImage("path/to/image.png", 30)
-//   -- 30x30 のサイズで image2.png を表示。元画像のアスペクト比が 1:1 出ない場合、縦横いずれかに引き伸ばされて表示。
-//   era.printImage("path/to/image2.png", 30, 30)
-//
+//	-- 幅 TextWidth 30、高さアスペクト比追従で、 image.png を表示。
+//	era.printImage("path/to/image.png", 30)
+//	-- 30x30 のサイズで image2.png を表示。元画像のアスペクト比が 1:1 出ない場合、縦横いずれかに引き伸ばされて表示。
+//	era.printImage("path/to/image2.png", 30, 30)
 func (ft functor) printImage(L *lua.LState) int {
 	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
 	err := ft.game.PrintImage(imgPath, widthInTW, heightInLC)
@@ -773,13 +786,12 @@ func (ft functor) printImage(L *lua.LState) int {
 // この関数は、例えば height_in_lc を省略した場合、自動的に計算された height がいくつになるのかを
 // 知りたい場合に使用できます。
 //
-//   w, h = era.measureImageSize(image_path, width_in_tw)
-//   era.printImage(image_path, width_in_tw)
-//   -- 画像表示分だけ改行して、次の文字表示位置を画像の下の行に合わせる。
-//   for i = 1, w do
-//     era.printl("")
-//   end
-//
+//	w, h = era.measureImageSize(image_path, width_in_tw)
+//	era.printImage(image_path, width_in_tw)
+//	-- 画像表示分だけ改行して、次の文字表示位置を画像の下の行に合わせる。
+//	for i = 1, w do
+//	  era.printl("")
+//	end
 func (ft functor) measureImageSize(L *lua.LState) int {
 	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
 	retW, retH, err := ft.game.MeasureImageSize(imgPath, widthInTW, heightInLC)

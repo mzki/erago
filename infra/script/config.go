@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // ScriptConfig holds Script parameters.
@@ -16,13 +17,16 @@ type Config struct {
 	CallStackSize       int
 	RegistrySize        int
 	IncludeGoStackTrace bool
+
+	InfiniteLoopTimeoutSecond int
 }
 
 var (
 	// default paramters for script VM.
-	LoadPattern   = "init.lua"
-	CallStackSize = lua.CallStackSize
-	RegistrySize  = lua.RegistrySize
+	LoadPattern               = "init.lua"
+	CallStackSize             = lua.CallStackSize
+	RegistrySize              = lua.RegistrySize
+	InfiniteLoopTimeoutSecond = 10 * time.Second
 )
 
 func (c Config) loadPattern() string {

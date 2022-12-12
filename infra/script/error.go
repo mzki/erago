@@ -2,6 +2,7 @@ package script
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/mzki/erago/scene"
@@ -25,13 +26,18 @@ var (
 	scriptCanceledMessage = context.Canceled.Error()
 )
 
+var (
+	// ErrWatchDogtimerExpired indicates script execution takes too long time, it may be infinite loop.
+	ErrWatchDogTimerExpired = errors.New("script execution takes too long time, may be infinite loop")
+)
+
 // check whether error is special case,
 // and return corresponding error, if not matched return error through.
 //
 // NOTE: current implementation of gopher-lua does not return error context
 // directly, the error wrapped by gopher-lua's context.
 // Therefore we use string comparision to detect error context instead of error type assertion.
-func checkSpecialError(err error) error {
+func (ip Interpreter) checkSpecialError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -45,6 +51,9 @@ func checkSpecialError(err error) error {
 	case strings.Contains(mes, ScriptLongReturnMessage):
 		return nil
 	case strings.Contains(mes, scriptCanceledMessage):
+		if ip.watchDogTimer.IsExpired() {
+			return ErrWatchDogTimerExpired
+		}
 		return context.Canceled
 	}
 	return err

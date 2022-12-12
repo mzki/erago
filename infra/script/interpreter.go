@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/state"
@@ -26,6 +27,7 @@ type Interpreter struct {
 	game  GameController
 
 	customLoaders *customLoaders
+	watchDogTimer *watchDogTimer
 
 	config Config
 }
@@ -45,7 +47,9 @@ func NewInterpreter(s *state.GameState, g GameController, config Config) *Interp
 		state:         s,
 		game:          g,
 		customLoaders: newCustomLoaders(),
-		config:        config,
+		watchDogTimer: newWatchDogTimer(
+			time.Duration(config.InfiniteLoopTimeoutSecond) * time.Second),
+		config: config,
 	}
 	ip.init()
 	return ip
@@ -90,7 +94,7 @@ func (ip *Interpreter) init() {
 		L.PreloadModule(mod.Name, mod.Loader)
 	}
 
-	ip.eraModule = registerEraModule(L, ip.state, ip.game)
+	ip.eraModule = registerEraModule(L, ip.state, ip.game, ip.watchDogTimer)
 	registerSystemParams(L, ip.state)
 	registerCsvParams(L, ip.state.CSV)
 	registerCharaParams(L, ip.state)
@@ -115,8 +119,18 @@ func (ip *Interpreter) init() {
 
 // set context to internal virtual machine.
 // context must not be nil.
+// It also starts Watch Dog Timer (WDT) which detect infinite loop
+// on script and terminate execution with raise error.
 func (ip Interpreter) SetContext(ctx context.Context) {
 	ip.vm.SetContext(ctx)
+
+	// start watch dog timer (WDT) and stops immidiately.
+	// WDT re-starts at API call from external.
+	// NOTE: If Run returns false, context is not propagates to watchDogTimer.
+	startTimer := ip.watchDogTimer.Run(ctx)
+	if startTimer {
+		ip.watchDogTimer.Stop()
+	}
 }
 
 // Quit quits virtual machine in Interpreter.
@@ -125,6 +139,7 @@ func (ip *Interpreter) Quit() {
 	ip.customLoaders.RemoveAll()
 	ip.customLoaders.Unregister(ip.vm)
 	ip.vm.Close()
+	ip.watchDogTimer.Quit()
 	ip.game = nil
 	ip.state = nil
 }
@@ -132,10 +147,10 @@ func (ip *Interpreter) Quit() {
 // DoString runs given src text as script.
 func (ip Interpreter) DoString(src string) error {
 	if fn, err := ip.vm.LoadString(src); err != nil {
-		return checkSpecialError(err)
+		return err
 	} else {
 		err = ip.callByParam(fn, lua.MultRet)
-		return checkSpecialError(err)
+		return ip.checkSpecialError(err)
 	}
 }
 
@@ -145,7 +160,7 @@ func (ip *Interpreter) DoFile(file string) error {
 		return err
 	} else {
 		err = ip.callByParam(fn, lua.MultRet)
-		return checkSpecialError(err)
+		return ip.checkSpecialError(err)
 	}
 }
 
@@ -180,11 +195,7 @@ func (ip *Interpreter) LoadDataOnSandbox(file, dataKey string) (map[string]strin
 	vm := ip.vm
 	emptyEnv := vm.NewTable()
 	vm.SetFEnv(lfunc, emptyEnv)
-	if err := vm.CallByParam(lua.P{
-		Fn:      lfunc,
-		NRet:    0,
-		Protect: true,
-	}); err != nil {
+	if err := ip.callByParam(lfunc, 0); err != nil {
 		return nil, err
 	}
 
@@ -241,10 +252,28 @@ func (ip Interpreter) HasEraValue(vname string) bool {
 func (ip Interpreter) EraCall(vname string) error {
 	fn := ip.getEraValue(vname)
 	err := ip.callByParam(fn, 0)
-	return checkSpecialError(err)
+	return ip.checkSpecialError(err)
 }
 
 func (ip Interpreter) callByParam(fn lua.LValue, nret int, args ...lua.LValue) error {
+	if parentCtx := ip.vm.Context(); parentCtx != nil {
+		cancelCtx, cancel := context.WithCancel(parentCtx)
+		defer cancel()
+		ip.vm.SetContext(cancelCtx)
+		defer func() { ip.vm.SetContext(parentCtx) }() // recover original state
+
+		ip.watchDogTimer.Reset()
+		go func() {
+			select {
+			case <-ip.watchDogTimer.Expired():
+				cancel() // for script execution
+			case <-cancelCtx.Done():
+				// do nothing
+			}
+		}()
+		defer ip.watchDogTimer.Stop()
+	}
+
 	return ip.vm.CallByParam(lua.P{
 		Fn:      fn,
 		NRet:    nret,
@@ -256,7 +285,7 @@ func (ip Interpreter) callByParam(fn lua.LValue, nret int, args ...lua.LValue) e
 func (ip Interpreter) EraCallBool(vname string) (bool, error) {
 	fn := ip.getEraValue(vname)
 	err := ip.callByParam(fn, 1)
-	if err = checkSpecialError(err); err != nil {
+	if err = ip.checkSpecialError(err); err != nil {
 		return false, err
 	}
 	ret := ip.vm.Get(-1)
@@ -270,7 +299,7 @@ func (ip Interpreter) EraCallBool(vname string) (bool, error) {
 func (ip Interpreter) EraCallBoolArgInt(func_name string, arg int64) (bool, error) {
 	fn := ip.getEraValue(func_name)
 	err := ip.callByParam(fn, 1, lua.LNumber(arg))
-	if err = checkSpecialError(err); err != nil {
+	if err = ip.checkSpecialError(err); err != nil {
 		return false, err
 	}
 	ret := ip.vm.Get(-1)

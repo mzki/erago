@@ -2,6 +2,7 @@ package script
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -41,11 +42,15 @@ func newConfig() Config {
 }
 
 func newInterpreter() *Interpreter {
+	return newInterpreterWithConf(newConfig())
+}
+
+func newInterpreterWithConf(conf Config) *Interpreter {
 	state, err := stub.GetGameState()
 	if err != nil {
 		panic(err)
 	}
-	return NewInterpreter(state, stub.NewScriptGameController(), newConfig())
+	return NewInterpreter(state, stub.NewScriptGameController(), conf)
 }
 
 func newOlderDataInterpreter() *Interpreter {
@@ -266,7 +271,11 @@ func TestInterpreterSpecialErrors(t *testing.T) {
 }
 
 func TestInterpreterContextCancel(t *testing.T) {
-	ip := newInterpreter()
+	t.Parallel()
+	conf := newConfig()
+	conf.InfiniteLoopTimeoutSecond = 10
+
+	ip := newInterpreterWithConf(conf)
 	defer ip.Quit()
 	ctx, cancel := context.WithCancel(context.Background())
 	ip.SetContext(ctx)
@@ -281,6 +290,77 @@ func TestInterpreterContextCancel(t *testing.T) {
 	cancel()
 	if err := <-errCh; err != context.Canceled {
 		t.Fatal(err)
+	}
+}
+
+func TestInterpreterWatchDogTimerCancel(t *testing.T) {
+	t.Parallel()
+	conf := newConfig()
+	conf.InfiniteLoopTimeoutSecond = 1
+
+	ip := newInterpreterWithConf(conf)
+	defer ip.Quit()
+	ctx := context.Background()
+	ip.SetContext(ctx)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- ip.DoFile(filepath.Join(scriptDir, "infinite_loop.lua"))
+		close(errCh)
+	}()
+
+	time.Sleep(2 * time.Second)
+	if err := <-errCh; err != ErrWatchDogTimerExpired {
+		t.Fatal(err)
+	}
+}
+
+func TestInterpreterWatchDogTimerNotExpired(t *testing.T) {
+	t.Parallel()
+	conf := newConfig()
+	conf.InfiniteLoopTimeoutSecond = 1
+
+	ip := newInterpreterWithConf(conf)
+	defer ip.Quit()
+	ctx, cancel := context.WithCancel(context.Background())
+	ip.SetContext(ctx)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- ip.DoFile(filepath.Join(scriptDir, "infinite_loop_ok.lua"))
+		close(errCh)
+	}()
+
+	time.Sleep(time.Duration(conf.InfiniteLoopTimeoutSecond+1) * time.Second)
+	cancel()
+	if err := <-errCh; err != context.Canceled {
+		t.Fatal(err)
+	}
+}
+
+func TestInterpreterWatchDogTimerNotExpiredAfterInitialization(t *testing.T) {
+	t.Parallel()
+
+	conf := newConfig()
+	conf.InfiniteLoopTimeoutSecond = 1
+
+	ip := newInterpreterWithConf(conf)
+	defer ip.Quit()
+	ctx := context.Background()
+	ip.SetContext(ctx)
+
+	// large sleep than InfiniteLoopTimeoutSecond
+	// may be watch dog timer is expired if something wrong.
+	time.Sleep(2 * time.Second)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- ip.DoFile(filepath.Join(scriptDir, "lua_function.lua"))
+		close(errCh)
+	}()
+
+	if err := <-errCh; err == ErrWatchDogTimerExpired {
+		t.Fatal(errors.New("No request WatchDogTimer, but got it"))
 	}
 }
 
