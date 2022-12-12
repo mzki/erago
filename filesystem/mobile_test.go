@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,7 +17,7 @@ func TestMobileLoader(t *testing.T) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(io.LimitReader(reader, 64))
+	content, err := io.ReadAll(io.LimitReader(reader, 64))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +83,7 @@ func TestAbsPathFileSystemResolvePath(t *testing.T) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(io.LimitReader(reader, 64))
+	content, err := io.ReadAll(io.LimitReader(reader, 64))
 	if err != nil {
 		t.Fatal(err)
 	}

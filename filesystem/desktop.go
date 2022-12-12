@@ -3,7 +3,6 @@ package filesystem
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -80,5 +79,5 @@ func (osfs *OSFileSystem) Store(fpath string) (writer io.WriteCloser, err error)
 // StringReadCloser is helper function which creates io.ReadCloser from a entire content
 // to adapt Loader interface.
 func StringReadCloser(content string) (io.ReadCloser, error) {
-	return ioutil.NopCloser(strings.NewReader(content)), nil
+	return io.NopCloser(strings.NewReader(content)), nil
 }

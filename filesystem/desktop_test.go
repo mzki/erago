@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -17,7 +16,7 @@ func TestOSLoader(t *testing.T) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(io.LimitReader(reader, 64))
+	content, err := io.ReadAll(io.LimitReader(reader, 64))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +43,7 @@ func TestStringLoader(t *testing.T) {
 	}
 	defer reader.Close()
 
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
