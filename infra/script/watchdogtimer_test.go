@@ -60,6 +60,7 @@ func Test_watchDogTimer_Stop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt()
 			defer wdt.Quit()
@@ -95,6 +96,7 @@ func Test_watchDogTimer_Reset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt()
 			defer wdt.Quit()
@@ -130,6 +132,7 @@ func Test_watchDogTimer_Quit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt()
 			defer wdt.Quit()
@@ -170,6 +173,7 @@ func Test_watchDogTimer_Expired(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt()
 			defer wdt.Quit()
@@ -217,6 +221,7 @@ func Test_watchDogTimer_IsExpired(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt()
 			defer wdt.Quit()
@@ -287,6 +292,7 @@ func Test_watchDogTimer_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			args := tt.newargs()
 			defer args.cancel()
@@ -329,6 +335,7 @@ func Test_watchDogTimer_KeepAliveFuncCall(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt // store local scope for parallel use
 			t.Parallel()
 			wdt := tt.newwdt(tt.args)
 			defer wdt.Quit()
