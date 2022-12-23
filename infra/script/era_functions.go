@@ -26,7 +26,7 @@ const (
 // protect metatable by set it to table.__metatable.
 const metaProtectObj = lua.LString("protected")
 
-func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameController, wdt *watchDogTimer) *lua.LTable {
+func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameState, game GameController) *lua.LTable {
 	if era_mod, ok := L.GetGlobal(EraModuleName).(*lua.LTable); ok {
 		return era_mod // already exist
 	}
@@ -103,10 +103,14 @@ func registerEraModule(L *lua.LState, gamestate *state.GameState, game GameContr
 	}
 	// Input functions keep alive WDT since these interact with the user.
 	for k, v := range eraModInputFuncMap {
-		eraModInputFuncMap[k] = wdt.WrapKeepAliveLG(v)
+		eraModInputFuncMap[k] = ip.watchDogTimer.WrapKeepAliveLG(v)
 	}
 	for k, v := range eraModInputFuncMap {
 		eraModFuncMap[k] = v
+	}
+	// era functions consume pending tasks
+	for k, v := range eraModFuncMap {
+		eraModFuncMap[k] = ip.wrapConsumeTaskLG(v)
 	}
 	L.SetFuncs(era_module, eraModFuncMap)
 	L.SetMetatable(era_module, getStrictTableMetatable(L))

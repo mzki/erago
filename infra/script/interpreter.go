@@ -8,6 +8,7 @@ import (
 
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/state"
+	"github.com/mzki/erago/util/log"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -27,6 +28,7 @@ type Interpreter struct {
 	game  GameController
 
 	customLoaders *customLoaders
+	taskQueue     *ipTaskQueue
 	watchDogTimer *watchDogTimer
 
 	config Config
@@ -46,7 +48,8 @@ func NewInterpreter(s *state.GameState, g GameController, config Config) *Interp
 		vm:            vm,
 		state:         s,
 		game:          g,
-		customLoaders: newCustomLoaders(),
+		customLoaders: newCustomLoaders(config.ReloadFileChange),
+		taskQueue:     newIpTaskQueue(),
 		watchDogTimer: newWatchDogTimer(
 			time.Duration(config.InfiniteLoopTimeoutSecond) * time.Second),
 		config: config,
@@ -94,7 +97,7 @@ func (ip *Interpreter) init() {
 		L.PreloadModule(mod.Name, mod.Loader)
 	}
 
-	ip.eraModule = registerEraModule(L, ip.state, ip.game, ip.watchDogTimer)
+	ip.eraModule = ip.registerEraModule(L, ip.state, ip.game)
 	registerSystemParams(L, ip.state)
 	registerCsvParams(L, ip.state.CSV)
 	registerCharaParams(L, ip.state)
@@ -136,7 +139,10 @@ func (ip Interpreter) SetContext(ctx context.Context) {
 // Quit quits virtual machine in Interpreter.
 // use it for releasing resources.
 func (ip *Interpreter) Quit() {
-	ip.customLoaders.RemoveAll()
+	err := ip.customLoaders.RemoveAll()
+	if err != nil {
+		log.Infof("Interpreter Quit: failed to remove customLoader. May leak resource: %v", err)
+	}
 	ip.customLoaders.Unregister(ip.vm)
 	ip.vm.Close()
 	ip.watchDogTimer.Quit()

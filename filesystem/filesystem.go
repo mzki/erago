@@ -15,6 +15,18 @@ type FileSystem interface {
 	Store(filepath string) (io.WriteCloser, error)
 }
 
+// FileSystemPR is a composit interface with FileSystem and PathResolver interfaces.
+type FileSystemPR interface {
+	FileSystem
+	PathResolver
+}
+
+// RFileSystemPR is a Readonly FileSystemPR interface.
+type RFileSystemPR interface {
+	Loader
+	PathResolver
+}
+
 // path resolver resolves file path on the filesystem.
 type PathResolver interface {
 	ResolvePath(path string) (string, error)
@@ -42,7 +54,7 @@ type Loader interface {
 
 var (
 	// Default is a default FileSystem to be used by exported functions.
-	Default FileSystem = Desktop
+	Default FileSystemPR = Desktop
 )
 
 func Load(filepath string) (reader io.ReadCloser, err error) {
@@ -65,9 +77,8 @@ func Glob(pattern string) ([]string, error) {
 	return GlobFS(Default, pattern)
 }
 
-// Glob is wrap function for filepath.Glob with use filesystem.FileSystem
-// if FileSystem also implements PathResolver, use it to resolve path.
-func GlobFS(fs FileSystem, pattern string) ([]string, error) {
+// Glob is wrap function for filepath.Glob with use filesystem.FileSystemPR
+func GlobFS(fs FileSystemPR, pattern string) ([]string, error) {
 	var err error
 	pattern, err = ResolvePathFS(fs, pattern)
 	if err != nil {
@@ -86,23 +97,14 @@ func ResolvePath(path string) (string, error) {
 // ResolvePathFS resolve file path under given FileSystem.
 // if FileSystem also implements PathResolver, use it to resolve path,
 // otherwise returns path itself.
-func ResolvePathFS(fs FileSystem, path string) (string, error) {
-	if pr, ok := fs.(PathResolver); ok {
-		return pr.ResolvePath(path)
-	}
-	return path, nil
+func ResolvePathFS(fs FileSystemPR, path string) (string, error) {
+	return fs.ResolvePath(path)
 }
 
 // OpenWatcher creates Watcher interface from Default FileSystem.
-// If Default FileSystem not implements PathResolver interface, use NopPathResover for
-// create Watcher. Note that returned watcher must call Close() after use.
+// Note that returned watcher must call Close() after use.
 func OpenWatcher() (Watcher, error) {
-	if pr, ok := Default.(PathResolver); ok {
-		return OpenWatcherPR(pr)
-	} else {
-		log.Debug("Default FileSystem not implement PathResolver. Use NopPathResolver instead of that.")
-		return newWatcher(NopPathResolver{})
-	}
+	return OpenWatcherPR(Default)
 }
 
 // OpenWatcherPR creates Watcher interface from given PathResolver.

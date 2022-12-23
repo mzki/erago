@@ -3,7 +3,11 @@ package script
 import (
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"testing"
+
+	"github.com/mzki/erago/filesystem"
 )
 
 type MockReader struct {
@@ -39,6 +43,7 @@ func (m *MockReader) Close() error {
 }
 
 type MockLoader struct {
+	filesystem.NopPathResolver
 	Ignore       bool
 	LastLoadName string
 	Reader       MockReader
@@ -67,8 +72,8 @@ func TestCallCustomLoader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if mockLoader.LastLoadName != requirePath {
-		t.Error("custom loader is not called")
+	if !strings.Contains(mockLoader.LastLoadName, requirePath) {
+		t.Errorf("custom loader is not called. expected to contain: %s, got: %s", requirePath, mockLoader.LastLoadName)
 	}
 
 	if mockLoader.Reader.ReadCount == 0 {
@@ -112,5 +117,71 @@ func TestCloseMultipleCustomReader(t *testing.T) {
 		if mockLoader.Reader.Closed == false {
 			t.Errorf("custom loader (%d) returns error reader but it's not closed", i)
 		}
+	}
+}
+
+func TestCustomLoaderWatchFileChange(t *testing.T) {
+	const testPath = "./testing/watch_change.lua"
+	const requirePath = "watch_change"
+
+	ipr := newInterpreterWithConf(Config{
+		LoadDir:                   "testing",
+		LoadPattern:               "*",
+		CallStackSize:             CallStackSize,
+		RegistrySize:              RegistrySize,
+		IncludeGoStackTrace:       true,
+		InfiniteLoopTimeoutSecond: 0,
+		ReloadFileChange:          true,
+	})
+	defer ipr.Quit()
+
+	fs := filesystem.Desktop
+	err := ipr.AddCustomLoader(fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := ipr.RemoveCustomLoader(fs)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	const beforeCode = `
+return {
+	func1 = function() end
+}
+`
+	const afterCode = `
+return {
+	func1 = "func1_string",
+	func2 = function() end
+}
+`
+	if err := os.WriteFile(testPath, []byte(beforeCode), 0755); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(testPath) // to remove dust file.
+
+	if err := ipr.DoString(fmt.Sprintf(`watch_change = require "%s"`, requirePath)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(testPath, []byte(afterCode), 0755); err != nil {
+		t.Fatal(err)
+	}
+	// reflect change by call era function, so it places first
+	doSrc := fmt.Sprintf(`
+era.printl "reflect change"
+-- check existant module has be reflected reload result.
+assert(type(watch_change.func1), "string")
+assert(type(watch_change.func2), "function")
+-- check require module has be reflected reload result.
+local watch_change2 = require "%s"
+assert(type(watch_change2.func1), "string")
+assert(type(watch_change2.func2), "function")
+`, requirePath)
+	if err := ipr.DoString(doSrc); err != nil {
+		t.Fatal(err)
 	}
 }

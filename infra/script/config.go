@@ -19,6 +19,7 @@ type Config struct {
 	IncludeGoStackTrace bool
 
 	InfiniteLoopTimeoutSecond int
+	ReloadFileChange          bool
 }
 
 var (
