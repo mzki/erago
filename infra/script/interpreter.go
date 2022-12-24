@@ -112,9 +112,13 @@ func (ip *Interpreter) init() {
 	}
 	L.SetField(L.GetGlobal("package"), "path", lua.LString(reg_path))
 
-	// register custom loader
+	// register custom loader. knockout default loader to activate custom loader.
+	knockoutDefaultLuaLoader(L)
 	if err := ip.customLoaders.Register(L); err != nil {
 		panic(err) // it never occurs
+	}
+	if err := ip.AddCustomLoader(filesystem.Default); err != nil {
+		panic(err) // TODO: This sometimes occurs. Need to return error?
 	}
 
 	ip.config.register(L)

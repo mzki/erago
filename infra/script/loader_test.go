@@ -85,6 +85,33 @@ func TestCallCustomLoader(t *testing.T) {
 	}
 }
 
+func TestCallCustomLoaderExistFile(t *testing.T) {
+	const requirePath = "require"
+	ip := newInterpreter()
+
+	// partially disabled default custom loader to use mock loader.
+	ip.RemoveCustomLoader(filesystem.Default)
+	mockLoader := &MockLoader{}
+	ip.AddCustomLoader(mockLoader)
+
+	err := ip.DoString(`require "` + requirePath + `"` + "\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(mockLoader.LastLoadName, requirePath) {
+		t.Errorf("custom loader is not called. expected to contain: %s, got: %s", requirePath, mockLoader.LastLoadName)
+	}
+
+	if mockLoader.Reader.ReadCount == 0 {
+		t.Error("custom loader returns reader but it's not used")
+	}
+
+	if mockLoader.Reader.Closed == false {
+		t.Error("custom loader returns reader but it's not closed")
+	}
+}
+
 func TestCloseMultipleCustomReader(t *testing.T) {
 	const requirePath = "must/not/be/present/multi"
 	const multiNum = 5

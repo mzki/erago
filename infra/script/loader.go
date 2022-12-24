@@ -328,3 +328,11 @@ func (ip *Interpreter) RemoveCustomLoader(ld filesystem.RFileSystemPR) error {
 func (ip *Interpreter) reload(ldr filesystem.RFileSystemPR, path string) error {
 	return ip.customLoaders.reload(ip.vm, ldr, path)
 }
+
+func knockoutDefaultLuaLoader(L *lua.LState) {
+	// NOTE: get package.loader from registery index, since package module may be removed
+	loaders := L.GetField(L.Get(lua.RegistryIndex), "_LOADERS").(*lua.LTable)
+	// Remove default lua loader. This is based on assumption package.loader registers {preload, lualoader}.
+	// The assumption is valid if LState is just initialized, not modifying any to default package.loader.
+	L.RawSetInt(loaders, 2, lua.LNil)
+}
