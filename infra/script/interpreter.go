@@ -233,6 +233,9 @@ func (ip Interpreter) PathOf(file string) string {
 // it is used for loading user scirpts under specified directory.
 func (ip Interpreter) LoadSystem() error {
 	path := ip.config.loadPattern()
+	if err := validateScriptPath(path, ip.config.LoadDir); err != nil {
+		return fmt.Errorf("got invalid script LoadDir and LoadPattern: %w", err)
+	}
 	files, err := filesystem.Glob(path)
 	if err != nil {
 		return err

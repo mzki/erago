@@ -185,3 +185,47 @@ assert(type(watch_change2.func2), "function")
 		t.Fatal(err)
 	}
 }
+
+func TestCustomLoaderRequireUpperBaseDirFailed(t *testing.T) {
+	const testPath = "./testing/../testing2/invalid_basedir.lua"
+	const requirePath = "../invalid_basedir"
+	const upperTestDir = "./testing2"
+
+	ipr := newInterpreterWithConf(Config{
+		LoadDir:                   "testing",
+		LoadPattern:               "*",
+		CallStackSize:             CallStackSize,
+		RegistrySize:              RegistrySize,
+		IncludeGoStackTrace:       true,
+		InfiniteLoopTimeoutSecond: 0,
+		ReloadFileChange:          false,
+	})
+	defer ipr.Quit()
+
+	// create partially exist script file
+	if err := os.MkdirAll(upperTestDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(testPath, []byte(`era.print "hello"`), 0755); err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(upperTestDir)
+
+	fs := filesystem.Desktop
+	err := ipr.AddCustomLoader(fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := ipr.RemoveCustomLoader(fs)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if err := ipr.DoString(fmt.Sprintf(`require "%s"`, requirePath)); err == nil {
+		t.Fatalf("call require with upper base directory, breaks sandbox, but no error")
+	} else {
+		t.Log(err)
+	}
+}

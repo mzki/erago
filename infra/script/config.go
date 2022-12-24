@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -71,8 +72,23 @@ func scriptPath(L *lua.LState, p string) (string, error) {
 	lv := L.CheckTable(lua.RegistryIndex).RawGetString(registryBaseDirKey)
 	basedir := lua.LVAsString(lv)
 	joined := filepath.Clean(filepath.Join(basedir, p))
-	if !strings.HasPrefix(joined, basedir) {
-		return joined, fmt.Errorf("given path %s must be under %s, but you specifies %s", p, basedir, joined)
+	if err := validateScriptPath(joined, basedir); err != nil {
+		return "", fmt.Errorf("make scriptPath failed: %w", err)
 	}
 	return joined, nil
+}
+
+func validateScriptPathL(L *lua.LState, p string) error {
+	lv := L.CheckTable(lua.RegistryIndex).RawGetString(registryBaseDirKey)
+	baseDir := lua.LVAsString(lv)
+	return validateScriptPath(p, baseDir)
+}
+
+func validateScriptPath(p, baseDir string) error {
+	cleanP := filepath.Clean(p)
+	cleanD := filepath.Clean(baseDir) + string(os.PathSeparator) // ends with "/"
+	if !strings.HasPrefix(cleanP, cleanD) {
+		return fmt.Errorf("given path %s must be under %s", p, baseDir)
+	}
+	return nil
 }

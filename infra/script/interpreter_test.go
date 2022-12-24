@@ -221,6 +221,34 @@ func TestInterpreterLoadFileFromFS(t *testing.T) {
 	}
 }
 
+func TestInterpreterLoadSystemUpperLoadDirFail(t *testing.T) {
+	const upperTestDir = "testing2"
+	const testPath = "testing2/invalid_basedir.lua"
+	ip := newInterpreterWithConf(Config{
+		LoadDir:             "testing",
+		LoadPattern:         "../" + testPath,
+		CallStackSize:       CallStackSize,
+		RegistrySize:        RegistrySize,
+		IncludeGoStackTrace: true,
+	})
+	defer ip.Quit()
+
+	// create partially exist script file
+	if err := os.MkdirAll(upperTestDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(testPath, []byte(`era.printl "hello"`), 0755); err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(upperTestDir)
+
+	if err := ip.LoadSystem(); err == nil {
+		t.Fatal("LoadSystem should fail due to access upper LoadDir, breaking rule, but not error")
+	} else {
+		t.Logf("Intended Error: %v", err)
+	}
+}
+
 func TestInterpreterEraCall(t *testing.T) {
 	ip := globalInterpreter
 

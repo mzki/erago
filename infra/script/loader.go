@@ -141,10 +141,14 @@ func (ldrs *customLoaders) findFile(L *lua.LState, name string, ldr filesystem.R
 	messages := []string{}
 	for _, pattern := range strings.Split(string(path), ";") {
 		luapath := strings.Replace(pattern, "?", name, -1)
-		if ok := ldr.Exist(luapath); ok {
-			return luapath, ""
+		if err := validateScriptPathL(L, luapath); err != nil {
+			messages = append(messages, fmt.Sprintf("invalid script name %s: %s", name, err.Error()))
 		} else {
-			messages = append(messages, fmt.Sprintf("%s is not found in %s", name, pattern))
+			if ok := ldr.Exist(luapath); ok {
+				return luapath, ""
+			} else {
+				messages = append(messages, fmt.Sprintf("%s is not found in %s", name, pattern))
+			}
 		}
 	}
 	return "", strings.Join(messages, "\n\t")
