@@ -12,6 +12,8 @@ import (
 	"github.com/mzki/erago/view/exp/ui"
 )
 
+var DefaultAppTextViewOptions = ui.DefaultTextViewOptions
+
 // UI is mixture of widgets in ui package.
 type UI struct {
 	node.ShellEmbed
@@ -24,7 +26,14 @@ type UI struct {
 }
 
 // construct standard UI node tree for the era application.
-func NewUI(presenter *ui.EragoPresenter) *UI {
+func NewUI(presenter *ui.EragoPresenter, appConf *Config) *UI {
+	ui.DefaultTextViewOptions = DefaultAppTextViewOptions
+	if appConf.HistoryLineCount > 0 {
+		ui.DefaultTextViewOptions.MaxParagraphs = int32(appConf.HistoryLineCount)
+	}
+	// if appConf.HistoryBytesPerLine > 0 {
+	// 	ui.DefaultTextViewOptions.MaxParagraphBytes = int32(appConf.HistoryBytesPerLine)
+	// }
 	mv := ui.NewMultipleView(presenter)
 	bg_cmd := widget.NewUniform(theme.Background,
 		widget.NewPadder(widget.AxisHorizontal, unit.Ems(0.5),

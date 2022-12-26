@@ -37,11 +37,25 @@ type TextView struct {
 	onScroll func(int, int, int)
 }
 
-func NewTextView(name string, sender *EragoPresenter) *TextView {
+type TextViewOptions = text.FrameOptions
+
+// DefaultTextViewOptions defines the volume of stored text content, which can be visible by scrolling.
+var DefaultTextViewOptions = TextViewOptions{
+	MaxParagraphs:     1024,
+	MaxParagraphBytes: 1024,
+}
+
+func NewTextView(name string, sender *EragoPresenter, opts ...TextViewOptions) *TextView {
 	if sender == nil {
 		panic("nil sender is not allowed")
 	}
-	f := text.NewFrame(nil)
+	var opt *TextViewOptions
+	if len(opts) > 0 {
+		opt = &opts[0]
+	} else {
+		opt = &DefaultTextViewOptions
+	}
+	f := text.NewFrame(opt)
 	view := &TextView{
 		name:    name,
 		frame:   f,

@@ -42,6 +42,12 @@ type Config struct {
 	Height int `toml:"height"` // initial window height.
 	// TODO: Title string  // title on window top.
 
+	// number of lines or bytes per line stored in history.
+	// these can take 0 or negative in which case use default value instead.
+	HistoryLineCount int `toml:"history_line_count"`
+	// TODO: This is not implemented yet, but whole byte limits are builtin implemented
+	//HistoryBytesPerLine int `toml:"history_bytes_per_line"`
+
 	Game erago.Config `toml:"game"`
 }
 
@@ -52,12 +58,14 @@ func NewConfig(baseDir string) *Config {
 		baseDir = DefaultBaseDir
 	}
 	return &Config{
-		LogFile:  DefaultLogFile,
-		LogLevel: DefaultLogLevel,
-		Font:     DefaultFont,
-		FontSize: DefaultFontSize,
-		Width:    DefaultWidth,
-		Height:   DefaultHeight,
+		LogFile:          DefaultLogFile,
+		LogLevel:         DefaultLogLevel,
+		Font:             DefaultFont,
+		FontSize:         DefaultFontSize,
+		Width:            DefaultWidth,
+		Height:           DefaultHeight,
+		HistoryLineCount: int(DefaultAppTextViewOptions.MaxParagraphs),
+		//HistoryBytesPerLine: int(DefaultAppTextViewOptions.MaxParagraphBytes),
 
 		Game: erago.NewConfig(baseDir),
 	}

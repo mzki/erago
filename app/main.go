@@ -146,7 +146,7 @@ func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) e
 	defer w.Release()
 
 	presenter := ui.NewEragoPresenter(w)
-	root := NewUI(presenter)
+	root := NewUI(presenter, appConf)
 
 	Theme := t
 
