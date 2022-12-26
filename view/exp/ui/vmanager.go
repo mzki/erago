@@ -148,12 +148,13 @@ func (vm viewManager) getViewNames() []string {
 }
 
 func (vm *viewManager) appendTextView(vname string) *textVNode {
-	newV := NewTextView(vname, vm.sender)
-	f := unfocusFrame(newV)
+	newTV := NewTextView(vname, vm.sender)
+	f := unfocusFrame(newTV)
+	newSV := NewScrollViewFromNode(f)
 	tv := &textVNode{
-		Node:  f,
+		Node:  newSV,
 		Frame: f,
-		View:  newV,
+		View:  newTV,
 	}
 	tv.Unfocus()
 	vm.textViews[vname] = tv

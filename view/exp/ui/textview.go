@@ -33,9 +33,10 @@ type TextView struct {
 	sender *EragoPresenter
 
 	focused bool
+
+	onScroll func(int, int, int)
 }
 
-//
 func NewTextView(name string, sender *EragoPresenter) *TextView {
 	if sender == nil {
 		panic("nil sender is not allowed")
@@ -115,7 +116,6 @@ func (v *TextView) PaintBase(ctx *node.PaintBaseContext, origin image.Point) err
 }
 
 // Focused means this view is current view on viewManager, not lifecycle.Focused.
-//
 func (v *TextView) Focus() {
 	v.focused = true
 }
@@ -142,9 +142,7 @@ func (v *TextView) OnInputEvent(ev interface{}, origin image.Point) node.EventHa
 			scrollLine = -1
 		}
 		if scrollLine != 0 && inputWaiting {
-			v.v.ScrollLine(scrollLine)
-			v.v.UnhighlightCommand()
-			v.Mark(node.MarkNeedsPaintBase)
+			v.Scroll(-scrollLine) // Scroll API and scrollLine has inverted sign.
 			return node.Handled
 		}
 
@@ -312,3 +310,21 @@ func (v *TextView) Sync() error {
 	v.sender.sync(v)
 	return nil
 }
+
+// --- Implement DiscreteScroller interface ---
+
+// Scroll scrolls view by step. Positive step means lower content is visible, otherwise upper content is visible.
+func (v *TextView) Scroll(step int) {
+	step = -step // since pos/neg meaning is inverted between DiscreteScroller and text.View
+	v.v.ScrollLine(step)
+	v.v.UnhighlightCommand()
+	v.Mark(node.MarkNeedsPaintBase)
+	if fn := v.onScroll; fn != nil {
+		fn(v.CurrentStep(), v.MaximumStep(), v.VisibleStep())
+	}
+}
+
+func (v *TextView) CurrentStep() int                                     { return v.v.ScrolledLinePos() }
+func (v *TextView) MaximumStep() int                                     { return v.v.StoredLineCount() }
+func (v *TextView) VisibleStep() int                                     { return v.v.LineCount() }
+func (v *TextView) OnScroll(fn func(currStep, maxStep, visibleStep int)) { v.onScroll = fn }

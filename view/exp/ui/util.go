@@ -1,13 +1,19 @@
 package ui
 
 import (
+	"golang.org/x/exp/shiny/unit"
 	"golang.org/x/exp/shiny/widget"
 	"golang.org/x/exp/shiny/widget/node"
+	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/mobile/event/lifecycle"
 )
 
 func round(f float32) int {
 	return int(f + 0.5)
+}
+
+func dpToPx(t *theme.Theme, dp int) int {
+	return t.Pixels(unit.DIPs(float64(dp))).Round()
 }
 
 func gotoLifecycleStageDead(n node.Node) {

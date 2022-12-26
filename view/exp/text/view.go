@@ -127,6 +127,45 @@ func (v *View) LineCount() int {
 	return int(v.maxLines)
 }
 
+// It returns a count of all lines stored in the frame, which includig not visialized one.
+// This is equivalent to the frame.LineCount() but user should use this since this is
+// goroutine safe.
+func (v *View) StoredLineCount() (nline int) {
+	v.frame.mu.RLock()
+	nline = v.frame.LineCount()
+	v.frame.mu.RUnlock()
+	return
+}
+
+// ScrolledLinePos returns curretnly visualized line position in all lines stored in the frame.
+// The line position takes in range [0:(StoredLineCount()-LineCount())], 0 means most top of lines and
+// (StoredLineCount()-LineCount()) means most bottom of the lines. Note that line pos indicates top of
+// currently visualized lines, so ScrolledLinePos of the most bottom should be substracted from LineCount()
+// which returns visualized line count. The line position is differed by every scrolling.
+func (v *View) ScrolledLinePos() (pos int) {
+	f := v.frame
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if v.startP == v.maxStartP && v.startL == v.maxStartL {
+		// the most bottom of all lines.
+		pos = f.LineCount() - int(v.maxLines)
+	} else {
+		// other cases
+		pos = 0
+	findingLoop:
+		for p := f.firstP; p != 0; p = f.paragraphs[p].next {
+			pp := &f.paragraphs[p]
+			for l := pp.firstL; l != 0; l = f.lines[l].next {
+				if p == v.startP && l == v.startL {
+					break findingLoop
+				}
+				pos += 1
+			}
+		}
+	}
+	return
+}
+
 // Set View size in pixel.
 // It changes Frame layout.
 func (v *View) SetSize(size image.Point) {
