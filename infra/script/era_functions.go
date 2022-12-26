@@ -61,7 +61,6 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 		"print":            ft.print,
 		"printl":           ft.printL,
 		"printc":           ft.printC,
-		"printw":           ft.printW,
 		"printLine":        ft.printLine,
 		"printBar":         ft.printBar,
 		"textBar":          ft.textBar,
@@ -90,6 +89,7 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 	}
 	eraModInputFuncMap := map[string]lua.LGFunction{
 		// input functions
+		"printw":      ft.printW,
 		"wait":        ft.wait,
 		"twait":       ft.twait,
 		"input":       ft.inputStr,

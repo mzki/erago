@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mzki/erago/util/log"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -55,6 +56,7 @@ const (
 // Stop stops internal timer count down. It returns true if timer stopped,
 // returns false if timer is not stopped due to internal timer is not running yet.
 func (wdt *watchDogTimer) Stop() bool {
+	log.Debugln("WatchDogTimer: Stop")
 	if !wdt.running.Load() {
 		return false
 	}
@@ -66,6 +68,7 @@ func (wdt *watchDogTimer) Stop() bool {
 // true if timer reset, returns false if timer is not reset due to internal timer
 // is not running yet.
 func (wdt *watchDogTimer) Reset() bool {
+	log.Debugln("WatchDogTimer: Reset")
 	if !wdt.running.Load() {
 		return false
 	}

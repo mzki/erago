@@ -12,10 +12,10 @@ import (
 // SceneManager is entry point of the scene flow transition.
 //
 // Example:
-//   sm := NewSceneManager(...)
-//   defer sm.Free()
-//	 // do something
 //
+//	  sm := NewSceneManager(...)
+//	  defer sm.Free()
+//		 // do something
 type SceneManager struct {
 	sf *sceneFields
 
@@ -24,7 +24,7 @@ type SceneManager struct {
 
 func NewSceneManager(game IOController, scr Scripter, state *state.GameState, config Config) *SceneManager {
 	sf := &sceneFields{
-		callbacker:  callBacker{scr, game},
+		callbacker:  callBacker{&loggedScripter{scr}, game},
 		io:          game,
 		conf:        config,
 		state:       state,

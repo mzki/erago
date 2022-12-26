@@ -1,5 +1,7 @@
 package scene
 
+import "github.com/mzki/erago/util/log"
+
 // Scripter handles calling script function in era module.
 // These functions can return spcial error defined in the package scene
 // In such case, scene flow will be changed by type of special error.
@@ -8,6 +10,21 @@ type Scripter interface {
 	EraCall(string) error
 	EraCallBoolArgInt(string, int64) (bool, error)
 	HasEraValue(string) bool
+}
+
+type loggedScripter struct {
+	Scripter
+}
+
+// oprations for era module.
+func (ls *loggedScripter) EraCall(fn_name string) error {
+	log.Debugf("ScriptCall: %s", fn_name)
+	return ls.Scripter.EraCall(fn_name)
+}
+
+func (ls *loggedScripter) EraCallBoolArgInt(fn_name string, v int64) (bool, error) {
+	log.Debugf("ScriptCall: %s", fn_name)
+	return ls.Scripter.EraCallBoolArgInt(fn_name, v)
 }
 
 //go:generate go run gen_callback_doc.go --outputdir ./gendoc
