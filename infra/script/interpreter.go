@@ -3,7 +3,9 @@ package script
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/mzki/erago/filesystem"
@@ -233,8 +235,13 @@ func (ip Interpreter) PathOf(file string) string {
 	return filepath.Join(ip.config.LoadDir, file)
 }
 
+// LoadPatternNotFoundError indicates Config.LoadDir and Config.LoadPattern are not matched any files.
+type LoadPatternNotFoundError = os.PathError
+
 // load all files matched to config pattern.
 // it is used for loading user scirpts under specified directory.
+// If any files not found to be loaded, it returns LoadPattenNotFoundError.
+// And other cases in failure, It returns arbitrary error type.
 func (ip Interpreter) LoadSystem() error {
 	path := ip.config.loadPattern()
 	if err := validateScriptPath(path, ip.config.LoadDir); err != nil {
@@ -244,12 +251,47 @@ func (ip Interpreter) LoadSystem() error {
 	if err != nil {
 		return err
 	}
-	for _, match := range files {
-		if err := ip.DoFile(match); err != nil {
+	if len(files) == 0 {
+		return &LoadPatternNotFoundError{
+			Op:   "Glob",
+			Path: path,
+			Err:  fmt.Errorf("pattern does not match any files"),
+		}
+	}
+	trimFiles, err := trimBaseDirPath(ip.config.LoadDir, files)
+	if err != nil {
+		return fmt.Errorf("failed to triming base dir %s: %w", ip.config.LoadDir, err)
+	}
+	for _, trimF := range trimFiles {
+		// use require to watch file change through customLoader.
+		reqPath := strings.TrimSuffix(trimF, ".lua")
+		reqPath = strings.ReplaceAll(reqPath, string(os.PathSeparator), ".")
+		src := fmt.Sprintf(`require "%s"`, reqPath)
+		if err := ip.DoString(src); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func trimBaseDirPath(baseDir string, files []string) ([]string, error) {
+	resBaseDir, err := filesystem.ResolvePath(baseDir)
+	if err != nil {
+		return nil, err
+	}
+	resBaseDir = filepath.Clean(resBaseDir)
+	ret := make([]string, 0, len(files))
+	for _, f := range files {
+		resF, err := filesystem.ResolvePath(f)
+		if err != nil {
+			return nil, err
+		}
+		resF = filepath.Clean(resF)
+		trimF := strings.TrimPrefix(resF, resBaseDir)
+		trimF = strings.TrimLeft(trimF, string(os.PathSeparator))
+		ret = append(ret, trimF)
+	}
+	return ret, nil
 }
 
 func (ip Interpreter) getEraValue(vname string) lua.LValue {

@@ -221,6 +221,82 @@ func TestInterpreterLoadFileFromFS(t *testing.T) {
 	}
 }
 
+func TestInterpreterLoadSystemRelativePath(t *testing.T) {
+	const fileName = "init_loadsystem"
+	const testPath = "testing/" + fileName + ".lua"
+	ip := newInterpreterWithConf(Config{
+		LoadDir:             "testing",
+		LoadPattern:         fileName + ".lua",
+		CallStackSize:       CallStackSize,
+		RegistrySize:        RegistrySize,
+		IncludeGoStackTrace: true,
+	})
+	defer ip.Quit()
+
+	if err := os.WriteFile(testPath, []byte(`era.twait(100)`), 0755); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(testPath)
+
+	oldFS := filesystem.Default
+	defer func() { filesystem.Default = oldFS }()
+	filesystem.Default = filesystem.Desktop
+	if err := ip.LoadSystem(); err != nil {
+		t.Errorf("Failed to LoadSystem: %v", err)
+	}
+}
+
+func TestInterpreterLoadSystemAbsPath(t *testing.T) {
+	const fileName = "init_loadsystem"
+	const testPath = "testing/" + fileName + ".lua"
+	ip := newInterpreterWithConf(Config{
+		LoadDir:             "testing",
+		LoadPattern:         fileName + ".lua",
+		CallStackSize:       CallStackSize,
+		RegistrySize:        RegistrySize,
+		IncludeGoStackTrace: true,
+	})
+	defer ip.Quit()
+
+	if err := os.WriteFile(testPath, []byte(`era.twait(100)`), 0755); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(testPath)
+
+	oldFS := filesystem.Default
+	defer func() { filesystem.Default = oldFS }()
+	absDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filesystem.Default = &filesystem.AbsPathFileSystem{
+		CurrentDir: absDir,
+		Backend:    filesystem.Desktop,
+	}
+	if err := ip.LoadSystem(); err != nil {
+		t.Errorf("Failed to LoadSystem: %v", err)
+	}
+}
+
+func TestInterpreterLoadSystemNotFound(t *testing.T) {
+	const fileName = "load_system_not_found"
+	ip := newInterpreterWithConf(Config{
+		LoadDir:             "testing",
+		LoadPattern:         fileName + ".lua",
+		CallStackSize:       CallStackSize,
+		RegistrySize:        RegistrySize,
+		IncludeGoStackTrace: true,
+	})
+	defer ip.Quit()
+
+	err := ip.LoadSystem()
+	if notFoundErr, ok := err.(*LoadPatternNotFoundError); !ok {
+		t.Errorf("LoadSystem should return LoadPatternNotFoundError but got: %v", err)
+	} else {
+		t.Logf("Intended Erorr: %v", notFoundErr)
+	}
+}
+
 func TestInterpreterLoadSystemUpperLoadDirFail(t *testing.T) {
 	const upperTestDir = "testing2"
 	const testPath = "testing2/invalid_basedir.lua"
