@@ -8,6 +8,7 @@ import (
 
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/errutil"
+	"github.com/mzki/erago/util/log"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -56,6 +57,7 @@ func (ldrs *customLoaders) LuaLoader(L *lua.LState) int {
 
 		// watch ldrHelper
 		if ldrs.ShouldWatch(ldrHelper.watcher) {
+			log.Debugf("ScriptLoader: Watch file change: %s", modpath)
 			if err := ldrHelper.watcher.Watch(modpath); err != nil {
 				merr.Add(err)
 				continue
@@ -83,6 +85,7 @@ func (ldrs *customLoaders) loadLFunc(L *lua.LState, ldr filesystem.RFileSystemPR
 }
 
 func (ldrs *customLoaders) reload(L *lua.LState, ldr filesystem.RFileSystemPR, path string) error {
+	log.Infof("ScriptLoader: Reload %s", path)
 	var name string
 	if ldrHelper, ok := ldrs.loaders[ldr]; !ok {
 		return fmt.Errorf("reload: unknown FileSystem")
