@@ -75,13 +75,6 @@ jobs:
       - name: Create archive path
         run: mkdir -p ./build
 
-      # Need to configure safe.directory to perform git command inside user specific container
-      # See https://zenn.dev/gorohash/articles/72c9c84778194f
-      # Note that there is environment difference between this step and below one at container.
-      # We need to configure local setting to share configuration.
-      - name: Set up a Git safe directory
-        run: git config --local --add safe.directory "${GITHUB_WORKSPACE}"
-
       - name: Run Custom build action for mobile build
         uses: './.github/actions/mobile-build/'
         with:
