@@ -7,8 +7,12 @@ ENV HOME /home/gopher
 ENV SHELL /bin/bash
 
 # install dependency tools
+# We need Workaround for ca-certificates-java to install JDK>11 properly.
+# See https://bugs.launchpad.net/ubuntu/+source/ca-certificates-java/+bug/2012191
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y unzip openjdk-17-jdk \
+  && apt-get install --no-install-recommends -y unzip openjdk-11-jre-headless ca-certificates-java \
+  && apt-get remove -y openjdk-11-jre-headless \
+  && apt-get install --no-install-recommends -y openjdk-17-jdk \
   && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
