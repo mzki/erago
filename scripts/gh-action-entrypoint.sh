@@ -14,7 +14,7 @@ set -eu
 # Need to configure safe.directory to perform git command inside user specific container
 # See https://zenn.dev/gorohash/articles/72c9c84778194f
 # See https://medium.com/@janloo/github-actions-detected-dubious-ownership-in-repository-at-github-workspace-how-to-fix-b9cc127d4c04
-git config --global --add safe.directory $PWD"
+sh -c "git config --global --add safe.directory $PWD"
 
 #echo $*
 /bin/bash -c "$*"
