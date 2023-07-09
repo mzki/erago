@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,7 +92,9 @@ func TestOpenWatcher(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	removeCh := make(chan bool)
+	// check whether write event is emitted after watching.
+	// Write event is mostly used for our usecase, hot-reloading.
+	writeCh := make(chan bool)
 	go func() {
 		for {
 			select {
@@ -104,8 +107,8 @@ func TestOpenWatcher(t *testing.T) {
 				matched, err := filepath.Match(cleanTestPath, cleanName)
 				if err != nil {
 					t.Error(err)
-				} else if matched && ev.Has(WatchOpRemove) {
-					removeCh <- true
+				} else if matched && ev.Has(WatchOpWrite) {
+					writeCh <- true
 				}
 			case err, ok := <-watcher.Errors():
 				if !ok {
@@ -118,30 +121,30 @@ func TestOpenWatcher(t *testing.T) {
 		}
 	}()
 
-	// create and remove testPath
+	// create and overwrite testPath
 	fp, err := os.Create(cleanTestPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fp.Close()
+	defer os.Remove(cleanTestPath) // do 2nd at deferring
 
 	// Watch accpet un-Cleaned path
 	if err := watcher.Watch(testPath); err != nil {
+		fp.Close()
 		t.Fatal(err)
 	}
-	if err := os.Remove(cleanTestPath); err != nil {
-		t.Fatal(err)
-	}
+	fmt.Fprintln(fp, "Test file content")
+	fp.Close() // needs obvious calling of Close() for WRITE events on windows platform
 
-	var removed bool = false
+	var written bool = false
 	select {
 	case <-ctx.Done():
-		t.Fatal("Failed to receive Remove Event from Watcher", ctx.Err())
-	case <-removeCh:
-		removed = true
+		t.Fatal("Failed to receive WRITE Event from Watcher", ctx.Err())
+	case <-writeCh:
+		written = true
 	}
 
-	if !removed {
-		t.Errorf("Expect receive Remove Event: %v, but got: %v", true, removed)
+	if !written {
+		t.Errorf("Expect receive WRITE Event: %v, but got: %v", true, written)
 	}
 }
