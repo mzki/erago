@@ -387,21 +387,29 @@ func writeTxt(file string, docGroups []docGroup) error {
 	return nil
 }
 
-/* Create below for each docElement
-"era.print": {
-	"scope": "lua",
-	"prefix": "era.print",
-	"body": [
-		"era.print(\"$1\")",
-		"$2"
-	],
-	"description": [
-		"Print text at screen.",
-		"",
-		"This is second lines..."
-	],
-},
+/*
+Create below for each docElement
+
+	"era.print": {
+		"scope": "lua",
+		"prefix": "era.print",
+		"body": [
+			"era.print(\"$1\")",
+			"$2"
+		],
+		"description": [
+			"Print text at screen.",
+			"",
+			"This is second lines..."
+		],
+	},
 */
+
+var customEscaper = strings.NewReplacer(
+	`"`, `\"`,
+	string('\t'), "  ",
+)
+
 var vscodeSnippetTmpl = template.Must(
 	template.
 		New("vscode-snippets").
@@ -409,7 +417,7 @@ var vscodeSnippetTmpl = template.Must(
 			"custom_add":       func(a, b int) int { return a + b },
 			"custom_is_last":   func(i int, list []string) bool { return i+1 >= len(list) },
 			"custom_is_last_n": func(i, length int) bool { return i+1 >= length },
-			"custom_esc":       func(s string) string { return strings.Replace(s, `"`, `\"`, -1) },
+			"custom_esc":       customEscaper.Replace,
 		}).
 		Parse(`
 {{- define "ARG_LIST_BODY" -}}
