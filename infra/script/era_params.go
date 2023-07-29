@@ -265,13 +265,15 @@ func intParamMetaNewIndex(L *lua.LState) int {
 // 具体的には、csvindexモジュール以下のオブジェクトです。
 // name_indexerを渡した場合には、indexとして文字列も使用することができます。
 // つまり、
-//   intparam = IntParam.new(100)
-//   index = csvindex.item["道具"]
-//   value = intparam[index]
+//
+//	intparam = IntParam.new(100)
+//	index = csvindex.item["道具"]
+//	value = intparam[index]
 //
 // という操作を、
-//   intparam = IntParam.new(100, csvindex.item)
-//   value = intparam["道具"]
+//
+//	intparam = IntParam.new(100, csvindex.item)
+//	value = intparam["道具"]
 //
 // というように、代行してくれます。
 func intParamNew(L *lua.LState) int {
@@ -288,13 +290,20 @@ func intParamNew(L *lua.LState) int {
 }
 
 // +gendoc "XXXParam"
-// * value = IntParam:get(key),  IntParam:set(key, new_value)
+// * IntParam:set(key, new_value)
 //
-// key番目の値を取得/設定します。keyにはインデックス番号あるいは文字列を指定します。
+// key番目にnew_valueを設定します。keyにはインデックス番号あるいは文字列を指定します。
+// IntParam:get() の項目も参照。
+
+// +gendoc "XXXParam"
+// * value = IntParam:get(key)
+//
+// key番目の値を取得します。keyにはインデックス番号あるいは文字列を指定します。
 // 例えば、keyの名前とIntParamのメソッド名が被っている場合には、メソッドが優先されてしまいます。
-//   intparam:len()
-//   len_method = intparam["len"]
-//   not_a_value = intparam["len"]
+//
+//	intparam:len()
+//	len_method = intparam["len"]
+//	not_a_value = intparam["len"]
 //
 // その場合（ここでは、"len"というkey）でも、このget/setによって、値の取得/設定が可能です。
 func intParamGetSet(L *lua.LState) int {
@@ -428,9 +437,16 @@ func strParamNew(L *lua.LState) int {
 }
 
 // +gendoc "XXXParam"
-// * value = StrParam:get(key),  StrParam:set(key, new_value)
+// * StrParam:set(key, new_value)
 //
-// key番目の値を取得/設定します。keyにはインデックス番号あるいは文字列を指定します。
+// key番目にnew_valueを設定します。keyにはインデックス番号あるいは文字列を指定します。
+// IntParam:get() の項目も参照。
+
+// +gendoc "XXXParam"
+// * value = StrParam:get(key)
+//
+// key番目の値を取得します。keyにはインデックス番号あるいは文字列を指定します。
+// IntParam:get() の項目も参照。
 func strParamGetSet(L *lua.LState) int {
 	sp := checkStrParam(L, 1)
 	index := checkParamIndex(L, 2, sp)

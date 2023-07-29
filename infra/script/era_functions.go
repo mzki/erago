@@ -916,7 +916,7 @@ func (ft functor) inputNumRange(L *lua.LState) int {
 }
 
 // +gendoc "Era Module"
-// * command_number = inputSelect(num1, num2, ...)
+// * command_number = era.inputSelect(num1, num2, ...)
 //
 // 渡した複数の数値num1, num2, ...に一致したものの入力を待ちます。
 // 結果をcommand_numberとして返します。
@@ -993,7 +993,7 @@ func (ft functor) trawInput(L *lua.LState) int {
 // // Controll Flow
 
 // +gendoc "Era Module"
-// * era.flow.quit()
+// * flow.quit()
 //
 // quit this game immediately, without any notification.
 //
@@ -1280,7 +1280,7 @@ func checkMultipleLayoutData(L *lua.LState) []*attr.LayoutData {
 }
 
 // +gendoc "Era Module"
-// * layout_data = layout.flowHorizontal(...layout_data)
+// * layout_data = layout.flowHorizontal(layout_data...)
 func flowHorizontalLayout(L *lua.LState) int {
 	lds := checkMultipleLayoutData(L)
 	flowH := attr.NewFlowHorizontal(lds...)
@@ -1289,7 +1289,7 @@ func flowHorizontalLayout(L *lua.LState) int {
 }
 
 // +gendoc "Era Module"
-// * layout_data = layout.flowVertical(...layout_data)
+// * layout_data = layout.flowVertical(layout_data...)
 func flowVerticalLayout(L *lua.LState) int {
 	lds := checkMultipleLayoutData(L)
 	flowV := attr.NewFlowVertical(lds...)
