@@ -42,13 +42,13 @@ func (ad UIAdapter) GetInputPort() Sender {
 
 // print text then wait any input.
 func (ad UIAdapter) PrintW(s string) error {
-	ad.PrintL(s)
+	ad.Print(s)
 	return ad.Wait()
 }
 
 // print text to view spcfied by name then wait any input.
 func (ad UIAdapter) VPrintW(vname, s string) error {
-	if err := ad.VPrintL(vname, s); err != nil {
+	if err := ad.VPrint(vname, s); err != nil {
 		return err
 	}
 	return ad.Wait()

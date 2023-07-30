@@ -478,9 +478,9 @@ func (ft functor) vprintC(L *lua.LState) int {
 // +gendoc "Era Module"
 // * era.printw(text)
 //
-// textを改行付きで出力し、ユーザーからの何らかの入力を待ちます。
+// textを出力し、ユーザーからの何らかの入力を待ちます。
 //
-//	era.printl(text)
+//	era.print(text)
 //	era.wait()
 //
 // と等価です。
