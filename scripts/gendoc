@@ -23,5 +23,5 @@ mkdir -p $outputdir
 
 # aggregate generated document into a direcotry 
 for pkg in $target_pkgs; do
-  cp -t $outputdir $pkg/gendoc/*
+  cp -t $outputdir -r $pkg/gendoc/*
 done
