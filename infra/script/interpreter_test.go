@@ -364,6 +364,16 @@ func TestInterpreterSpecialErrors(t *testing.T) {
 		{"testquit", scene.ErrorQuit},
 		{"testgoto", scene.ErrorSceneNext},
 		{"testlongreturn", nil},
+		{"testpcall_quit", scene.ErrorQuit},
+		{"testpcall_gotoNextScene", scene.ErrorSceneNext},
+		{"testpcall_longReturn", nil},
+		{"testpcall_something", nil},
+		{"testxpcall_quit", scene.ErrorQuit},
+		{"testxpcall_gotoNextScene", scene.ErrorSceneNext},
+		{"testxpcall_longReturn", nil},
+		{"testxpcall_something", nil},
+		{"testxpcall_something2", nil},
+		{"testxpcall_something_error_handler", nil},
 	} {
 		if err := ip.EraCall(testcase.FuncName); err != testcase.Error {
 			if err == nil {

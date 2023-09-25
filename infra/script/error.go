@@ -29,6 +29,9 @@ var (
 var (
 	// ErrWatchDogtimerExpired indicates script execution takes too long time, it may be infinite loop.
 	ErrWatchDogTimerExpired = errors.New("script execution takes too long time, may be infinite loop")
+
+	// errScriptLongReturn indicates scrit execution is interrupted and returned to runtime caller.
+	errScriptLongReturn = errors.New("script execution is interrupted and returned to caller")
 )
 
 // check whether error is special case,
@@ -42,19 +45,32 @@ func (ip Interpreter) checkSpecialError(err error) error {
 		return nil
 	}
 
-	mes := err.Error()
+	if intErr := ip.extractScriptInterruptError(err.Error()); intErr != nil {
+		if intErr == errScriptLongReturn {
+			// longReturn is consumed at this runtime layer.
+			return nil
+		} else {
+			// to propagate upper runtime layer
+			return intErr
+		}
+	}
+	return err
+}
+
+func (ip Interpreter) extractScriptInterruptError(mes string) error {
 	switch {
 	case strings.Contains(mes, ScriptQuitMessage):
 		return scene.ErrorQuit
 	case strings.Contains(mes, ScriptGoToNextSceneMessage):
 		return scene.ErrorSceneNext
 	case strings.Contains(mes, ScriptLongReturnMessage):
-		return nil
+		return errScriptLongReturn
 	case strings.Contains(mes, scriptCanceledMessage):
 		if ip.watchDogTimer.IsExpired() {
 			return ErrWatchDogTimerExpired
 		}
 		return context.Canceled
+	default:
+		return nil
 	}
-	return err
 }

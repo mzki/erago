@@ -169,3 +169,116 @@ func lpairsWithMetaNext(L *lua.LState) int {
 	L.Push(lua.LNumber(-1)) // to adjust to 0 on nextOp
 	return 3
 }
+
+// extend pcall and xpcall to raise un-recoverable errors without any hooks in script layer.
+func registerExtPCall(L *lua.LState, ip *Interpreter) {
+	// assumes LState already registers "pcall" fucntion
+	for _, v := range []struct {
+		RawFuncName string
+		ExtendFunc  lua.LGFunction
+	}{
+		{"pcall", ip.extendPcall},
+		{"xpcall", ip.extendXPcall},
+	} {
+		rawFunc := L.GetGlobal(v.RawFuncName)
+		if rawFunc == lua.LNil {
+			panic(v.RawFuncName + " is not found in LState")
+		}
+		lextendFunc := L.NewClosure(v.ExtendFunc, rawFunc)
+		L.SetGlobal(v.RawFuncName, lextendFunc)
+	}
+}
+
+func (ip *Interpreter) extendPcall(L *lua.LState) int {
+	rawFunc := L.CheckFunction(lua.UpvalueIndex(1)) // assumes raw pcall given
+	args := []lua.LValue{}
+	for i := 1; i <= L.GetTop(); i++ {
+		args = append(args, L.Get(i))
+	}
+	orgTop := L.GetTop()
+
+	err := L.CallByParam(lua.P{
+		Fn:      rawFunc,
+		NRet:    lua.MultRet,
+		Protect: false,
+	}, args...)
+	raiseErrorIf(L, err)
+
+	// re-throw special errors so that script ignores Non-local exits by runtime.
+	if ok := L.OptBool(orgTop+1, true); !ok {
+		msg := L.OptString(orgTop+2, "nothing")
+		err := ip.extractScriptInterruptError(msg)
+		if err != nil {
+			L.Pop(2)          // to reset rawFunc returns
+			L.RaiseError(msg) // re-throw msg itself to keep special error context in message.
+			return 0
+		}
+	}
+	return L.GetTop() - orgTop
+}
+
+func (ip *Interpreter) extendXPcall(L *lua.LState) int {
+	rawFunc := L.CheckFunction(lua.UpvalueIndex(1)) // assumes raw xpcall given
+	fn := L.CheckFunction(1)
+	errHandler := L.OptFunction(2, nil)
+	if errHandler != nil {
+		errHandler = ip.wrapXPcallErrorHandler(L, errHandler)
+	}
+	orgTop := L.GetTop()
+
+	err := L.CallByParam(lua.P{
+		Fn:      rawFunc, // xpcall
+		NRet:    lua.MultRet,
+		Protect: false,
+	}, fn, errHandler)
+	raiseErrorIf(L, err) // it should be something fatal which breaks pcall protection,
+
+	// re-throw special errors such as gotoNextScene so that user can not handle any errors which
+	// used by implementation internally. In other case, error handler is used as original XMCall does
+	if ok := L.ToBool(orgTop + 1); !ok {
+		msg := L.OptString(orgTop+2, "nothing")
+		if err := ip.extractScriptInterruptError(msg); err != nil {
+			L.RaiseError(msg) // re-throw msg itself to keep special error context in message.
+			return 0
+		}
+	}
+	return L.GetTop() - orgTop
+}
+
+func (ip *Interpreter) wrapXPcallErrorHandler(L *lua.LState, orgHandler *lua.LFunction) *lua.LFunction {
+	return L.NewFunction(func(L *lua.LState) int {
+		// error in error handler breaks Lua runtime. must avoid any error in this function scope.
+		// See. https://github.com/yuin/gopher-lua/issues/452
+		errObj := L.CheckAny(1)
+		msg := lua.LVAsString(errObj)
+		if err := ip.extractScriptInterruptError(msg); err != nil {
+			// reuse error msg itself to keep error context and immediately return
+			// so that user can not access interruption raised by erago runtime.
+			L.Push(lua.LString(msg))
+			return 1
+		} else {
+			top := L.GetTop()
+			L.Push(orgHandler)
+			L.Push(errObj)
+			if err := L.PCall(1, lua.MultRet, nil); err != nil {
+				if apiErr, ok := err.(*lua.ApiError); ok {
+					msg = lua.LVAsString(apiErr.Object)
+				} else {
+					// This case should not occured with PCall contract.
+					msg = err.Error()
+				}
+				L.Push(lua.LString(msg))
+				return 1
+			}
+			// need to return exactly 1 value, by Lua runtime restriction.
+			if nret := L.GetTop() - top; nret > 1 {
+				L.Pop(nret - 1)
+			} else if nret == 1 {
+				// do nothing
+			} else {
+				L.Push(lua.LNil)
+			}
+			return 1
+		}
+	})
+}

@@ -105,6 +105,7 @@ func (ip *Interpreter) init() {
 	registerCharaParams(L, ip.state)
 	registerMisc(L)
 	registerExtPairs(L)
+	registerExtPCall(L, ip)
 
 	// register load path which is limited under config.LoadDir only.
 	// NOTE: bultin path is cleared. ( /usr/local/share/lua5.1  etc. are not available)
