@@ -61,6 +61,16 @@ func newOlderDataInterpreter() *Interpreter {
 	return NewInterpreter(state, stub.NewScriptGameController(), newConfig())
 }
 
+func newInterpreterAndInputQueuer() (*Interpreter, InputQueuer) {
+	state, err := stub.GetGameState()
+	if err != nil {
+		panic(err)
+	}
+	ctrlr := stub.NewScriptGameController()
+	inputQ := stub.GetInputQueue(ctrlr)
+	return NewInterpreter(state, ctrlr, newConfig()), inputQ
+}
+
 func TestInterpreterPath(t *testing.T) {
 	ip := globalInterpreter
 
@@ -475,6 +485,22 @@ func TestInterpreterWatchDogTimerNotExpiredAfterInitialization(t *testing.T) {
 
 	if err := <-errCh; err == ErrWatchDogTimerExpired {
 		t.Fatal(errors.New("No request WatchDogTimer, but got it"))
+	}
+}
+
+func TestInterpreterTestingLibs(t *testing.T) {
+	ip, inputQ := newInterpreterAndInputQueuer()
+	ip.OpenTestingLibs(inputQ)
+
+	for _, testcase := range []struct {
+		FileName string
+		Error    error
+	}{
+		{"era_input_queue.lua", nil},
+	} {
+		if err := ip.DoFile(filepath.Join(scriptDir, testcase.FileName)); err != testcase.Error {
+			t.Errorf("in %v, Error expect: %v, got: %v", testcase.FileName, testcase.Error, err)
+		}
 	}
 }
 

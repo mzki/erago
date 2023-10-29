@@ -83,6 +83,7 @@ layout.setLayout(
 -- data access
 
 era.printl ""
+assert(era.is_testing == false)
 assert(era.system)
 assert(era.system.Number)
 era.system.Number[0] = 10

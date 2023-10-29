@@ -6,39 +6,41 @@ import (
 	"time"
 )
 
-// implements scene.IOController
+// implements scene.IOController, script.InputQueuer
 type sceneIOController struct {
 	*gameUIStub
+
+	*scriptInputQueuer
 }
 
 // return implements scene.IOController
 func NewFlowGameController() *sceneIOController {
-	return &sceneIOController{NewGameUIStub()}
+	return &sceneIOController{NewGameUIStub(), NewScriptInputQueuer()}
 }
 
 func (ui sceneIOController) RawInput() (string, error) {
-	return "", nil
+	return ui.scriptInputQueuer.Deque(), nil
 }
 func (ui sceneIOController) RawInputWithTimeout(context.Context, time.Duration) (string, error) {
-	return "", nil
+	return ui.scriptInputQueuer.Deque(), nil
 }
 func (ui sceneIOController) Command() (string, error) {
-	return "", nil
+	return ui.scriptInputQueuer.Deque(), nil
 }
 func (ui sceneIOController) CommandWithTimeout(context.Context, time.Duration) (string, error) {
-	return "", nil
+	return ui.scriptInputQueuer.Deque(), nil
 }
 func (ui sceneIOController) CommandNumber() (int, error) {
-	return 0, nil
+	return ui.scriptInputQueuer.DequeInt(), nil
 }
 func (ui sceneIOController) CommandNumberWithTimeout(context.Context, time.Duration) (int, error) {
-	return 0, nil
+	return ui.scriptInputQueuer.DequeInt(), nil
 }
 func (ui sceneIOController) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
-	return 0, nil
+	return ui.scriptInputQueuer.DequeInt(), nil
 }
 func (ui sceneIOController) CommandNumberSelect(ctx context.Context, ns ...int) (int, error) {
-	return 0, nil
+	return ui.scriptInputQueuer.DequeInt(), nil
 }
 
 func (ui sceneIOController) Wait() error {

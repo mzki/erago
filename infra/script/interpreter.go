@@ -125,6 +125,7 @@ func (ip *Interpreter) init() {
 	}
 
 	ip.config.register(L)
+	registerIsTesting(L, false)
 }
 
 // set context to internal virtual machine.
