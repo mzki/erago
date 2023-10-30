@@ -49,6 +49,9 @@ func newInputPort(ls *lineSyncer) *inputPort {
 
 // RequestObserver observes changing input state.
 type RequestObserver interface {
+	// OnRequestChanged is called when user changes input request by calling
+	// input APIs such as WaitXXX, CommandXXX and RawInputXXX.
+	// This function is called on same context as input APIs.
 	OnRequestChanged(InputRequestType)
 }
 
@@ -79,7 +82,7 @@ const (
 	inputRequestTypeLen
 )
 
-//  It can not use concurrently.
+// It can not use concurrently.
 func (port *inputPort) RegisterRequestObserver(typ InputRequestType, o RequestObserver) {
 	if typ < InputRequestNone || typ >= inputRequestTypeLen {
 		panic("invalid input reqeust type")
@@ -87,7 +90,7 @@ func (port *inputPort) RegisterRequestObserver(typ InputRequestType, o RequestOb
 	port.requestObservers[typ] = o
 }
 
-//  It can not use concurrently.
+// It can not use concurrently.
 func (port *inputPort) UnregisterRequestObserver(typ InputRequestType) {
 	if typ < InputRequestNone || typ >= inputRequestTypeLen {
 		panic("invalid input reqeust type")
@@ -95,7 +98,7 @@ func (port *inputPort) UnregisterRequestObserver(typ InputRequestType) {
 	port.requestObservers[typ] = nil
 }
 
-//  It can not use concurrently.
+// It can not use concurrently.
 func (port *inputPort) requestChanged(typ InputRequestType) {
 	if obs := port.requestObservers[typ]; obs != nil {
 		obs.OnRequestChanged(typ)
