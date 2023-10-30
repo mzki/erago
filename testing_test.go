@@ -23,3 +23,13 @@ func TestTestingWithInputRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTestingWithInputQueue(t *testing.T) {
+	conf := NewConfig("./stub/")
+	files := []string{
+		"./stub/ELA/game_test_input_queue.lua",
+	}
+	if err := Testing(conf, files); err != nil {
+		t.Fatal(err)
+	}
+}
