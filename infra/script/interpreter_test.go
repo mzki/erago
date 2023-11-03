@@ -412,7 +412,7 @@ func TestInterpreterContextCancel(t *testing.T) {
 
 	time.Sleep(1 * time.Millisecond)
 	cancel()
-	if err := <-errCh; err != context.Canceled {
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
 }
@@ -434,7 +434,7 @@ func TestInterpreterWatchDogTimerCancel(t *testing.T) {
 	}()
 
 	time.Sleep(2 * time.Second)
-	if err := <-errCh; err != ErrWatchDogTimerExpired {
+	if err := <-errCh; !errors.Is(err, ErrWatchDogTimerExpired) {
 		t.Fatal(err)
 	}
 }
@@ -457,7 +457,7 @@ func TestInterpreterWatchDogTimerNotExpired(t *testing.T) {
 
 	time.Sleep(time.Duration(conf.InfiniteLoopTimeoutSecond+1) * time.Second)
 	cancel()
-	if err := <-errCh; err != context.Canceled {
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
 }

@@ -62,7 +62,7 @@ func (ip Interpreter) checkSpecialError(err error) error {
 	// assumes script error lost type of root cause error. try to get internal error
 	// and store into original error.
 	if internalErr := getAndClearRaisedError(ip.vm); internalErr != nil {
-		return fmt.Errorf("%v : caused by %w", err, internalErr)
+		return fmt.Errorf("%v\ncaused by: %w", err, internalErr)
 	}
 	// unexpected error
 	return err
@@ -78,11 +78,12 @@ func (ip Interpreter) extractScriptInterruptError(mes string) error {
 		return errScriptLongReturn
 	case strings.Contains(mes, scriptCanceledMessage):
 		if ip.watchDogTimer.IsExpired() {
-			return ErrWatchDogTimerExpired
+			return fmt.Errorf("%v\ncaused by: %w", mes, ErrWatchDogTimerExpired)
+		} else {
+			return fmt.Errorf("%v\ncaused by: %w", mes, context.Canceled)
 		}
-		return context.Canceled
 	case strings.Contains(mes, scriptTimeoutExpiredMessage):
-		return context.DeadlineExceeded
+		return fmt.Errorf("%v\ncaused by: %w", mes, context.DeadlineExceeded)
 	default:
 		return nil
 	}
