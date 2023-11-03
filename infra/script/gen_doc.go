@@ -87,6 +87,7 @@ var sortingOrder = []string{
 	"Builtin Module: csv",
 	"Builtin Module: log",
 	"Constant Value",
+	"InputQueue",
 }
 
 func main() {
