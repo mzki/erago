@@ -1,7 +1,10 @@
 package erago
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/mzki/erago/uiadapter"
 )
 
 func TestTesting(t *testing.T) {
@@ -39,13 +42,9 @@ func TestTestingWithInputQueueInfiniteLoop(t *testing.T) {
 	files := []string{
 		"./stub/ELA/game_test_input_queue_infinite_loop.lua",
 	}
-	if err := Testing(conf, files); err == nil {
-		t.Fatal("Expect some error, but returned nil")
+	if err := Testing(conf, files); !errors.Is(err, uiadapter.ErrorPipelineClosed) {
+		t.Fatalf("Expect %v, but returned %v", uiadapter.ErrorPipelineClosed, err)
 	} else {
-		// TODO: need to check expected error, which is uiadapter.ErrorPipeLineClosed by the situation that
-		// stucking at waiting user input, then context timeout and then uiadapter returns ErrorPipeLineClosed.
-		// But current interpreter implementation erases error itself by using err.Error(), so there is no way to
-		// check error is exactly expected one.
 		t.Logf("Acceptable error: %v", err)
 	}
 }

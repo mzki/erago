@@ -2,6 +2,7 @@ package erago
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -52,9 +53,14 @@ func Testing(conf Config, script_files []string) error {
 		for _, s := range script_files {
 			// TODO set timeout for each script file?
 			if err := game.ipr.DoFile(s); err != nil {
+				if errors.Is(err, uiadapter.ErrorPipelineClosed) {
+					// indicates timeout error. Add user friendly information.
+					err = fmt.Errorf("script execution too long time (>%v):\n%w", testingMaxTime, err)
+				}
 				// TODO: integrates multiple errors for scripts as one error?
-				return fmt.Errorf("script(%s) Fail: %v", s, err)
+				return fmt.Errorf("script(%s) Fail: %w", s, err)
 			}
+			// TODO: show passed file names in progress?
 		}
 		return nil
 	})

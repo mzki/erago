@@ -2,6 +2,7 @@ package erago
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/mzki/erago/uiadapter/event/input"
 )
 
-//
 // Game is entry point of the application.
 // It implements Sender interface to send user event from external.
 // Sender is valid after Game.Init(), so accsessing it causes panic before initializing.
@@ -92,6 +92,7 @@ func (g Game) InputPort() uiadapter.Sender {
 // So you should use it in the other thread.
 //
 // Example:
+//
 //	go func() {
 //		game.Main(ctx)
 //	}()
@@ -132,7 +133,7 @@ func (g *Game) main() error {
 	// run game flow.
 	g.ipr.SetContext(ctx)
 	err := g.scene.Run(ctx, startSceneName)
-	if err == uiadapter.ErrorPipelineClosed {
+	if errors.Is(err, uiadapter.ErrorPipelineClosed) {
 		return nil
 	}
 	return err
