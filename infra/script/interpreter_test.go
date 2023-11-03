@@ -522,6 +522,68 @@ func TestInterpreterTimeoutByContext(t *testing.T) {
 	}
 }
 
+type gameControllerWithInputError struct {
+	GameController
+}
+
+var errInputErrorSomehow = errors.New("input error some how")
+
+func (gameControllerWithInputError) RawInput() (string, error) { return "", errInputErrorSomehow }
+func (gameControllerWithInputError) RawInputWithTimeout(context.Context, time.Duration) (string, error) {
+	return "", errInputErrorSomehow
+}
+func (gameControllerWithInputError) Command() (string, error) { return "", errInputErrorSomehow }
+func (gameControllerWithInputError) CommandWithTimeout(context.Context, time.Duration) (string, error) {
+	return "", errInputErrorSomehow
+}
+func (gameControllerWithInputError) CommandNumber() (int, error) { return 0, errInputErrorSomehow }
+func (gameControllerWithInputError) CommandNumberWithTimeout(context.Context, time.Duration) (int, error) {
+	return 0, errInputErrorSomehow
+}
+func (gameControllerWithInputError) CommandNumberRange(ctx context.Context, min, max int) (int, error) {
+	return 0, errInputErrorSomehow
+}
+func (gameControllerWithInputError) CommandNumberSelect(context.Context, ...int) (int, error) {
+	return 0, errInputErrorSomehow
+}
+func (gameControllerWithInputError) Wait() error { return errInputErrorSomehow }
+func (gameControllerWithInputError) WaitWithTimeout(ctx context.Context, timeout time.Duration) error {
+	return errInputErrorSomehow
+}
+
+func newInterpreterWithInputError() *Interpreter {
+	state, err := stub.GetGameState()
+	if err != nil {
+		panic(err)
+	}
+	ctrlr := stub.NewScriptGameController()
+	return NewInterpreter(state, &gameControllerWithInputError{ctrlr}, newConfig())
+}
+
+func TestInterpreterInputErrorSomehow(t *testing.T) {
+	ip := newInterpreterWithInputError()
+
+	for _, testcase := range []struct {
+		Src   string
+		Error error
+	}{
+		{`era.input()`, errInputErrorSomehow},
+		{`era.tinput(1000)`, errInputErrorSomehow},
+		{`era.rawInput()`, errInputErrorSomehow},
+		{`era.trawInput(1000)`, errInputErrorSomehow},
+		{`era.inputNum()`, errInputErrorSomehow},
+		{`era.tinputNum(1000)`, errInputErrorSomehow},
+		{`era.wait()`, errInputErrorSomehow},
+		{`era.twait(1000)`, errInputErrorSomehow},
+		{`era.inputRange(0, 10)`, errInputErrorSomehow},
+		{`era.inputSelect(0, 1, 2)`, errInputErrorSomehow},
+	} {
+		if err := ip.DoString(testcase.Src); !errors.Is(err, testcase.Error) {
+			t.Errorf("in %q, Error expect: %v, got: %v", testcase.Src, testcase.Error, err)
+		}
+	}
+}
+
 // ------------------------
 // benchmarking
 // ------------------------

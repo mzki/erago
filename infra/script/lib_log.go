@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mzki/erago/util/log"
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // TODO: split logger between script and system?
@@ -145,11 +145,11 @@ func getDebugValues(L *lua.LState, start int) []interface{} {
 func getDebugHeader(L *lua.LState) string {
 	dbg, ok := L.GetStack(1)
 	if !ok {
-		L.RaiseError("getDebugHeader: can not get current call stack.")
+		raiseErrorf(L, "getDebugHeader: can not get current call stack.")
 	}
 	_, err := L.GetInfo("Sln", dbg, lua.LNil)
 	if err != nil {
-		L.RaiseError("getDebugHeader: %v", err)
+		raiseErrorf(L, "getDebugHeader: %w", err)
 	}
 	header := fmt.Sprintf("Script: %s:%d:", dbg.Source, dbg.CurrentLine)
 	return header

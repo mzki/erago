@@ -305,7 +305,7 @@ func (ft functor) getAlignment(L *lua.LState) int {
 	var alignStr string
 	align, err := ft.game.GetAlignment()
 	if err != nil {
-		L.RaiseError("script.getAlignment(): %v", err)
+		raiseErrorf(L, "script.getAlignment(): %w", err)
 	}
 	switch align {
 	case scene.AlignmentLeft:
@@ -315,7 +315,7 @@ func (ft functor) getAlignment(L *lua.LState) int {
 	case scene.AlignmentRight:
 		alignStr = "right"
 	default:
-		L.RaiseError("script.getAlignment(): unkown alignment")
+		raiseErrorf(L, "script.getAlignment(): unkown alignment")
 	}
 	L.Push(lua.LString(alignStr))
 	return 1
@@ -353,7 +353,7 @@ func pushColor(L *lua.LState, color uint32) int {
 func (ft functor) getColor(L *lua.LState) int {
 	color, err := ft.game.GetColor()
 	if err != nil {
-		L.RaiseError("script.getColor(): %v", err)
+		raiseErrorf(L, "script.getColor(): %w", err)
 	}
 	return pushColor(L, color)
 }
@@ -629,7 +629,7 @@ func (ft functor) vclearLine(L *lua.LState) int {
 func (ft functor) windowStrWidth(L *lua.LState) int {
 	width, err := ft.game.WindowRuneWidth()
 	if err != nil {
-		L.RaiseError("script.windowStrWidth(): %v", err)
+		raiseErrorf(L, "script.windowStrWidth(): %w", err)
 	}
 	L.Push(lua.LNumber(width))
 	return 1
@@ -644,7 +644,7 @@ func (ft functor) windowStrWidth(L *lua.LState) int {
 func (ft functor) windowLineCount(L *lua.LState) int {
 	width, err := ft.game.WindowLineCount()
 	if err != nil {
-		L.RaiseError("script.windowLineCount(): %v", err)
+		raiseErrorf(L, "script.windowLineCount(): %w", err)
 	}
 	L.Push(lua.LNumber(width))
 	return 1
@@ -661,7 +661,7 @@ func (ft functor) windowLineCount(L *lua.LState) int {
 func (ft functor) currentStrWidth(L *lua.LState) int {
 	width, err := ft.game.CurrentRuneWidth()
 	if err != nil {
-		L.RaiseError("script.currentStrWidth(): %v", err)
+		raiseErrorf(L, "script.currentStrWidth(): %w", err)
 	}
 	L.Push(lua.LNumber(width))
 	return 1
@@ -677,7 +677,7 @@ func (ft functor) currentStrWidth(L *lua.LState) int {
 func (ft functor) lineCount(L *lua.LState) int {
 	count, err := ft.game.LineCount()
 	if err != nil {
-		L.RaiseError("script.lineCount(): %v", err)
+		raiseErrorf(L, "script.lineCount(): %w", err)
 	}
 	L.Push(lua.LNumber(count))
 	return 1
@@ -750,7 +750,7 @@ func (ft functor) textBar(L *lua.LState) int {
 	p := checkBarParams(L, 1)
 	res, err := ft.game.TextBar(p.now, p.max, p.width, p.fg, p.bg)
 	if err != nil {
-		L.RaiseError("script.textBar(): %v", err)
+		raiseErrorf(L, "script.textBar(): %w", err)
 	}
 	L.Push(lua.LString(res))
 	return 1
@@ -776,7 +776,7 @@ func (ft functor) printImage(L *lua.LState) int {
 	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
 	err := ft.game.PrintImage(imgPath, widthInTW, heightInLC)
 	if err != nil {
-		L.RaiseError("script.printImage(): %v", err)
+		raiseErrorf(L, "script.printImage(): %w", err)
 	}
 	return 0
 }
@@ -800,7 +800,7 @@ func (ft functor) measureImageSize(L *lua.LState) int {
 	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
 	retW, retH, err := ft.game.MeasureImageSize(imgPath, widthInTW, heightInLC)
 	if err != nil {
-		L.RaiseError("script.printImage(): %v", err)
+		raiseErrorf(L, "script.measureImageSize(): %w", err)
 	}
 	L.Push(lua.LNumber(retW))
 	L.Push(lua.LNumber(retH))
@@ -836,7 +836,7 @@ func checkTimeExceeded(L *lua.LState, err error) bool {
 	case nil:
 		return false
 	default:
-		L.RaiseError(err.Error())
+		raiseErrorE(L, err)
 		return false
 	}
 }
@@ -847,7 +847,8 @@ func checkTimeExceeded(L *lua.LState, err error) bool {
 // ユーザーからの何らかの入力を待ちます。
 // 入力があるまで、スクリプトは停止し続けます。
 func (ft functor) wait(L *lua.LState) int {
-	ft.game.Wait()
+	err := ft.game.Wait()
+	raiseErrorIf(L, err)
 	return 0
 }
 
@@ -869,7 +870,7 @@ func (ft functor) twait(L *lua.LState) int {
 
 func pushIntError(L *lua.LState, num int, err error) int {
 	if err != nil {
-		L.RaiseError("%v", err)
+		raiseErrorE(L, err)
 	}
 	L.Push(lua.LNumber(num))
 	return 1
@@ -935,7 +936,7 @@ func (ft functor) inputNumSelect(L *lua.LState) int {
 
 func pushStringError(L *lua.LState, s string, err error) int {
 	if err != nil {
-		L.RaiseError("%v", err)
+		raiseErrorE(L, err)
 	}
 	L.Push(lua.LString(s))
 	return 1
@@ -1019,7 +1020,7 @@ func longReturnScript(L *lua.LState) int {
 // error handling for interpreter.
 func raiseErrorIf(L *lua.LState, err error) {
 	if err != nil {
-		L.RaiseError("%v", err)
+		raiseErrorE(L, err)
 	}
 }
 
@@ -1224,7 +1225,7 @@ func (ft functor) setHorizontalLayout(L *lua.LState) int {
 func (ft functor) setLayout(L *lua.LState) int {
 	ld := checkLayoutData(L, 1)
 	if ld == nil {
-		L.RaiseError("passing nil LayoutData")
+		raiseErrorf(L, "passing nil LayoutData")
 		return 0
 	}
 	err := ft.game.SetLayout(ld)
@@ -1268,7 +1269,7 @@ const nothingLayoutDataMessage = "require layout data more than or equal 1"
 func checkMultipleLayoutData(L *lua.LState) []*attr.LayoutData {
 	n := L.GetTop()
 	if n <= 0 {
-		L.RaiseError(nothingLayoutDataMessage)
+		raiseErrorf(L, nothingLayoutDataMessage)
 		return nil
 	}
 	lds := make([]*attr.LayoutData, 0, n)

@@ -1,8 +1,8 @@
 package script
 
 import (
-	"github.com/yuin/gopher-lua"
 	"github.com/mzki/erago/state/csv"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // +gendoc.set_section "Builtin Module: csv"
@@ -32,11 +32,12 @@ var builtinCSVExports = map[string]lua.LGFunction{
 // i は現在の行数、record は現在の行のフィールド値の配列です。
 //
 // Example:
-//   local filename = "/path/to/any.csv"
-//   csv.readFunc(filename, function(i, record)
-//     local str1 = record[1] -- １列目の文字列
-//     local str2 = record[2] -- ２列目の文字列
-//   end)
+//
+//	local filename = "/path/to/any.csv"
+//	csv.readFunc(filename, function(i, record)
+//	  local str1 = record[1] -- １列目の文字列
+//	  local str2 = record[2] -- ２列目の文字列
+//	end)
 func builtinCSVReadFunc(L *lua.LState) int {
 	file := checkFilePath(L, 1)
 	luaP := lua.P{
@@ -53,8 +54,6 @@ func builtinCSVReadFunc(L *lua.LState) int {
 		i += 1
 		return L.CallByParam(luaP, lua.LNumber(i), lt)
 	})
-	if err != nil {
-		L.RaiseError(err.Error())
-	}
+	raiseErrorIf(L, err)
 	return 0
 }

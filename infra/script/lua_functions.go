@@ -57,7 +57,7 @@ func extendIpairs(L *lua.LState) int {
 		NRet:    lua.MultRet,
 		Protect: false,
 	}, arg); err != nil {
-		L.RaiseError(err.Error())
+		raiseErrorE(L, err)
 	}
 	return 3 // ipairs's nret
 }
@@ -80,7 +80,7 @@ func extendPairs(L *lua.LState) int {
 		NRet:    lua.MultRet,
 		Protect: false,
 	}, arg); err != nil {
-		L.RaiseError(err.Error())
+		raiseErrorE(L, err)
 	}
 	return 3 // pairs's nret
 }

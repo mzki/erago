@@ -78,7 +78,7 @@ func getStrictTableMetatable(L *lua.LState) *lua.LTable {
 func ltableNotFoundMetaIndex(L *lua.LState) int {
 	_ = L.CheckTable(1)
 	key := L.CheckString(2)
-	L.RaiseError(key + " is not found")
+	raiseErrorf(L, key+" is not found")
 	return 0
 }
 

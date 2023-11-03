@@ -75,9 +75,7 @@ func (ip *Interpreter) consumeTaskFuncCall(L *lua.LState, fn lua.LGFunction) int
 			break
 		}
 		err := task()
-		if err != nil {
-			L.RaiseError(err.Error())
-		}
+		raiseErrorIf(L, err)
 	}
 	return fn(L)
 }
