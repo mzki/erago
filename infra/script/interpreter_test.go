@@ -504,6 +504,24 @@ func TestInterpreterTestingLibs(t *testing.T) {
 	}
 }
 
+func TestInterpreterTimeoutByContext(t *testing.T) {
+	ip := newInterpreter()
+
+	for _, testcase := range []struct {
+		FileName string
+		Error    error
+	}{
+		{"infinite_loop_ok.lua", context.DeadlineExceeded},
+	} {
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		ip.SetContext(ctx)
+		if err := ip.DoFile(filepath.Join(scriptDir, testcase.FileName)); !errors.Is(err, testcase.Error) {
+			t.Errorf("in %v, Error expect: %v, got: %v", testcase.FileName, testcase.Error, err)
+		}
+		cancel()
+	}
+}
+
 // ------------------------
 // benchmarking
 // ------------------------
