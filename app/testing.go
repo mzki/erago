@@ -1,6 +1,8 @@
 package app
 
 import (
+	"time"
+
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/util/log"
 )
@@ -26,7 +28,7 @@ func Testing(appConf *Config, scriptFiles []string) {
 		return
 	}
 
-	if err := erago.Testing(appConf.Game, scriptFiles); err != nil {
+	if err := erago.Testing(appConf.Game, scriptFiles, time.Duration(appConf.TestingTimeoutSecond)*time.Second); err != nil {
 		log.Infoln("Error: app.Testing:", err)
 	} else {
 		log.Infoln("PASS: script files,", scriptFiles, ", is OK!")

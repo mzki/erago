@@ -12,7 +12,9 @@ import (
 	"github.com/mzki/erago/util/deque"
 )
 
-const testingMaxTime = 10 * time.Second
+// DefaultTestingTimeout is default value for testing timeout.
+// test will fail when execution time exceed this time.
+const DefaultTestingTimeout = 60 * time.Second
 
 // Run testing flow.
 //
@@ -22,7 +24,7 @@ const testingMaxTime = 10 * time.Second
 // In script execution, input function returns
 // no sense values, so the test scripts requiring
 // user input can not be tested.
-func Testing(conf Config, script_files []string) error {
+func Testing(conf Config, script_files []string, timeout time.Duration) error {
 	game := NewGame()
 	if err := game.Init(stub.NewGameUIStub(), conf); err != nil {
 		return fmt.Errorf("Game.Init() Fail: %v", err)
@@ -30,7 +32,7 @@ func Testing(conf Config, script_files []string) error {
 	defer game.Quit()
 
 	// create testing context with timeout.
-	testCtx, cancel := context.WithTimeout(context.Background(), testingMaxTime)
+	testCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	// run filtering user input on other thread.
@@ -55,7 +57,7 @@ func Testing(conf Config, script_files []string) error {
 			if err := game.ipr.DoFile(s); err != nil {
 				if errors.Is(err, uiadapter.ErrorPipelineClosed) {
 					// indicates timeout error. Add user friendly information.
-					err = fmt.Errorf("script execution too long time (>%v):\n%w", testingMaxTime, err)
+					err = fmt.Errorf("script execution too long time (>%v):\n%w", DefaultTestingTimeout, err)
 				}
 				// TODO: integrates multiple errors for scripts as one error?
 				return fmt.Errorf("script(%s) Fail: %w", s, err)

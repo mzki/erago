@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"time"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/filesystem"
@@ -27,6 +28,8 @@ const (
 
 	DefaultWidth  = 800 // initial window width
 	DefaultHeight = 600 // initial window height
+
+	DefaultTestingTimeoutSecond = int(erago.DefaultTestingTimeout / time.Second)
 )
 
 // Configure for the Applicaltion.
@@ -48,6 +51,9 @@ type Config struct {
 	// TODO: This is not implemented yet, but whole byte limits are builtin implemented
 	//HistoryBytesPerLine int `toml:"history_bytes_per_line"`
 
+	// timeout value for testing mode only, in second.
+	TestingTimeoutSecond int `toml:"testing_timeout_sec"`
+
 	Game erago.Config `toml:"game"`
 }
 
@@ -66,6 +72,7 @@ func NewConfig(baseDir string) *Config {
 		Height:           DefaultHeight,
 		HistoryLineCount: int(DefaultAppTextViewOptions.MaxParagraphs),
 		//HistoryBytesPerLine: int(DefaultAppTextViewOptions.MaxParagraphBytes),
+		TestingTimeoutSecond: DefaultTestingTimeoutSecond,
 
 		Game: erago.NewConfig(baseDir),
 	}

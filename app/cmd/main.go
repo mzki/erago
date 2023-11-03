@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
 	// "net/http"
 	// _ "net/http/pprof"
 	// "runtime"
@@ -48,10 +49,11 @@ const (
 )
 
 var (
-	LogFile  string  = app.DefaultLogFile
-	LogLevel string  = app.LogLevelInfo
-	Font     string  = app.DefaultFont
-	FontSize float64 = app.DefaultFontSize
+	LogFile              string  = app.DefaultLogFile
+	LogLevel             string  = app.LogLevelInfo
+	Font                 string  = app.DefaultFont
+	FontSize             float64 = app.DefaultFontSize
+	TestingTimeoutSecond int     = app.DefaultTestingTimeoutSecond
 )
 
 const (
@@ -60,8 +62,9 @@ const (
 	flagNameFont     = "font"
 	flagNameFontSize = "fontsize"
 
-	flagNameTest    = "test"
-	flagNameVersion = "version"
+	flagNameTest        = "test"
+	flagNameTestTimeout = "testtimeout"
+	flagNameVersion     = "version"
 )
 
 func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
@@ -72,6 +75,8 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 		"info outputs information level log only, and debug also outputs debug level log.")
 	flags.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
 	flags.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
+
+	flags.IntVar(&TestingTimeoutSecond, flagNameTestTimeout, TestingTimeoutSecond, "`test-timeout` for timeout of test execution")
 
 	testing := false
 	flags.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+
@@ -120,6 +125,8 @@ func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
 			config.Font = Font
 		case flagNameFontSize:
 			config.FontSize = FontSize
+		case flagNameTestTimeout:
+			config.TestingTimeoutSecond = TestingTimeoutSecond
 		}
 	})
 }
