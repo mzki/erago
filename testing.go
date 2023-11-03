@@ -44,30 +44,20 @@ func Testing(conf Config, script_files []string) error {
 
 	// Prepare test libraries in interpreter.
 	game.ipr.OpenTestingLibs(observer)
+	game.ipr.SetContext(testCtx)
+	defer game.ipr.Quit()
 
 	// do testing
-	errCh := make(chan error)
-	go func() {
-		defer close(errCh)
-		err := withRecoverRun(func() error {
-			for _, s := range script_files {
-				if err := game.ipr.DoFile(s); err != nil {
-					// TODO: integrates multiple errors for scripts as one error?
-					return fmt.Errorf("script(%s) Fail: %v", s, err)
-				}
+	return withRecoverRun(func() error {
+		for _, s := range script_files {
+			// TODO set timeout for each script file?
+			if err := game.ipr.DoFile(s); err != nil {
+				// TODO: integrates multiple errors for scripts as one error?
+				return fmt.Errorf("script(%s) Fail: %v", s, err)
 			}
-			return nil
-		})
-		errCh <- err
-	}()
-
-	// wait completion for testing
-	select {
-	case err := <-errCh:
-		return err
-	case <-testCtx.Done():
-		return testCtx.Err()
-	}
+		}
+		return nil
+	})
 }
 
 type requestObserver struct {
