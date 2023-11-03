@@ -125,6 +125,7 @@ func (ip *Interpreter) init() {
 	}
 
 	ip.config.register(L)
+	initInternalError(L)
 	registerIsTesting(L, false)
 }
 

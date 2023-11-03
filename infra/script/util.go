@@ -81,3 +81,24 @@ func ltableNotFoundMetaIndex(L *lua.LState) int {
 	L.RaiseError(key + " is not found")
 	return 0
 }
+
+// ----------- Lua Registery utils --------------------
+
+func setRegGValue[T any](L *lua.LState, key string, value T) {
+	ud := L.NewUserData()
+	ud.Value = value
+	setRegValue(L, key, ud)
+}
+
+func getRegGValue[T any](L *lua.LState, key string) T {
+	ud := getRegValue(L, key).(*lua.LUserData)
+	return ud.Value.(T)
+}
+
+func setRegValue(L *lua.LState, key string, value lua.LValue) {
+	L.Get(lua.RegistryIndex).(*lua.LTable).RawSetString(key, value)
+}
+
+func getRegValue(L *lua.LState, key string) lua.LValue {
+	return L.Get(lua.RegistryIndex).(*lua.LTable).RawGetString(key)
+}
