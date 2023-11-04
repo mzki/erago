@@ -733,14 +733,14 @@ var luaLSMetaTmpl = template.Must(
 --DO NOT EDIT MANUALLY.
 
 {{- $modules := .Modules }}
-{{- range $moduleIdx, $mod := $modules }}
-
+{{- range $moduleIdx, $mod := $modules }}{{/* ------------- Module forward declaration ----------------- */}}
 {{- with $modname := $mod.ModName }}
-
 ---@class {{ $modname }}
 {{ $modname }} = {}
+{{ end }}{{- /* with modname */ -}}
+{{- end }}{{/* range modules */}}
 
-{{- end }}{{- /* with modname */ -}}
+{{- range $moduleIdx, $mod := $modules }}{{/* ------------- Module member definition ----------------- */}}
 
 {{- range $docIdx, $doc := $mod.List }}
 {{- if custom_is_function_type $doc }}{{/* ------------- Function Doc ----------------- */}}
