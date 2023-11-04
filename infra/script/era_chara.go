@@ -7,6 +7,57 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// +gendoc.set_section "Era Module"
+
+// +gendoc
+// * var era.chara: CharaList
+// CharaList is array of the active character in the game. it is denoted as Character List.
+// Characters stored in this list should be persisted on saving game state.
+// Modifiying this list is needed to use its method, addXXX, remove and clear.
+// User can get Character from this list by indexing,
+// Note that Character retrived from this list may be expried when loading other game state.
+// User need to treat Character retrived from the list as temporary.
+//
+// CharaList はゲーム上で有効なキャラクターの配列です。（以降、キャラクター配列と呼びます）
+// キャラクター配列に格納されているキャラクターはゲームの状態を保存する際に、一緒に保存されます。
+// キャラクター配列の変更は、キャラクター配列自身のメソッド、関数呼び出しによって行います。
+// ユーザーはインデックスを使ってキャラクターを取得することができます。
+// キャラクター配列から取得したキャラクターは、他のゲームの状態をロードした際に、無効値になります。
+// キャラクター配列から取得したキャラクターは一時的なものであることに注意が必要です。
+//
+// Example:
+//  local chara = CharaList[0]. -- index is started from 0.
+
+// +gendoc
+// * var era.master: CharaRefList
+// CharaRefList is a array of reference for a Character.
+// It can be used as like array of Character with same length as a number CSV character definition. It is included in saving game state.
+// Note that Character retrived from this list may be expried when loading other game state or removing character from Character List.
+// User need to treat Character retrived from the list as temporary.
+//
+// CharaRefList はキャラクターへの参照の配列です。
+// CSV で定義したキャラクター数と同じ長さのCharacter の配列のように扱うことができます。ゲーム状態として保存されるデータに含まれます。
+// キャラクター配列の変更は、キャラクター配列自身のメソッド、関数呼び出しによって行います。
+// ユーザーはインデックスを使ってキャラクターを取得することができます。
+// キャラクター参照配列から取得したキャラクターは、他のゲームの状態をロードした際や、キャラクター配列で削除が行われた際に、無効値になります。
+// キャラクター参照配列から取得したキャラクターは一時的なものであることに注意が必要です。
+//
+// Example:
+//  local chara = CharaListRef[0]. -- index is started from 0.
+//  CharaListRef[10] = chara
+
+// +gendoc
+// * var era.target: CharaRefList
+// See era.master
+
+// +gendoc
+// * var era.player: CharaRefList
+// See era.master
+
+// +gendoc
+// * var era.assi: CharaRefList
+// See era.master
+
 const (
 	luaCharaListName       = "chara"
 	luaCharaRefsMasterName = "master"
@@ -67,6 +118,14 @@ func registerCharaParams(L *lua.LState, gamestate *state.GameState) {
 
 // //  cahracter list or state.Characters
 
+// +gendoc.set_section "Characters"
+
+// +gendoc
+// * chara: Chara = CharaList:__index(i: integer)
+
+// +gendoc
+// * CharaList:__newindex(i: integer, newChara: Chara)
+
 type luaCharaList struct {
 	*state.Characters
 	methods map[string]*lua.LFunction
@@ -99,7 +158,13 @@ func checkLuaCharaList(L *lua.LState, pos int) luaCharaList {
 }
 
 // +gendoc "Characters"
-// * added_charas = chara:add(id1, id2, ...)
+// * added_charas: (Chara|Chara[]) = CharaList:add(id1: integer, ...: integer)
+// It adds new Character specified by csv id into the end of internal Character List and returns added character.
+// If only one id is given it returns Chara type, but in case of multiple ids are given it returns
+// array of Chara.
+//
+// CSV ID によって指定されたキャラクターを キャラクター配列の末尾に追加し、追加されたキャラクターを返します。
+// CSV ID が1つのみ指定された場合、キャラクター型の値を返却し、複数のCSV ID が指定された場合、キャラクター型の配列を返却します。
 func charaListAdd(L *lua.LState) int {
 	nargs := L.GetTop()
 	if nargs < 2 {
@@ -136,7 +201,7 @@ func charaListAdd(L *lua.LState) int {
 }
 
 // +gendoc "Characters"
-// * empty_chara = chara:addEmpty()
+// * empty_chara: Chara = CharaList:addEmpty()
 func charaListAddEmpty(L *lua.LState) int {
 	charas := checkLuaCharaList(L, 1)
 	empty_chara := charas.AddEmptyCharacter()
@@ -146,7 +211,7 @@ func charaListAddEmpty(L *lua.LState) int {
 }
 
 // +gendoc "Characters"
-// * chara:remove(index)
+// * CharaList:remove(index: integer)
 func charaListRemove(L *lua.LState) int {
 	charas := checkLuaCharaList(L, 1)
 	idx := L.CheckInt(2)
@@ -157,7 +222,7 @@ func charaListRemove(L *lua.LState) int {
 }
 
 // +gendoc "Characters"
-// * chara:clear()
+// * CharaList:clear()
 func charaListClear(L *lua.LState) int {
 	charas := checkLuaCharaList(L, 1)
 	charas.Clear()
@@ -166,7 +231,7 @@ func charaListClear(L *lua.LState) int {
 
 // Meta method, used internal and not documented
 // // +gendoc "Characters"
-// // * next_index, next_chara = chara:next([index])
+// // * next_index, next_chara = CharaList:next([index])
 func charaListMetaNext(L *lua.LState) int {
 	charas := checkLuaCharaList(L, 1)
 	idx := L.OptInt(2, -1)
@@ -213,6 +278,14 @@ func getCharaListFields(L *lua.LState) int {
 }
 
 // // character references: Target, Assi, Master, etc
+
+// +gendoc.set_section "Reference Characters"
+
+// +gendoc
+// * chara: Chara = CharaRefList:__index(i: integer)
+
+// +gendoc
+// * CharaRefList:__newindex(i: integer, newChara: Chara)
 
 func checkCharaRefereces(L *lua.LState, pos int) *state.CharaReferences {
 	ud := L.CheckUserData(pos)
@@ -282,13 +355,13 @@ func checkCharacter(L *lua.LState, pos int) *state.Character {
 // +gendoc.set_section "Lua Character"
 
 // +gendoc
-// * var chara.id: integer
+// * var Chara.id: integer
 //
 // キャラクターのIDを示す数値。CSVファイル上では番号と表され、キャラクターの種類を示す。
 // readonlyな変数である。
 
 // +gendoc
-// * var chara.uid: integer
+// * var Chara.uid: integer
 //
 // キャラクターのUID。キャラクター自身を区別する一意の数値。
 // 例えば、IDが同じ(同じキャラクターの種類)キャラクターが複数いる場合、
@@ -296,38 +369,41 @@ func checkCharacter(L *lua.LState, pos int) *state.Character {
 // readonlyな変数である。
 
 // +gendoc
-// * var chara.is_assi: integer
+// * var Chara.is_assi: integer
 //
 // 数値型の変数。
 // キャラクターが調教の助手が可能であるかを示すことを目的としている。
 // readonlyな変数である。
 
 // +gendoc
-// * var chara.name: string
+// * var Chara.name: string
 //
 // 文字列型の変数。
 // キャラクターの正式名を保持する。読み書き可能な変数である。
 
 // +gendoc
-// * var chara.master_name: string
+// * var Chara.master_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // 主人の呼び名を保持する。読み書き可能な変数である。
 
 // +gendoc
-// * var chara.nick_name: string
+// * var Chara.nick_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // キャラクターのあだ名を保持する。読み書き可能な変数である。
 
 // +gendoc
-// * var chara.call_name: string
+// * var Chara.call_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // 呼び名を保持する。読み書き可能な変数である。
+
+// +gendoc
+// * param: (IntParam|StrParam) = Chara:__index(key: string)
 
 const (
 	// read only

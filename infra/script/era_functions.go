@@ -993,6 +993,9 @@ func (ft functor) trawInput(L *lua.LState) int {
 
 // // Controll Flow
 
+// +gendoc "Era Module"
+// * var era.flow: flow
+
 // +gendoc "Flow Module"
 // * flow.quit()
 //

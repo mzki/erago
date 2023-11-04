@@ -10,6 +10,15 @@ import (
 
 // // register System Paramters
 
+// +gendoc "Era Module"
+// * var era.system: table<string, (IntParam|StrParam)>
+
+// +gendoc "Era Module"
+// * var era.share: table<string, (IntParam|StrParam)>
+
+// +gendoc "Era Module"
+// * var era.saveinfo: SaveInfo
+
 const (
 	systemParamsModuleName = "system"
 	sharedParamsModuleName = "share"
@@ -79,6 +88,18 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 	ud := newUserDataWithMt(L, gamestate.SaveInfo, newGetterSetterMt(L, saveInfoDataName, getSetSaveInfo))
 	era_module.RawSetString(saveInfoDataName, ud)
 }
+
+// +gendoc "SaveInfo"
+// * var SaveInfo.save_comment: string
+// Read/Write
+
+// +gendoc "SaveInfo"
+// * var SaveInfo.load_comment: string
+// ReadOnly
+
+// +gendoc "SaveInfo"
+// * var SaveInfo.load_ver: string
+// ReadOnly
 
 // save info user data
 func getSetSaveInfo(L *lua.LState) int {
@@ -210,6 +231,9 @@ func checkIntParam(L *lua.LState, pos int) state.IntParam {
 
 const indexOutMessage = "index out of data range"
 
+// +gendoc "IntParam"
+// * value: integer = IntParam:__index(key: integer|string)
+
 // metamethod __index for IntParam.
 func intParamMetaIndex(L *lua.LState) int {
 	data := checkIntParam(L, 1)
@@ -243,6 +267,9 @@ func intParamMetaIndex(L *lua.LState) int {
 	L.Push(lua.LNil)
 	return 1
 }
+
+// +gendoc "IntParam"
+// * IntParam:__newindex(key: integer|string, newValue: integer)
 
 // metamethod __newindex for IntParam.
 func intParamMetaNewIndex(L *lua.LState) int {
@@ -372,6 +399,9 @@ func checkStrParam(L *lua.LState, pos int) state.StrParam {
 	return state.StrParam{}
 }
 
+// +gendoc "StrParam"
+// * value: string = StrParam:__index(key: integer|string)
+
 // metamethod __index for StrParam.
 func strParamMetaIndex(L *lua.LState) int {
 	data := checkStrParam(L, 1)
@@ -405,6 +435,9 @@ func strParamMetaIndex(L *lua.LState) int {
 	L.Push(lua.LNil)
 	return 1
 }
+
+// +gendoc "StrParam"
+// * StrParam:__newindex(key: integer|string, newValue: string)
 
 // metamethod __newindex for StrParam.
 func strParamMetaNewIndex(L *lua.LState) int {

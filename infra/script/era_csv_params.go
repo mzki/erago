@@ -6,6 +6,17 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// +gendoc.set_section "Era Module"
+
+// +gendoc
+// * var era.csv: table<string, CSVNames>
+
+// +gendoc
+// * var era.csvindex: table<string, CSVIndex>
+
+// +gendoc
+// * var era.csvfields: table<string, CSVFields>
+
 const (
 	csvModuleName       = "csv"
 	csvFieldsModuleName = "csvfields"
@@ -134,6 +145,19 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 
 // // csv names
 
+// +gendoc "CSV Names"
+// * name: string = CSVNames:__index(i: integer)
+// Get CSV defined value by index
+//
+// CSVで定義した index に対応する値を取り出します。
+//
+// Example:
+//  Base.csv
+//  : 0, HP
+//  : 1, MP
+//
+//  era.csv.Base[1] --> "MP"
+
 func checkCsvNames(L *lua.LState, pos int) csv.Names {
 	ud := L.CheckUserData(pos)
 	if names, ok := ud.Value.(csv.Names); ok {
@@ -155,6 +179,19 @@ func csvNamesMetaIndex(L *lua.LState) int {
 }
 
 // // csv index
+
+// +gendoc "CSV Index"
+// * index: integer = CSVIndex:__index(name: string)
+// Get CSV defined index by value
+//
+// CSVで定義した値に対応する index を取り出します。
+//
+// Example:
+//  Base.csv
+//  : 0, HP
+//  : 1, MP
+//
+//  era.csvindex.Base["MP"] --> 1
 
 func checkCsvIndex(L *lua.LState, pos int) csv.NameIndex {
 	ud := L.CheckUserData(pos)
@@ -178,6 +215,20 @@ func csvIndexMetaIndex(L *lua.LState) int {
 }
 
 // // csv fields
+
+// +gendoc "CSV Fields"
+// * fields: CSVNums|CSVStrs = CSVFields:__index(key: string)
+// Get CSV defined extended fields by its name.
+//
+// CSVで定義した key に対応する拡張定義配列を取得します。
+//
+// Example:
+//  Item.csv
+//  : id,name, int_price
+//  : 0, Weapon, 1000
+//  : 1, Armor, 2000
+//
+//  era.csvfields.Item.price --> {0: 1000, 1: 2000}
 
 func registerCsvFieldsMeta(L *lua.LState) {
 	if lv := L.GetTypeMetatable(csvFieldsNumbersMetaName); lua.LVAsBool(lv) {
@@ -229,6 +280,12 @@ func csvFieldsMetaIndex(L *lua.LState) int {
 		return 0
 	}
 }
+
+// +gendoc "CSV Nums"
+// * value: integer = CSVNums:__index(i: integer)
+
+// +gendoc "CSV Strs"
+// * value: string = CSVStrs:__index(i: integer)
 
 func checkCsvInts(L *lua.LState, pos int) *csv.Ints {
 	ud := L.CheckUserData(pos)

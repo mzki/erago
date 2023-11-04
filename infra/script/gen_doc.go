@@ -84,13 +84,19 @@ var sortingOrder = []string{
 	"Layout Module",
 	"Lua Character",
 	"Characters",
+	"Reference Characters",
 	"IntParam",
 	"StrParam",
+	"CSV Names",
+	"CSV Index",
+	"CSV Fields",
+	"CSV Nums",
+	"CSV Strs",
+	"SaveInfo",
 	"Builtin Module: bit32",
 	"Builtin Module: time",
 	"Builtin Module: csv",
 	"Builtin Module: log",
-	"Constant Value",
 	"InputQueue",
 }
 
@@ -211,6 +217,10 @@ func findModName(docElems []docElement) string {
 	for _, docE := range docElems {
 		if docE.DocType == DocTypeFunction {
 			if modname := modName(docE.Signature.FuncName); len(modname) > 0 {
+				return modname
+			}
+		} else if docE.DocType == DocTypeVariable {
+			if modname := modName(docE.Variable.VarName); len(modname) > 0 {
 				return modname
 			}
 		}
@@ -772,21 +782,6 @@ function {{$sig.FuncName}}({{template "ARG_LIST_LUA" $sig.ArgList}}) end
 {{end -}}{{- /* if else if end */ -}}
 
 {{end -}}{{/* range modules */}}
-
-{{/* some magic */}}
-era.flow = flow
-
----@class Chara TODO
----@type Chara[]
-era.chara = {}
-
----@class CSV TODO
----@type CSV[]
-era.csv = {}
-
----@class CSVIndex TODO
----@type CSVIndex[]
-era.csvindex = {}
 
 `))
 

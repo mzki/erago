@@ -18,7 +18,7 @@ const (
 	MaxNumber = math.MaxFloat64
 )
 
-// +gendoc.set_section "Constant Value"
+// +gendoc.set_section "Era Module"
 
 // +gendoc
 // * var era.MAX_INTEGER: integer
