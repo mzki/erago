@@ -993,7 +993,7 @@ func (ft functor) trawInput(L *lua.LState) int {
 
 // // Controll Flow
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.quit()
 //
 // quit this game immediately, without any notification.
@@ -1004,7 +1004,7 @@ func quitScript(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.longReturn()
 //
 // return system beyond current call stack.
@@ -1024,7 +1024,7 @@ func raiseErrorIf(L *lua.LState, err error) {
 	}
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.setNextScene(scene_name)
 //
 // it sets next scene detected by given scene name.
@@ -1041,7 +1041,7 @@ func (ft functor) setNextScene(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.gotoNextScene(scene_name)
 //
 // go to next scene imidiately. current scene flow is interrupted
@@ -1060,7 +1060,7 @@ func (ft functor) gotoNextScene(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.saveScene()
 //
 // it starts the save game scene to save current game state.
@@ -1077,7 +1077,7 @@ func (ft functor) saveScene(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.loadScene()
 //
 // it starts the load game scene to load game state into current state.
@@ -1113,7 +1113,7 @@ func tableToInt64s(t *lua.LTable) []int64 {
 	return cmds
 }
 
-// +gendoc "Era Module"
+// +gendoc "Flow Module"
 // * flow.doTrains(commands)
 //
 // Do multiple trains specified by commands which is sequence of command number.
@@ -1156,7 +1156,7 @@ func (ft functor) expLv(L *lua.LState) int {
 
 // // View and Screen Layout
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout.setCurrentView(vname)
 func (ft functor) setCurrentView(L *lua.LState) int {
 	vname := L.CheckString(1)
@@ -1166,14 +1166,14 @@ func (ft functor) setCurrentView(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * vname = layout.getCurrentView()
 func (ft functor) getCurrentViewName(L *lua.LState) int {
 	L.Push(lua.LString(ft.game.GetCurrentViewName()))
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * vnames = layout.viewNames()
 func (ft functor) getViewNames(L *lua.LState) int {
 	vnames := ft.game.GetViewNames()
@@ -1186,7 +1186,7 @@ func (ft functor) getViewNames(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout.setSingle(vname)
 func (ft functor) setSingleLayout(L *lua.LState) int {
 	s := L.OptString(1, ft.game.GetCurrentViewName())
@@ -1202,7 +1202,7 @@ func getVHLayoutArgs(L *lua.LState) (string, string, float64) {
 	return s1, s2, float64(rate)
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout.setVertical(vname1, vname2, [rate])
 func (ft functor) setVerticalLayout(L *lua.LState) int {
 	s1, s2, rate := getVHLayoutArgs(L)
@@ -1211,7 +1211,7 @@ func (ft functor) setVerticalLayout(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout.setHorizontal(vname1, vname2, [rate])
 func (ft functor) setHorizontalLayout(L *lua.LState) int {
 	s1, s2, rate := getVHLayoutArgs(L)
@@ -1220,7 +1220,7 @@ func (ft functor) setHorizontalLayout(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout.set(layout_data)
 func (ft functor) setLayout(L *lua.LState) int {
 	ld := checkLayoutData(L, 1)
@@ -1242,7 +1242,7 @@ func checkLayoutData(L *lua.LState, pos int) *attr.LayoutData {
 	return nil
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.text(name)
 func singleTextLayout(L *lua.LState) int {
 	name := L.CheckString(1)
@@ -1251,7 +1251,7 @@ func singleTextLayout(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.image(src)
 //
 // the src path is under script directory, typically ELA/.
@@ -1280,7 +1280,7 @@ func checkMultipleLayoutData(L *lua.LState) []*attr.LayoutData {
 	return lds
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.flowHorizontal(layout_data...)
 func flowHorizontalLayout(L *lua.LState) int {
 	lds := checkMultipleLayoutData(L)
@@ -1289,7 +1289,7 @@ func flowHorizontalLayout(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.flowVertical(layout_data...)
 func flowVerticalLayout(L *lua.LState) int {
 	lds := checkMultipleLayoutData(L)
@@ -1298,7 +1298,7 @@ func flowVerticalLayout(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.fixedSplit(edge, size, first_child, second_child)
 func fixedSplitLayout(L *lua.LState) int {
 	eStr := L.CheckString(1)
@@ -1325,7 +1325,7 @@ func fixedSplitLayout(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "Era Module"
+// +gendoc "Layout Module"
 // * layout_data = layout.withValue(layout_data, flow_weight)
 func withLayoutValue(L *lua.LState) int {
 	ld := checkLayoutData(L, 1)

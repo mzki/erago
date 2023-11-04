@@ -21,7 +21,7 @@ type TestingController interface {
 }
 
 // +gendoc "Era Module"
-// * is_testing = era.is_testing
+// * var era.is_testing = false
 //
 // is_testing indicates current running mode is testing or not.
 // Some feature is enabled only in testing mode.

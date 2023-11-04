@@ -79,9 +79,12 @@ import (
 var sortingOrder = []string{
 	"Over View",
 	"Era Module",
+	"Flow Module",
+	"Layout Module",
 	"Lua Character",
 	"Characters",
-	"XXXParam",
+	"IntParam",
+	"StrParam",
 	"Builtin Module: bit32",
 	"Builtin Module: time",
 	"Builtin Module: csv",
@@ -119,13 +122,14 @@ func ParseAST(dir string, outputDir string) error {
 	}
 	// manual order. Section names are not auto collected.
 	sections := sort_by(docMap, sortingOrder)
+	funcSections := filterByDocType(sections, DocTypeFunction)
 
 	// output documents
-	err = writeTxt(filepath.Join(outputDir, "erago-lua-api-document.md"), sections)
+	err = writeTxt(filepath.Join(outputDir, "erago-lua-api-document.md"), funcSections) // variable is not support
 	if err != nil {
 		return fmt.Errorf("Failed writeTxt(): %w", err)
 	}
-	err = writeVSCodeSnippet(filepath.Join(outputDir, "erago-lua.json.code-snippets"), sections)
+	err = writeVSCodeSnippet(filepath.Join(outputDir, "erago-lua.json.code-snippets"), funcSections) // variable is not support
 	if err != nil {
 		return fmt.Errorf("Failed writeVSCodeSnippet(): %w", err)
 	}
@@ -182,6 +186,7 @@ func sort_by(docMap map[string][]docElement, sectionOrder []string) []docGroup {
 		touched[sec] = struct{}{}
 		groups = append(groups, docGroup{
 			Section: docs[0].GroupName,
+			ModName: findModName(docs),
 			List:    docs,
 		})
 	}
@@ -194,24 +199,72 @@ func sort_by(docMap map[string][]docElement, sectionOrder []string) []docGroup {
 		fmt.Println("gendoc: untouched in sorting section:", sec)
 		groups = append(groups, docGroup{
 			Section: docs[0].GroupName,
+			ModName: findModName(docs),
 			List:    docs,
 		})
 	}
 	return groups
 }
 
+func findModName(docElems []docElement) string {
+	for _, docE := range docElems {
+		if docE.DocType == DocTypeFunction {
+			if modname := modName(docE.Signature.FuncName); len(modname) > 0 {
+				return modname
+			}
+		}
+	}
+	// missing mod name
+	return ""
+}
+
+func modName(signature string) string {
+	if strings.Contains(signature, ":") {
+		return strings.Split(signature, ":")[0] // considering lua methid signature <mod>:<funcname>
+	} else {
+		return strings.Split(signature, ".")[0]
+	}
+}
+
+func filterByDocType(docGs []docGroup, docType DocType) []docGroup {
+	newDocGs := make([]docGroup, 0, len(docGs))
+	for _, docG := range docGs {
+		newElems := make([]docElement, 0, len(docG.List))
+		for _, elem := range docG.List {
+			if elem.DocType == docType {
+				newElems = append(newElems, elem)
+			}
+		}
+		newG := docG
+		newG.List = newElems
+		newDocGs = append(newDocGs, newG)
+	}
+	return newDocGs
+}
+
 // group by section name
 type docGroup struct {
 	Section string
+	ModName string
 	List    []docElement
 }
+
+type DocType int
+
+const (
+	DocTypeNone DocType = iota
+	DocTypeFunction
+	DocTypeVariable
+)
 
 // docElement is a each element of raw parsed document
 type docElement struct {
 	GroupName string
 	Doc       []string // raw text
 
+	DocType   DocType
 	Signature docSignature
+	Variable  docVariable
 	Comments  []string
 }
 
@@ -219,6 +272,11 @@ type docSignature struct {
 	RetList  []string
 	FuncName string
 	ArgList  []string
+}
+
+type docVariable struct {
+	VarName string
+	Value   string
 }
 
 type docContext struct {
@@ -229,6 +287,9 @@ var (
 	sectionPattern        = regexp.MustCompile(`"(.*)"`)
 	signaturePatternRet   = regexp.MustCompile(`(.*) = (.*)\((.*)?\)`)
 	signaturePatternNoRet = regexp.MustCompile(`(.*)\((.*)?\)`)
+
+	variablePatternWithValue    = regexp.MustCompile(`(.*) = (.*)`)
+	variablePatternWithoutValue = regexp.MustCompile(`(.*)`)
 )
 
 // if header has subcommand then executes it and return true,
@@ -255,6 +316,11 @@ func (ctx *docContext) reset() {
 	ctx.Section = "Others"
 }
 
+const (
+	signatureSign = "* "
+	variableSign  = "* var "
+)
+
 func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 	header := comments[0].Text
 	var section string
@@ -272,11 +338,11 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 		doc = append(doc, line)
 	}
 
-	// parse function signature
+	// parse function signature, variable definition or else.
 	var (
-		retList     []string
-		funcName    string = ""
-		argList     []string
+		docType     DocType = DocTypeNone
+		variable    docVariable
+		signature   docSignature
 		commentList []string
 	)
 	trimmedSplit := func(s, sep string) []string {
@@ -291,11 +357,27 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 		return parts
 	}
 	for _, line := range doc {
-		// function signature must be start with "* " at first.
-		if i := strings.Index(line, "* "); i != 0 {
-			commentList = append(commentList, line)
-		} else {
-			line = line[i+2:]
+		// for historical reason, variableSign must be first.
+		if i := strings.Index(line, variableSign); i == 0 {
+			line = line[i+len(variableSign):]
+			var namePart, valuePart string
+			if match := variablePatternWithValue.FindStringSubmatch(line); match != nil {
+				namePart, valuePart = match[1], match[2]
+			} else if match = variablePatternWithoutValue.FindStringSubmatch(line); match != nil {
+				namePart = match[1]
+			} else {
+				// TODO: error message?
+				// This line is unexpected match, just ignore.
+				fmt.Printf("Warning: unmatched to variable signature: %v\n", line)
+				continue
+			}
+			docType = DocTypeVariable
+			variable = docVariable{
+				VarName: strings.TrimSpace(namePart),
+				Value:   strings.TrimSpace(valuePart),
+			}
+		} else if i = strings.Index(line, signatureSign); i == 0 {
+			line = line[i+len(signatureSign):]
 			var retPart, funcPart, argPart string
 			if match := signaturePatternRet.FindStringSubmatch(line); match != nil {
 				retPart, funcPart, argPart = match[1], match[2], match[3]
@@ -307,21 +389,24 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 				fmt.Printf("Warning: unmatched to function signature: %v\n", line)
 				continue
 			}
-			retList = trimmedSplit(retPart, ",")
-			funcName = strings.TrimSpace(funcPart)
-			argList = trimmedSplit(argPart, ",")
+			docType = DocTypeFunction
+			signature = docSignature{
+				RetList:  trimmedSplit(retPart, ","),
+				FuncName: strings.TrimSpace(funcPart),
+				ArgList:  trimmedSplit(argPart, ","),
+			}
+		} else {
+			commentList = append(commentList, line)
 		}
 	}
 
 	return docElement{
 		GroupName: section,
 		Doc:       doc,
-		Signature: docSignature{
-			RetList:  retList,
-			FuncName: funcName,
-			ArgList:  argList,
-		},
-		Comments: commentList,
+		DocType:   docType,
+		Signature: signature,
+		Variable:  variable,
+		Comments:  commentList,
 	}
 }
 
@@ -537,21 +622,16 @@ var luaLSMetaTmpl = template.Must(
 				}
 				return arg
 			},
-			"custom_modname": func(signature string) string {
-				if strings.Contains(signature, ":") {
-					return strings.Split(signature, ":")[0] // considering lua methid signature <mod>:<funcname>
-				} else {
-					return strings.Split(signature, ".")[0]
-				}
-			},
-			"custom_is_new_modname": func(modname string) bool {
-				if modname == luaLSMetaPrevModname {
-					return false
-				} else {
-					luaLSMetaPrevModname = modname // stateful
-					return true
-				}
-			},
+			"custom_is_function_type": func(e docElement) bool { return e.DocType == DocTypeFunction },
+			"custom_is_variable_type": func(e docElement) bool { return e.DocType == DocTypeVariable },
+			// "custom_is_new_modname": func(modname string) bool {
+			// 	if modname == luaLSMetaPrevModname {
+			// 		return false
+			// 	} else {
+			// 		luaLSMetaPrevModname = modname // stateful
+			// 		return true
+			// 	}
+			// },
 			"custom_is_opt":  func(arg string) bool { return strings.HasPrefix(arg, "[") && strings.HasSuffix(arg, "]") },
 			"custom_esc_opt": func(arg string) string { return strings.Trim(arg, "[]") },
 		}).
@@ -595,6 +675,7 @@ var luaLSMetaTmpl = template.Must(
   {{- end -}}
 {{ end -}}
 
+{{- /* ------------------- Content Body -------------------------- */ -}}
 ---@meta erago
 
 --generated by gendoc.go, parsing pakcage infra/script@{{ .Version }}.
@@ -602,18 +683,17 @@ var luaLSMetaTmpl = template.Must(
 
 {{- $modules := .Modules }}
 {{- range $moduleIdx, $mod := $modules }}
-{{- range $funcIdx, $func := $mod.List }}
 
-{{- with $modname := custom_modname $func.Signature.FuncName -}}
-{{- if (custom_is_new_modname $modname) }}
+{{- with $modname := $mod.ModName }}
 
 ---@class {{ $modname }}
 {{ $modname }} = {}
 
-{{ else }}
-{{ end }}{{- /* if */ -}}
 {{- end }}{{- /* with modname */ -}}
 
+{{- range $docIdx, $doc := $mod.List }}
+{{- if custom_is_function_type $doc }}{{/* ------------- Function Doc ----------------- */}}
+{{- with $func := $doc }}
 {{- with $sig := $func.Signature }}
 ---{{$sig.FuncName}}({{template "ARG_LIST" $sig.ArgList}}) -> {{template "RET_LIST" $sig.RetList}}
 {{ range $idx, $comment := $func.Comments -}}
@@ -626,10 +706,21 @@ var luaLSMetaTmpl = template.Must(
 ---@return {{template "RET_FORMAT_LUA" . }}
 {{ end -}}
 function {{$sig.FuncName}}({{template "ARG_LIST_LUA" $sig.ArgList}}) end
-{{end -}}{{- /* end with */ -}}
-{{end -}}
+{{end -}}{{- /* end with sig */ -}}
+{{end -}}{{- /* end with func */ -}}
 
-{{end -}}{{- /* range modules */ -}}
+{{- else if custom_is_variable_type $doc }}{{/* ------------- Variable Doc ----------------- */}}
+{{- with $var := $doc.Variable }}
+---@type any
+{{ range $idx, $comment := $doc.Comments -}}
+---{{ $comment }}
+{{ end -}}
+{{$var.VarName}} = {{if gt (len $var.Value) 0 }}{{$var.Value}}{{else}}nil{{end}}
+{{end -}}{{- /* end with var */ -}}
+{{end -}}{{- /* range doc */ -}}
+{{end -}}{{- /* if else if end */ -}}
+
+{{end -}}{{/* range modules */}}
 
 {{- /* some magic */ -}}
 era.flow = flow
@@ -691,7 +782,9 @@ func writeLuaLSAddon(outputDir string, docGroups []docGroup) error {
 		newDocG := docG
 		elems := make([]docElement, 0, len(docG.List))
 		for _, elem := range docG.List {
-			if len(elem.Signature.FuncName) > 0 {
+			if elem.DocType == DocTypeFunction && len(elem.Signature.FuncName) > 0 {
+				elems = append(elems, elem)
+			} else if elem.DocType == DocTypeVariable && len(elem.Variable.VarName) > 0 {
 				elems = append(elems, elem)
 			}
 		}

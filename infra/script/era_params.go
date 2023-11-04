@@ -256,7 +256,7 @@ func intParamMetaNewIndex(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "XXXParam"
+// +gendoc "IntParam"
 // * new_intparam = IntParam.new(size, [name_indexer])
 //
 // 新しいIntParamを作成します。IntParamはsizeの長さのInt64配列と同じように振る舞います。
@@ -289,13 +289,13 @@ func intParamNew(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "IntParam"
 // * IntParam:set(key, new_value)
 //
 // key番目にnew_valueを設定します。keyにはインデックス番号あるいは文字列を指定します。
 // IntParam:get() の項目も参照。
 
-// +gendoc "XXXParam"
+// +gendoc "IntParam"
 // * value = IntParam:get(key)
 //
 // key番目の値を取得します。keyにはインデックス番号あるいは文字列を指定します。
@@ -323,7 +323,7 @@ func intParamGetSet(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "IntParam"
 // * sliced_intparam = IntParam:slice(from,[to = max_length])
 //
 // fromからtoまでのデータ範囲を切り出します。切り出したデータは再び0から始まり、その長さは(to - from)になります。
@@ -335,7 +335,7 @@ func intParamSlice(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "IntParam"
 // * IntParam:fill(new_value)
 //
 // 現在のデータ範囲すべてをnew_valueで初期化します。
@@ -418,7 +418,7 @@ func strParamMetaNewIndex(L *lua.LState) int {
 	return 0
 }
 
-// +gendoc "XXXParam"
+// +gendoc "StrParam"
 // * new_strparam = StrParam.new(size, [name_indexer])
 //
 // 新しいStrParamを作成します。StrParamはsizeの長さの文字列の配列と同じように振る舞います。
@@ -436,13 +436,13 @@ func strParamNew(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "StrParam"
 // * StrParam:set(key, new_value)
 //
 // key番目にnew_valueを設定します。keyにはインデックス番号あるいは文字列を指定します。
 // IntParam:get() の項目も参照。
 
-// +gendoc "XXXParam"
+// +gendoc "StrParam"
 // * value = StrParam:get(key)
 //
 // key番目の値を取得します。keyにはインデックス番号あるいは文字列を指定します。
@@ -464,7 +464,7 @@ func strParamGetSet(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "StrParam"
 // * sliced_strparam = StrParam:slice(from,[to = max_length])
 //
 // fromからtoまでのデータ範囲を切り出します。切り出したデータは再び0から始まり、その長さは(from - to)になります。
@@ -476,7 +476,7 @@ func strParamSlice(L *lua.LState) int {
 	return 1
 }
 
-// +gendoc "XXXParam"
+// +gendoc "StrParam"
 // * StrParam:fill(new_value)
 //
 // 現在のデータ範囲すべてをnew_valueで初期化します。
