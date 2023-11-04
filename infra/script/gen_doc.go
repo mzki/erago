@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -270,12 +271,15 @@ type docElement struct {
 
 type docSignature struct {
 	RetList  []string
+	RetTypes []string
 	FuncName string
 	ArgList  []string
+	ArgTypes []string
 }
 
 type docVariable struct {
 	VarName string
+	VarType string
 	Value   string
 }
 
@@ -345,17 +349,17 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 		signature   docSignature
 		commentList []string
 	)
-	trimmedSplit := func(s, sep string) []string {
-		s = strings.TrimSpace(s)
-		if len(s) == 0 {
-			return []string{}
-		}
-		parts := strings.Split(s, sep)
-		for i, p := range parts {
-			parts[i] = strings.TrimSpace(p)
-		}
-		return parts
-	}
+	// trimmedSplit := func(s, sep string) []string {
+	// 	s = strings.TrimSpace(s)
+	// 	if len(s) == 0 {
+	// 		return []string{}
+	// 	}
+	// 	parts := strings.Split(s, sep)
+	// 	for i, p := range parts {
+	// 		parts[i] = strings.TrimSpace(p)
+	// 	}
+	// 	return parts
+	// }
 	for _, line := range doc {
 		// for historical reason, variableSign must be first.
 		if i := strings.Index(line, variableSign); i == 0 {
@@ -371,9 +375,11 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 				fmt.Printf("Warning: unmatched to variable signature: %v\n", line)
 				continue
 			}
+			name, typ := parseNameAndType([]string{namePart})
 			docType = DocTypeVariable
 			variable = docVariable{
-				VarName: strings.TrimSpace(namePart),
+				VarName: strings.TrimSpace(name[0]),
+				VarType: strings.TrimSpace(typ[0]),
 				Value:   strings.TrimSpace(valuePart),
 			}
 		} else if i = strings.Index(line, signatureSign); i == 0 {
@@ -389,11 +395,15 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 				fmt.Printf("Warning: unmatched to function signature: %v\n", line)
 				continue
 			}
+			retNames, retTypes := parseNameAndType(trimmedSplit(retPart, ","))
+			argNames, argTypes := parseNameAndType(trimmedSplit(argPart, ","))
 			docType = DocTypeFunction
 			signature = docSignature{
-				RetList:  trimmedSplit(retPart, ","),
+				RetList:  retNames,
+				RetTypes: retTypes,
 				FuncName: strings.TrimSpace(funcPart),
-				ArgList:  trimmedSplit(argPart, ","),
+				ArgList:  argNames,
+				ArgTypes: argTypes,
 			}
 		} else {
 			commentList = append(commentList, line)
@@ -408,6 +418,36 @@ func (ctx *docContext) parseDocElement(comments []*ast.Comment) docElement {
 		Variable:  variable,
 		Comments:  commentList,
 	}
+}
+
+func trimmedSplit(s, sep string) []string {
+	s = strings.TrimSpace(s)
+	if len(s) == 0 {
+		return []string{}
+	}
+	parts := strings.Split(s, sep)
+	for i, p := range parts {
+		parts[i] = strings.TrimSpace(p)
+	}
+	return parts
+}
+
+func parseNameAndType(ss []string) (names []string, types []string) {
+	names = make([]string, 0, len(ss))
+	types = make([]string, 0, len(ss))
+	for _, s := range ss {
+		nameAndType := trimmedSplit(s, ":")
+		if l := len(nameAndType); l >= 2 {
+			names = append(names, nameAndType[0])
+			types = append(types, nameAndType[1])
+		} else if l == 1 {
+			names = append(names, nameAndType[0])
+			types = append(types, "")
+		} else {
+			continue
+		}
+	}
+	return names, types
 }
 
 func getVersionStr() string {
@@ -624,16 +664,23 @@ var luaLSMetaTmpl = template.Must(
 			},
 			"custom_is_function_type": func(e docElement) bool { return e.DocType == DocTypeFunction },
 			"custom_is_variable_type": func(e docElement) bool { return e.DocType == DocTypeVariable },
-			// "custom_is_new_modname": func(modname string) bool {
-			// 	if modname == luaLSMetaPrevModname {
-			// 		return false
-			// 	} else {
-			// 		luaLSMetaPrevModname = modname // stateful
-			// 		return true
-			// 	}
-			// },
-			"custom_is_opt":  func(arg string) bool { return strings.HasPrefix(arg, "[") && strings.HasSuffix(arg, "]") },
-			"custom_esc_opt": func(arg string) string { return strings.Trim(arg, "[]") },
+			"custom_is_opt":           func(arg string) bool { return strings.HasPrefix(arg, "[") && strings.HasSuffix(arg, "]") },
+			"custom_esc_opt":          func(arg string) string { return strings.Trim(arg, "[]") },
+			// https://stackoverflow.com/a/18276968
+			"dict": func(values ...interface{}) (map[string]interface{}, error) {
+				if len(values)%2 != 0 {
+					return nil, errors.New("invalid dict call")
+				}
+				dict := make(map[string]interface{}, len(values)/2)
+				for i := 0; i < len(values); i += 2 {
+					key, ok := values[i].(string)
+					if !ok {
+						return nil, errors.New("dict keys must be strings")
+					}
+					dict[key] = values[i+1]
+				}
+				return dict, nil
+			},
 		}).
 		Parse(`
 {{- define "ARG_LIST" -}}
@@ -659,19 +706,23 @@ var luaLSMetaTmpl = template.Must(
   {{- end -}}
 {{ end -}}
 
+{{- define "TYPE_FORMAT_LUA" -}}
+  {{- if gt (len .) 0}}{{custom_esc_lua .}}{{else}}any{{end -}}
+{{ end -}}
+
 {{- define "PARAM_FORMAT_LUA" -}}
-  {{- if custom_is_opt . -}}
-  	{{ custom_esc_lua .}}? any
+  {{- if custom_is_opt .Arg -}}
+  	{{ custom_esc_lua .Arg}}? {{template "TYPE_FORMAT_LUA" .Type}}
   {{- else -}}
-    {{ custom_esc_lua . }} any
+    {{ custom_esc_lua .Arg }} {{template "TYPE_FORMAT_LUA" .Type}}
   {{- end -}}
 {{ end -}}
 
 {{- define "RET_FORMAT_LUA" -}}
-  {{- if custom_is_opt . -}}
-  	any {{ custom_esc_lua .}}?
+  {{- if custom_is_opt .Ret -}}
+    {{template "TYPE_FORMAT_LUA" .Type}} {{ custom_esc_lua .Ret }}?
   {{- else -}}
-    any {{ custom_esc_lua . }}
+    {{template "TYPE_FORMAT_LUA" .Type}} {{ custom_esc_lua .Ret }}
   {{- end -}}
 {{ end -}}
 
@@ -699,11 +750,11 @@ var luaLSMetaTmpl = template.Must(
 {{ range $idx, $comment := $func.Comments -}}
 ---{{ $comment }}
 {{ end -}}
-{{- range $sig.ArgList -}}
----@param {{template "PARAM_FORMAT_LUA" . }}
+{{- range $i, $arg := $sig.ArgList -}}
+---@param {{template "PARAM_FORMAT_LUA" dict "Arg" $arg "Type" (index $sig.ArgTypes $i) }}
 {{ end -}}
-{{- range $sig.RetList -}}
----@return {{template "RET_FORMAT_LUA" . }}
+{{- range $i, $ret := $sig.RetList -}}
+---@return {{template "RET_FORMAT_LUA" dict "Ret" $ret "Type" (index $sig.RetTypes $i) }}
 {{ end -}}
 function {{$sig.FuncName}}({{template "ARG_LIST_LUA" $sig.ArgList}}) end
 {{end -}}{{- /* end with sig */ -}}
@@ -711,7 +762,7 @@ function {{$sig.FuncName}}({{template "ARG_LIST_LUA" $sig.ArgList}}) end
 
 {{- else if custom_is_variable_type $doc }}{{/* ------------- Variable Doc ----------------- */}}
 {{- with $var := $doc.Variable }}
----@type any
+---@type {{template "TYPE_FORMAT_LUA" .VarType}}
 {{ range $idx, $comment := $doc.Comments -}}
 ---{{ $comment }}
 {{ end -}}
@@ -722,7 +773,7 @@ function {{$sig.FuncName}}({{template "ARG_LIST_LUA" $sig.ArgList}}) end
 
 {{end -}}{{/* range modules */}}
 
-{{- /* some magic */ -}}
+{{/* some magic */}}
 era.flow = flow
 
 ---@class Chara TODO

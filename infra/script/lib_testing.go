@@ -21,7 +21,7 @@ type TestingController interface {
 }
 
 // +gendoc "Era Module"
-// * var era.is_testing = false
+// * var era.is_testing: boolean = false
 //
 // is_testing indicates current running mode is testing or not.
 // Some feature is enabled only in testing mode.
@@ -38,7 +38,7 @@ func registerIsTesting(L *lua.LState, isTesting bool) {
 const regKeyTestingController = "era_testing_controller"
 
 // +gendoc "Era Module"
-// * inputQ = era.inputQueue()
+// * inputQ: InputQueue = era.inputQueue()
 //
 // It is enabled only in testing mode. It returns InputQueue object which can
 // simulate pseudo user input and can be retrieved from era.inputXXX and its variants.
@@ -86,7 +86,7 @@ var inputQueueFuncMap = map[string]lua.LGFunction{
 }
 
 // +gendoc "InputQueue"
-// * n_inputs = inputQ:append(user_inputs)
+// * n_inputs: integer = InputQueue:append(user_inputs: table)
 //
 // append() appends pseudo user inputs into the end of internal queue.
 // user_inputs are array of string like {"0", "one", "2"}.
@@ -129,7 +129,7 @@ func linputQueueAppend(L *lua.LState) int {
 }
 
 // +gendoc "InputQueue"
-// * n_inputs = inputQ:prepend(user_inputs)
+// * n_inputs: integer = InputQueue:prepend(user_inputs: table)
 //
 // prepend() is same as append() except that user_inputs is prepend to
 // the begin of internal queue.
@@ -154,7 +154,7 @@ func linputQueuePrepend(L *lua.LState) int {
 }
 
 // +gendoc "InputQueue"
-// * inputQ:clear()
+// * InputQueue:clear()
 //
 // clear() clears all of element in internal queue.
 //
@@ -166,7 +166,7 @@ func linputQueueClear(L *lua.LState) int {
 }
 
 // +gendoc "InputQueue"
-// * n_inputs = inputQ:size()
+// * n_inputs: integer = InputQueue:size()
 //
 // size() returns a number of element in internal queue.
 //
