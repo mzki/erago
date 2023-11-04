@@ -1,10 +1,10 @@
 package script
 
 import (
-	"github.com/mzki/erago/scene"
 	"math"
 
-	"github.com/yuin/gopher-lua"
+	"github.com/mzki/erago/scene"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const (
@@ -21,38 +21,49 @@ const (
 // +gendoc.set_section "Constant Value"
 
 // +gendoc
-// * MAX_INTEGER
-//
+// * var era.MAX_INTEGER: integer
 // 精度を保てる最大の整数
-//
-//
-// * MAX_NUMBER
-//
-// 最大の実数
-//
-//
-// * PRINTC_WIDTH
-//
-// era.printc()のデフォルトで使用されるwidthの値
-//
-//
-// * TEXTBAR_WIDTH
-// * TEXTBAR_FG
-// * TEXTBAR_BG
-//
-// era.printBar()のデフォルトで使用されるwidth, fg, bgの値
-//
-//
-// * TEXTLINE_SYMBOL
-//
-// era.printLine()のデフォルトで使用されるsymbolの値
-func registerMisc(L *lua.LState) {
-	L.SetGlobal("MAX_INTEGER", lua.LNumber(MaxInteger))
-	L.SetGlobal("MAX_NUMBER", lua.LNumber(MaxNumber))
 
-	L.SetGlobal("PRINTC_WIDTH", lua.LNumber(scene.DefaultPrintCWidth))
-	L.SetGlobal("TEXTBAR_WIDTH", lua.LNumber(scene.DefaultTextBarWidth))
-	L.SetGlobal("TEXTBAR_FG", lua.LString(scene.DefaultTextBarFg))
-	L.SetGlobal("TEXTBAR_BG", lua.LString(scene.DefaultTextBarBg))
-	L.SetGlobal("TEXTLINE_SYMBOL", lua.LString(scene.DefaultLineSymbol))
+// +gendoc
+// * var era.MAX_NUMBER: number
+// 最大の実数
+
+// +gendoc
+// * var era.PRINTC_WIDTH: integer
+// era.printc()のデフォルトで使用されるwidthの値
+
+// +gendoc
+// * var era.TEXTBAR_WIDTH: integer
+// era.printBar()のデフォルトで使用されるwidth, fg, bgの値
+
+// +gendoc
+// * var era.TEXTBAR_FG
+// era.printBar()のデフォルトで使用されるwidth, fg, bgの値
+
+// +gendoc
+// * var era.TEXTBAR_BG
+// era.printBar()のデフォルトで使用されるwidth, fg, bgの値
+
+// +gendoc
+// * var era.TEXTLINE_SYMBOL
+// era.printLine()のデフォルトで使用されるsymbolの値
+
+func registerMisc(L *lua.LState) {
+	eraMod := mustGetEraModule(L)
+	for _, s := range []struct {
+		Key   string
+		Value lua.LValue
+	}{
+		{"MAX_INTEGER", lua.LNumber(MaxInteger)},
+		{"MAX_NUMBER", lua.LNumber(MaxNumber)},
+
+		{"PRINTC_WIDTH", lua.LNumber(scene.DefaultPrintCWidth)},
+		{"TEXTBAR_WIDTH", lua.LNumber(scene.DefaultTextBarWidth)},
+		{"TEXTBAR_FG", lua.LString(scene.DefaultTextBarFg)},
+		{"TEXTBAR_BG", lua.LString(scene.DefaultTextBarBg)},
+		{"TEXTLINE_SYMBOL", lua.LString(scene.DefaultLineSymbol)},
+	} {
+		L.SetGlobal(s.Key, s.Value) // for backward compatibility
+		eraMod.RawSetString(s.Key, s.Value)
+	}
 }

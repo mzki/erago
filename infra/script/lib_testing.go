@@ -97,7 +97,7 @@ var inputQueueFuncMap = map[string]lua.LGFunction{
 // stuck infinitely and raise timeout error by time expiration.
 //
 // append() はユーザーの疑似入力を内部の待ち行列の末端に追加します。
-// user_inputs は {"0", "one", "2"] のような文字列の配列で表現します
+// user_inputs は {"0", "one", "2"} のような文字列の配列で表現します
 // 返り値は、append()が成功した後の内部の待ち行列の要素数です。
 // 待ち行列の要素は、 era.inputXXX によって、その順番通りに取得できます。
 // 数値をユーザーの入力として表現する場合も、文字列で表現する必要があります。ゼロの場合は "0" です。

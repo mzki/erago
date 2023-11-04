@@ -279,48 +279,55 @@ func checkCharacter(L *lua.LState, pos int) *state.Character {
 	return nil
 }
 
-// +gendoc "Lua Character"
-// * chara.id
+// +gendoc.set_section "Lua Character"
+
+// +gendoc
+// * var chara.id: integer
 //
 // キャラクターのIDを示す数値。CSVファイル上では番号と表され、キャラクターの種類を示す。
 // readonlyな変数である。
-//
-// * chara.uid
+
+// +gendoc
+// * var chara.uid: integer
 //
 // キャラクターのUID。キャラクター自身を区別する一意の数値。
 // 例えば、IDが同じ(同じキャラクターの種類)キャラクターが複数いる場合、
 // UIDによって個々を区別することができる。
 // readonlyな変数である。
-//
-// * chara.is_assi
+
+// +gendoc
+// * var chara.is_assi: integer
 //
 // 数値型の変数。
 // キャラクターが調教の助手が可能であるかを示すことを目的としている。
 // readonlyな変数である。
-//
-// * chara.name
+
+// +gendoc
+// * var chara.name: string
 //
 // 文字列型の変数。
 // キャラクターの正式名を保持する。読み書き可能な変数である。
-//
-// * chara.master_name
+
+// +gendoc
+// * var chara.master_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // 主人の呼び名を保持する。読み書き可能な変数である。
-//
-// * chara.nick_name
+
+// +gendoc
+// * var chara.nick_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // キャラクターのあだ名を保持する。読み書き可能な変数である。
-//
-// * chara.call_name
+
+// +gendoc
+// * var chara.call_name: string
 //
 // TODO deprecated. move to CStr?
 // 文字列型の変数。
 // 呼び名を保持する。読み書き可能な変数である。
-//
 
 const (
 	// read only

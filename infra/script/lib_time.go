@@ -3,22 +3,17 @@ package script
 import (
 	"time"
 
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 )
 
 // +gendoc.set_section "Builtin Module: time"
 
 // +gendoc
-// 時間に関係する処理を行うモジュール。
+// * var time.NANOSECOND: integer = 1
 //
-// このモジュールでは、数値をナノ秒と捉えます。
+// time モジュールでは、時間の最小単位をナノ秒とします。
 // 以下の定数との掛け算によって、数値の単位を変換することが
 // できます。
-//
-// * time.NANOSECOND  =  1
-// * time.MICROSECOND = time.NANOSECOND * 1000
-// * time.MILLISECOND = time.MICROSECOND * 1000
-// * time.SECOND      = time.MILLISECOND * 1000
 //
 // Example:
 //   time = require "time"
@@ -26,6 +21,18 @@ import (
 //   local one_usec = 1 * time.MICROSECOND -- １マイクロ秒
 //   local one_msec = 1 * time.MILLISECOND -- １ミリ秒
 //   local one_sec = 1 * time.SECOND -- １秒
+
+// +gendoc
+// * var time.MICROSECOND: integer = time.NANOSECOND * 1000
+// time.NANOSECOND を参照
+
+// +gendoc
+// * var time.MILLISECOND: integer = time.MICROSECOND * 1000
+// time.NANOSECOND を参照
+
+// +gendoc
+// * var time.SECOND: integer = time.MILLISECOND * 1000
+// time.NANOSECOND を参照
 
 const timeModuleName = "time"
 
@@ -124,9 +131,9 @@ func timeNow(L *lua.LState) int {
 //
 // この関数を使って、スクリプトの実行時間を計ることが可能です。
 //
-//   local now = time.now()          -- 現在時刻を取得
-//   heavy_process()                 -- 重たい処理
-//   local delta_t = time.since(now) -- ナノ秒単位の経過時間delta_t
+//	local now = time.now()          -- 現在時刻を取得
+//	heavy_process()                 -- 重たい処理
+//	local delta_t = time.since(now) -- ナノ秒単位の経過時間delta_t
 func timeSince(L *lua.LState) int {
 	t := checkTime(L, 1)
 	L.Push(lua.LNumber(time.Since(t)))
@@ -221,10 +228,11 @@ func timeFormat(L *lua.LState) int {
 //
 // ナノ秒を、人に見やすい形式の文字列に変換します。
 // Example:
-//   local second = 1 * time.SECOND  -- 1秒をナノ秒単位で
-//   log.info(second)                -- "1000000000"と出力されてしまう
-//   str = time.tostring(second)     -- 1秒を文字列形式に変換
-//   log.info(str)                   -- "1s"と出力
+//
+//	local second = 1 * time.SECOND  -- 1秒をナノ秒単位で
+//	log.info(second)                -- "1000000000"と出力されてしまう
+//	str = time.tostring(second)     -- 1秒を文字列形式に変換
+//	log.info(str)                   -- "1s"と出力
 func timeToString(L *lua.LState) int {
 	d := checkDuration(L, 1)
 	L.Push(lua.LString(d.String()))
