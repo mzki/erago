@@ -65,6 +65,7 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 		"printBar":         ft.printBar,
 		"textBar":          ft.textBar,
 		"printButton":      ft.printButton,
+		"printPlain":       ft.printPlain,
 		"printImage":       ft.printImage,
 		"measureImageSize": ft.measureImageSize,
 		"newPage":          ft.newPage,
@@ -553,6 +554,17 @@ func (ft functor) vprintButton(L *lua.LState) int {
 	if err := ft.game.VPrintButton(vname, caption, cmd); err != nil {
 		L.ArgError(1, "vprintline: "+err.Error())
 	}
+	return 0
+}
+
+// +gendoc "Era Module"
+// * era.printPlain(text: string)
+//
+// text をそのまま画面に表示します。print() と異なり、クリックできるボタンへの自動変換を行いません。
+func (ft functor) printPlain(L *lua.LState) int {
+	text := L.CheckString(1)
+	err := ft.game.PrintPlain(text)
+	raiseErrorIf(L, err)
 	return 0
 }
 
