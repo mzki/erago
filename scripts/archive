@@ -87,7 +87,7 @@ fi
 if [ -d "${ARCHIVE_SRC_DOC}" ]; then
   : "packing for document..."
   # document is already direcotry, so not need create pkg directory and just do zip.
-  zip -T ${ARCHIVE_DST_DOC} ${ARCHIVE_SRC_DOC}/* 
+  zip -Tr ${ARCHIVE_DST_DOC} ${ARCHIVE_SRC_DOC}/* 
 fi
 
 popd # return top 
