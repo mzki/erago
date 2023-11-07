@@ -24,7 +24,8 @@ func TestTesting(t *testing.T) {
 }
 
 func TestTestingWithInputRequest(t *testing.T) {
-	t.Parallel()
+	// Disable parallelalication because this test uses timeout feature and sometimes delays on parallel execution.
+	// t.Parallel()
 
 	conf := NewConfig("./stub/")
 	if err := Testing(conf, []string{"./stub/ELA/game_test_input_request.lua"}, DefaultTestingTimeout); err != nil {
