@@ -584,6 +584,37 @@ func TestInterpreterInputErrorSomehow(t *testing.T) {
 	}
 }
 
+func TestInterpreterInternalErrorInPcall(t *testing.T) {
+	ip := newInterpreterWithInputError()
+
+	for _, testcase := range []struct {
+		Src      string
+		NotError error
+	}{
+		{`pcall(era.input); error("something wrong except input error")`, errInputErrorSomehow},
+		{`xpcall(era.input); error("something wrong except input error")`, errInputErrorSomehow},
+		{`xpcall(era.input, era.input); error("something wrong except input error")`, errInputErrorSomehow},
+	} {
+		if err := ip.DoString(testcase.Src); errors.Is(err, testcase.NotError) {
+			t.Errorf("in %q, Error NOT expect: %v, got: %v", testcase.Src, testcase.NotError, err)
+		}
+	}
+
+	for _, testcase := range []struct {
+		Src   string
+		Error error
+	}{
+		{`pcall(error, "something wrong except input error"); era.input()`, errInputErrorSomehow},
+		{`xpcall(function() error("something wrong except input error") end); era.input()`, errInputErrorSomehow},
+		{`xpcall(function() error("fn") end, function() error("something wrong except input error") end); era.input()`, errInputErrorSomehow},
+	} {
+		if err := ip.DoString(testcase.Src); !errors.Is(err, testcase.Error) {
+			t.Errorf("in %q, Error expect: %v, got: %v", testcase.Src, testcase.Error, err)
+		}
+	}
+
+}
+
 // ------------------------
 // benchmarking
 // ------------------------

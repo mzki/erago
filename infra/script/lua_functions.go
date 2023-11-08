@@ -204,6 +204,9 @@ func (ip *Interpreter) extendPcall(L *lua.LState) int {
 	}, args...)
 	raiseErrorIf(L, err)
 
+	// clear internal error which is catched by Pcall protection, not used anywhere.
+	_ = getAndClearRaisedError(L)
+
 	// re-throw special errors so that script ignores Non-local exits by runtime.
 	if ok := L.OptBool(orgTop+1, true); !ok {
 		msg := L.OptString(orgTop+2, "nothing")
@@ -232,6 +235,9 @@ func (ip *Interpreter) extendXPcall(L *lua.LState) int {
 		Protect: false,
 	}, fn, errHandler)
 	raiseErrorIf(L, err) // it should be something fatal which breaks pcall protection,
+
+	// clear internal error which is catched by Pcall protection, not used anywhere.
+	_ = getAndClearRaisedError(L)
 
 	// re-throw special errors such as gotoNextScene so that user can not handle any errors which
 	// used by implementation internally. In other case, error handler is used as original XMCall does
