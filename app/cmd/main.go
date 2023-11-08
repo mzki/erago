@@ -37,8 +37,16 @@ func main() {
 		fullTitle := Title + " " + version + "-" + commit
 		app.Main(fullTitle, appConf)
 	case runTest:
-		app.Testing(appConf, args)
+		ok := app.Testing(appConf, args)
+		if ok {
+			fmt.Fprintln(os.Stderr, "PASSED") // OK case also stderr to separate status messege and standard output in test execution.
+			os.Exit(0)
+		} else {
+			fmt.Fprintln(os.Stderr, "FAILED")
+			os.Exit(1)
+		}
 	}
+	os.Exit(0)
 }
 
 type runningMode int
@@ -63,7 +71,7 @@ const (
 	flagNameFontSize = "fontsize"
 
 	flagNameTest        = "test"
-	flagNameTestTimeout = "testtimeout"
+	flagNameTestTimeout = "test.timeoutsec"
 	flagNameVersion     = "version"
 )
 
@@ -76,7 +84,7 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 	flags.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
 	flags.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
 
-	flags.IntVar(&TestingTimeoutSecond, flagNameTestTimeout, TestingTimeoutSecond, "`test-timeout` for timeout of test execution")
+	flags.IntVar(&TestingTimeoutSecond, flagNameTestTimeout, TestingTimeoutSecond, "`test.timeout-sec` for timeout of test execution in second")
 
 	testing := false
 	flags.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+

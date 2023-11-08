@@ -45,6 +45,13 @@ func TestOverwriteFlag(t *testing.T) {
 			}
 			return conf.FontSize == f
 		}},
+		{flagNameTestTimeout, "12", func(conf *app.Config, v interface{}) bool {
+			i, err := strconv.ParseInt(v.(string), 10, 32)
+			if err != nil {
+				return false
+			}
+			return conf.TestingTimeoutSecond == int(i)
+		}},
 	}
 	for _, test := range testcases {
 		clearAllFlag()

@@ -8,8 +8,8 @@ import (
 )
 
 // Testing test given script files on appConf context.
-// the errors in testing are logged to appConf.LogFile.
-func Testing(appConf *Config, scriptFiles []string) {
+// the errors in testing are logged to appConf.LogFile. It returns testing succeded or not.
+func Testing(appConf *Config, scriptFiles []string) bool {
 	if appConf == nil {
 		appConf = NewConfig(DefaultBaseDir)
 	}
@@ -19,18 +19,20 @@ func Testing(appConf *Config, scriptFiles []string) {
 	reset, err := SetLogConfig(appConf)
 	if err != nil {
 		log.Infoln("Error: Can't create log file:", err)
-		return
+		return false
 	}
 	defer reset()
 
-	if scriptFiles == nil || len(scriptFiles) == 0 {
+	if len(scriptFiles) == 0 {
 		log.Info("app.Testing: nothing script files to test")
-		return
+		return false
 	}
 
 	if err := erago.Testing(appConf.Game, scriptFiles, time.Duration(appConf.TestingTimeoutSecond)*time.Second); err != nil {
 		log.Infoln("Error: app.Testing:", err)
+		return false
 	} else {
 		log.Infoln("PASS: script files,", scriptFiles, ", is OK!")
+		return true
 	}
 }
