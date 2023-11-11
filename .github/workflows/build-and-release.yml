@@ -75,10 +75,19 @@ jobs:
       - name: Create archive path
         run: mkdir -p ./build
 
-      - name: Run Custom build action for mobile build
-        uses: './.github/actions/mobile-build/'
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          output-dir: ./build
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup gomobile
+        uses: './.github/actions/setup-gomobile'
+        with:
+          setup-go: false
+    
+      - name: Build mobile binary
+        uses: ./scripts/build-mobile-v2 ./build
 
       - name: Upload built binaries
         uses: actions/upload-artifact@v3
