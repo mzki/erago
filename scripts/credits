@@ -46,6 +46,11 @@ target_dir=${outputdir}/credits_desktop/github.com/ebiten/internal/devicescale
 mkdir -p $target_dir
 cp ./app/internal/devicescale/LICENSE $target_dir/
 
+## Font lincense used in desktop only
+target_dir=${outputdir}/credits_desktop/jikasei.me/font/genshin
+mkdir -p $target_dir
+cp ./view/exp/theme/internal/font/license-for-fonts $target_dir/
+
 # for all platform
 target_dir=${outputdir}/credits_all/Go
 mkdir -p $target_dir
