@@ -1,17 +1,22 @@
 package theme
 
 import (
-	"io/ioutil"
+	"os"
 	"sync"
 
-	"github.com/golang/freetype/truetype"
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 
 	internalfont "github.com/mzki/erago/view/exp/theme/internal/font"
 )
 
-// It is same as Options in github.com/golang/freetype/truetype.go
+const (
+	DefaultFontSize = 12.0 // in pt
+	DefaultDPI      = 72.0
+)
+
+// It is same as Options in golang.org/x/image/font/opentype
 // but only DPI and Size fields exist to use easily.
 type FontFaceOptions struct {
 	// font size in point. if set 0 then use 12.0pt instead.
@@ -22,14 +27,27 @@ type FontFaceOptions struct {
 	// TODO: more option?
 }
 
-// return reciever as truetype.Options.
+// return reciever as opentype.Options.
 // because nil TTF Options is ok, it may return nil if reciever is nil.
-func (opt *FontFaceOptions) TTFOptions() *truetype.Options {
-	var ttfOpt *truetype.Options
+func (opt *FontFaceOptions) TTFOptions() *opentype.FaceOptions {
+	var ttfOpt *opentype.FaceOptions
 	if opt != nil {
-		ttfOpt = &truetype.Options{
-			Size: opt.Size,
-			DPI:  opt.DPI,
+		var setOpt FontFaceOptions = *opt
+		if setOpt.Size == 0 {
+			setOpt.Size = DefaultFontSize
+		}
+		if setOpt.DPI == 0 {
+			setOpt.DPI = DefaultDPI
+		}
+		ttfOpt = &opentype.FaceOptions{
+			Size: setOpt.Size,
+			DPI:  setOpt.DPI,
+			// TODO: more option?
+		}
+	} else {
+		ttfOpt = &opentype.FaceOptions{
+			Size: DefaultFontSize,
+			DPI:  DefaultDPI,
 			// TODO: more option?
 		}
 	}
@@ -41,12 +59,16 @@ const DefaultFontName = "GenShinGothic-Monospace-Normal.ttf"
 
 // return default monospace font face.
 func NewDefaultFace(opt *FontFaceOptions) font.Face {
-	f := defaultTruetypeFont()
-	return truetype.NewFace(f, opt.TTFOptions())
+	f := defaulFont()
+	face, err := opentype.NewFace(f, opt.TTFOptions())
+	if err != nil {
+		panic(err) // default must be succeeded
+	}
+	return face
 }
 
-func defaultTruetypeFont() *truetype.Font {
-	f, err := truetype.Parse(internalfont.MustAsset(DefaultFontName))
+func defaulFont() *opentype.Font {
+	f, err := opentype.Parse(internalfont.MustAsset(DefaultFontName))
 	if err != nil {
 		panic("font: DefaultFont can not be parsed: " + err.Error())
 	}
@@ -59,20 +81,20 @@ func ParseTruetypeFileFace(file string, opt *FontFaceOptions) (font.Face, error)
 	if err != nil {
 		return nil, err
 	}
-	return truetype.NewFace(f, opt.TTFOptions()), nil
+	return opentype.NewFace(f, opt.TTFOptions())
 }
 
-func parseTruetypeFile(file string) (*truetype.Font, error) {
-	ttf, err := ioutil.ReadFile(file)
+func parseTruetypeFile(file string) (*opentype.Font, error) {
+	ttf, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
-	return truetype.Parse(ttf)
+	return opentype.Parse(ttf)
 }
 
 // OneFontCatalog serves only one font object and its face.
 type OneFontFaceCatalog struct {
-	font *truetype.Font
+	font *opentype.Font
 
 	// Fields below are under mutex.
 	mu   *sync.Mutex
@@ -84,11 +106,11 @@ type OneFontFaceCatalog struct {
 // return error if fontfile is not found
 func NewOneFontFaceCatalog(fontfile string, o *FontFaceOptions) (*OneFontFaceCatalog, error) {
 	var (
-		f   *truetype.Font
+		f   *opentype.Font
 		err error
 	)
 	if fontfile == DefaultFontName {
-		f = defaultTruetypeFont()
+		f = defaulFont()
 	} else {
 		f, err = parseTruetypeFile(fontfile)
 		if err != nil {
@@ -96,13 +118,13 @@ func NewOneFontFaceCatalog(fontfile string, o *FontFaceOptions) (*OneFontFaceCat
 		}
 	}
 	ttfOpt := o.TTFOptions()
-	face := truetype.NewFace(f, ttfOpt)
+	face, err := opentype.NewFace(f, ttfOpt)
 	return &OneFontFaceCatalog{
 		font: f,
 		face: face,
 		opt:  o,
 		mu:   new(sync.Mutex),
-	}, nil
+	}, err
 }
 
 // update its font face using options.
@@ -117,8 +139,12 @@ func (cat *OneFontFaceCatalog) UpdateFontFaceOptions(opt *FontFaceOptions) {
 
 	cat.mu.Lock()
 	defer cat.mu.Unlock()
+	var err error
 	cat.opt = opt
-	cat.face = truetype.NewFace(cat.font, opt.TTFOptions())
+	cat.face, err = opentype.NewFace(cat.font, opt.TTFOptions())
+	if err != nil {
+		panic(err) // since it reuses previus font. should not fail
+	}
 }
 
 // Implements theme.FontFaceCatalog interface.

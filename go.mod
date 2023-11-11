@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-runewidth v0.0.14

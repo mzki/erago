@@ -39,6 +39,7 @@ var (
 
 	// Default theme for painting.
 	Default = theme.Theme{
+		DPI:             theme.DefaultDPI,
 		FontFaceCatalog: defaultFontFaceCatalog,
 		Palette:         &DefaultPalette,
 	}

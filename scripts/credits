@@ -46,12 +46,6 @@ target_dir=${outputdir}/credits_desktop/github.com/ebiten/internal/devicescale
 mkdir -p $target_dir
 cp ./app/internal/devicescale/LICENSE $target_dir/
 
-## github.com/golang/freetype/truetype
-target_dir=${outputdir}/credits_desktop/github.com/golang/freetype/truetype
-mkdir -p $target_dir
-cp $(go env GOPATH)/pkg/mod/github.com/golang/freetype\@v0.0.0-20170609003504-e2365dfdc4a0/LICENSE $target_dir/
-cp $(go env GOPATH)/pkg/mod/github.com/golang/freetype\@v0.0.0-20170609003504-e2365dfdc4a0/licenses/ftl.txt $target_dir/
-
 # for all platform
 target_dir=${outputdir}/credits_all/Go
 mkdir -p $target_dir
