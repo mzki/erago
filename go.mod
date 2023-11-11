@@ -13,10 +13,10 @@ require (
 	// By upgrading exp package from this version, exp/shiny adds go.mod then
 	// the versions of exp and exp/shiny are conflicts on gomobile which requires exp@2019.
 	golang.org/x/exp v0.0.0-20220203164150-d4f80a91470e
-	golang.org/x/image v0.9.0
+	golang.org/x/image v0.14.0
 	golang.org/x/mobile v0.0.0-20221110043201-43a038452099
 	golang.org/x/sys v0.5.0
-	golang.org/x/text v0.11.0
+	golang.org/x/text v0.14.0
 )
 
 require github.com/fsnotify/fsnotify v1.6.0
