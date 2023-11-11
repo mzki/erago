@@ -215,7 +215,7 @@ func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) e
 
 		case paint.Event:
 			if err := paintRoot(s, w, Theme, root); err != nil {
-				return err
+				return fmt.Errorf("paint failed: %w", err)
 			}
 			w.Publish()
 			paintPending = false

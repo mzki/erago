@@ -70,3 +70,8 @@ func TestOverwriteFlag(t *testing.T) {
 		}
 	}
 }
+
+func TestMainApp(t *testing.T) {
+	t.Skip("It is for debug purpose")
+	main()
+}
