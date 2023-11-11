@@ -1,6 +1,8 @@
 package image
 
 import (
+	"bytes"
+	"image"
 	img "image"
 	"image/png"
 	"io"
@@ -9,19 +11,20 @@ import (
 	"testing"
 
 	"golang.org/x/image/draw"
+	"golang.org/x/image/webp"
 )
 
 var (
-	testImageData   img.Image = loadTestImageData()
-	testImageLoader Loader    = *NewLoader(4)
+	testImageData     img.Image = mustImage(loadPngImage("testdata/color.png"))
+	testImageDataWebp img.Image = mustImage(loadWebpImage("testdata/color_resized.webp"))
+	testImageLoader   Loader    = *NewLoader(4)
 )
 
-func loadTestImageData() img.Image {
-	img, err := loadPngImage("testdata/color.png")
+func mustImage(m image.Image, err error) img.Image {
 	if err != nil {
 		panic(err)
 	}
-	return img
+	return m
 }
 
 func loadPngImage(file string) (img.Image, error) {
@@ -45,6 +48,17 @@ func dumpPngImage(file string, src img.Image) error {
 		return err
 	}
 	return nil
+}
+
+func loadWebpImage(file string) (img.Image, error) {
+	fp, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fp.Close()
+
+	img, err := webp.Decode(fp)
+	return img, err
 }
 
 func TestNewLoader(t *testing.T) {
@@ -81,6 +95,7 @@ func TestLoader_Get(t *testing.T) {
 		wantErr bool
 	}{
 		{"Get normal", &testImageLoader, args{"testdata/color.png"}, testImageData, false},
+		{"Get normal webp", &testImageLoader, args{"testdata/color_resized.webp"}, testImageDataWebp, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -107,6 +122,7 @@ func TestAutoLoadFile(t *testing.T) {
 		wantErr bool
 	}{
 		{"load test image", args{"testdata/color.png"}, testImageData, false},
+		{"load test image webp", args{"testdata/color_resized.webp"}, testImageDataWebp, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -302,4 +318,22 @@ func BenchmarkResizeEnlargeCatmullRom(b *testing.B) {
 	}
 	b.StopTimer()
 	dumpPngImage("testdata/bench_enlarge_catmullrom.png", dst)
+}
+
+func BenchmarkDecodePng(b *testing.B) {
+	testData, _ := os.ReadFile("testdata/color_resized.png")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = png.Decode(bytes.NewBuffer(testData))
+	}
+	b.StopTimer()
+}
+
+func BenchmarkDecodeWebp(b *testing.B) {
+	testData, _ := os.ReadFile("testdata/color_resized.webp")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = webp.Decode(bytes.NewBuffer(testData))
+	}
+	b.StopTimer()
 }

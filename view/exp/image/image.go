@@ -12,6 +12,7 @@ import (
 	"github.com/golang/groupcache/lru"
 	"github.com/mzki/erago/filesystem"
 	"golang.org/x/image/draw"
+	"golang.org/x/image/webp"
 )
 
 // Loader holds image caches.
@@ -84,6 +85,8 @@ func AutoLoad(r io.Reader, ext string) (image.Image, error) {
 		return png.Decode(r)
 	case "jpeg", "jpg", "JPEG", "JPG":
 		return jpeg.Decode(r)
+	case "webp", "WEBP":
+		return webp.Decode(r)
 	default:
 		return nil, fmt.Errorf("unsupported file type(%s)", ext)
 	}

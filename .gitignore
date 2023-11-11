@@ -24,6 +24,7 @@ _*.lua
 *.png
 *.jpeg
 *.jpg
+*.webp
 
 main
 */main
