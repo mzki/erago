@@ -41,8 +41,8 @@ func NewUI(presenter *ui.EragoPresenter, appConf *Config) *UI {
 		),
 	)
 	fixed := ui.NewFixedSplit(ui.EdgeBottom, customT.Lhs(1),
-		widget.NewSheet(bg_cmd),
-		widget.NewSheet(mv),
+		ui.NewSheet(bg_cmd),
+		ui.NewSheet(mv),
 	)
 
 	ui := &UI{
