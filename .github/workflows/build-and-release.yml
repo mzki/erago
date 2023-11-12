@@ -82,13 +82,21 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up Go environment values
+        run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+
       - name: Setup gomobile
         uses: './.github/actions/setup-gomobile'
         with:
           setup-go: false
-    
+
+      - name: Show GOPATH
+        run: |
+          echo $GOPATH
+          go env GOPATH
+
       - name: Build mobile binary
-        uses: ./scripts/build-mobile-v2 ./build
+        run: ./scripts/build-mobile-v2 ./build
 
       - name: Upload built binaries
         uses: actions/upload-artifact@v3

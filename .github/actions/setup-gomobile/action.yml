@@ -23,7 +23,7 @@ runs:
       with:
         go-version: "^1.19.x"
         cache: false
-      if: ${{ inputs.setup-go }}
+      if: ${{ inputs.setup-go == 'true' }}
 
     # - name: Specify Java version
     #   run: JAVA_HOME=$JAVA_HOME_17_X64
@@ -38,15 +38,15 @@ runs:
 
     - name: Checkout gomobile with specific version and initialize with android NDK
       run: |
+        cd ${{ inputs.working-dir }}
         git checkout ${{ inputs.gomobile-commit }}
         cd cmd/gomobile
         go install .
         gomobile init
       shell: bash
-      working-directory: ${{ inputs.working-dir }}
 
     - name: Remove working direcotry if requested
       run: rm -rf ${{ inputs.working-dir }}
       shell: bash
-      if: ${{ inputs.remove-working-dir }}
+      if: ${{ inputs.remove-working-dir == 'true' }}
 
