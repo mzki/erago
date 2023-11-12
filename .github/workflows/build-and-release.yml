@@ -31,6 +31,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up Go environment values
+        run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"  
+
       - name: Go dependency
         run: go mod download
 
