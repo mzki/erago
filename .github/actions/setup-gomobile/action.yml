@@ -1,0 +1,52 @@
+name: "Setup gomobile"
+description: "Setup gomobile command on Github Action runner"
+inputs:
+  working-dir:
+    description: "working directory to be stored necessary files"
+    default: "${{ github.workspace }}/gomobile"
+  remove-working-dir:
+    description: "Whether removing working directory after setup"
+    default: true
+  gomobile-commit:
+    description: "specify gomobile versionby git commit hash or tag"
+    default: "43a0384520996c8376bfb8637390f12b44773e65"
+  setup-go:
+    description: "Setup go before setup gomobile"
+    default: true
+runs:
+  using: "composite"
+  steps:
+    # below commands are highy depending on runner image envrionment.
+    # See ubuntu-2022 https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: "^1.19.x"
+        cache: false
+      if: ${{ inputs.setup-go == 'true' }}
+
+    # - name: Specify Java version
+    #   run: JAVA_HOME=$JAVA_HOME_17_X64
+    #   shell: bash
+
+    - name: Checkout Go mobile
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # for all history to checkout specific commit later.
+        repository: golang/mobile
+        path: ${{ inputs.working-dir }}
+
+    - name: Checkout gomobile with specific version and initialize with android NDK
+      run: |
+        cd ${{ inputs.working-dir }}
+        git checkout ${{ inputs.gomobile-commit }}
+        cd cmd/gomobile
+        go install .
+        gomobile init
+      shell: bash
+
+    - name: Remove working direcotry if requested
+      run: rm -rf ${{ inputs.working-dir }}
+      shell: bash
+      if: ${{ inputs.remove-working-dir == 'true' }}
+

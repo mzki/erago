@@ -17,6 +17,7 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -30,6 +31,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+
+      - name: Set up Go environment values
+        run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"  
 
       - name: Go dependency
         run: go mod download
@@ -66,6 +70,7 @@ jobs:
   build-mobile:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -76,10 +81,27 @@ jobs:
       - name: Create archive path
         run: mkdir -p ./build
 
-      - name: Run Custom build action for mobile build
-        uses: './.github/actions/mobile-build/'
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          output-dir: ./build
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Go environment values
+        run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+
+      - name: Setup gomobile
+        uses: './.github/actions/setup-gomobile'
+        with:
+          setup-go: false
+
+      - name: Show GOPATH
+        run: |
+          echo $GOPATH
+          go env GOPATH
+
+      - name: Build mobile binary
+        run: ./scripts/build-mobile-v2 ./build
 
       - name: Upload built binaries
         uses: actions/upload-artifact@v3
@@ -93,6 +115,7 @@ jobs:
   build-document:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -122,6 +145,7 @@ jobs:
   build-credits:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -155,6 +179,7 @@ jobs:
   archive: 
     runs-on: ubuntu-latest
     needs: [build, build-mobile, build-document, build-credits]
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -212,6 +237,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [archive]
     if: startsWith(github.ref, 'refs/tags/')
+    timeout-minutes: 5
     steps:
       - name: Download archive
         uses: actions/download-artifact@v3
