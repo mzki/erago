@@ -1,0 +1,81 @@
+name: "Delete Artifacts in Workflow"
+description: "Delete Artifacts in Workflow"
+inputs:
+  names:
+    description: |
+      Artifact names to be deleted. It can have multiple values with comma-separated string. e.g. \"name1, name2, name3\".
+      Note that whitespaces at both end of each name are removed."
+    required: true
+    type: string
+    default: ""
+  names-ignore:
+    description: |
+      Artifact names to be remained. All of the other artifacts are deleted. value format is same as parameter names."
+    required: true
+    type: string
+    default: ""
+  workflow-run-id:
+    description: Workflow run id
+    required: true
+    type: string
+runs:
+  using: "composite"
+  steps:
+    # https://stackoverflow.com/a/68777117
+    - name: Check names or names-ignore are supplied
+      if: ${{ (inputs.names == '') && (inputs.names-ignore == '') }}
+      uses: actions/github-script@v6
+      with:
+        script: |
+          core.setFailed("need either input parameter names or names-ignore")
+
+    # https://stackoverflow.com/questions/68481561/github-actions-keep-artifacts-only-for-the-latest-build-on-each-branch
+    # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#using-data-from-the-triggering-workflow
+    - name: List, filter and delete artifacts
+      id: delete-artifacts
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const owner = context.repo.owner
+          const repo = context.repo.repo
+          const run_id = ${{ inputs.workflow-run-id }}
+          
+          const res = await github.rest.actions.listWorkflowRunArtifacts({
+            owner: owner,
+            repo: repo,
+            run_id: run_id,
+          })
+
+          const parse_names = (str) => str.split(",").map((s) => s.trim())
+
+          const target_names = parse_names("${{ inputs.names }}")
+          const contains_in_target_names = (elem) => target_names.some((tname) => tname === elem)
+          console.log("names:", target_names)
+
+          const target_names_ignore = parse_names("${{ inputs.names-ignore }}")
+          const not_contains_in_target_names = (elem) => !( target_names_ignore.some((tname) => tname === elem) )
+          console.log("names-ignore:", target_names_ignore)
+
+          var is_delete_target
+          if (${{ inputs.names == '' }}) {
+            is_delete_target = not_contains_in_target_names
+            console.log("use names-ignore")
+          } else {
+            is_delete_target = contains_in_target_names
+            console.log("use names")
+          }
+
+          console.log("artifact names:", res.data.artifacts.map(({name}) => name))                  
+          const delete_targets = res.data.artifacts
+            .filter((artifact) => is_delete_target(artifact.name))
+          for (const target of delete_targets) {
+            await github.rest.actions.deleteArtifact({
+              owner: owner,
+              repo: repo,
+              artifact_id: target.id,
+            })
+          }
+          return delete_targets.map(({ name }) => name)
+    - name: Show Deleted result.
+      run: echo "${{steps.delete-artifacts.outputs.result}}"
+      shell: bash
