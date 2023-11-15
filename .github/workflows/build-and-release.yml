@@ -180,6 +180,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, build-mobile, build-document, build-credits]
     timeout-minutes: 5
+    env: 
+      ARTIFACT_NAME: archive
+    outputs:
+      artifact-name: ${{ env.ARTIFACT_NAME }}
 
     steps:
       - name: Checkout
@@ -227,7 +231,7 @@ jobs:
       - name: Upload archive 
         uses: actions/upload-artifact@v3
         with:
-          name: archive
+          name: ${{ env.ARTIFACT_NAME }}
           path: ./build/archive
           retention-days: 7 # for 1 week
           if-no-files-found: error
@@ -251,4 +255,3 @@ jobs:
           generate_release_notes: true
           files: build/archive/**/*
           fail_on_unmatched_files: true
-        
