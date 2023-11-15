@@ -1,0 +1,34 @@
+# This is a build and release workflow.
+name: Delete Unnecessary Artifacts
+
+# Controls when the workflow will run
+on:
+  workflow_run:
+    workflows: 
+        - Try-Workflow
+        #- Build-and-Release
+    types: 
+        - completed
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # clean up artifacts used in this workflow only
+  clean-up-artifacts: 
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            ref: ${{ github.event.workflow_run.head_branch }}
+
+      # needs completed target workflow before runing delete action.
+      - name: Delete temporary artifacts
+        uses: ./.github/actions/delete-artifacts-in-workflow
+        with:
+          # need comma-separated string for multiple names
+          names-ignore: archive
+          workflow-run-id: ${{ github.event.workflow_run.id }} 
+
+        
