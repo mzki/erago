@@ -6,7 +6,7 @@ on:
   workflow_run:
     workflows: 
         - Try-Workflow
-        #- Build-and-Release
+        - Build-and-Release
     types: 
         - completed
 
