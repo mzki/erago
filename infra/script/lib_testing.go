@@ -121,7 +121,7 @@ func linputQueueAppend(L *lua.LState) int {
 		case lua.LTString:
 			finalN = inputQ.Append(lua.LVAsString(cmd))
 		default:
-			L.ArgError(2, fmt.Sprintf("%d-th element is string", i))
+			L.ArgError(2, fmt.Sprintf("%d-th element should be string", i))
 		}
 	}
 	L.Push(lua.LNumber(finalN))
