@@ -1,6 +1,7 @@
+ARG GOVARIANTS=1.19-bullseye
 # no used due to drop latest go version
 # FROM dockercore/golang-cross:1.13.15
-FROM golang:1.19-bullseye
+FROM golang:${GOVARIANTS}
 
 LABEL maintainer mzki
 LABEL image-tag  erago-cross

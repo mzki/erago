@@ -20,6 +20,9 @@ DOCKER_VOLUME_NAME_GOPKG=erago-build-pkg-cache
 # working directory on the docker image
 DIR_ON_DOCKER=/home/gopher/erago
 
+# Go and OS version on base Docker image
+DOCKER_IMAGE_GOVARIANTS=1.21-bookworm
+
 # return absolute archive path from output binary path and version string.
 function absolute_archive_path() {
   local OUTPUT_BIN_DIR=$1

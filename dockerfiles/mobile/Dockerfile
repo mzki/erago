@@ -1,4 +1,5 @@
-FROM golang:1.19-bullseye
+ARG GOVARIANTS=1.19-bullseye
+FROM golang:${GOVARIANTS}
 
 LABEL maintainer mzki
 LABEL image-tag  gomobile-bind
@@ -10,9 +11,7 @@ ENV SHELL /bin/bash
 # We need Workaround for ca-certificates-java to install JDK>11 properly.
 # See https://bugs.launchpad.net/ubuntu/+source/ca-certificates-java/+bug/2012191
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y unzip openjdk-11-jre-headless ca-certificates-java \
-  && apt-get remove -y openjdk-11-jre-headless \
-  && apt-get install --no-install-recommends -y openjdk-17-jdk \
+  && apt-get install --no-install-recommends -y unzip openjdk-17-jdk \
   && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -69,7 +68,8 @@ RUN git clone https://github.com/golang/mobile.git mobile \
   && git checkout 43a0384520996c8376bfb8637390f12b44773e65 \
   && cd cmd/gomobile \
   && go install . \
-  && go clean -cache -modcache . \
+  && go clean -cache -modcache \
+  && go clean . \
   && cd - && cd ../ \
   && rm -rf mobile \
   && gomobile init 

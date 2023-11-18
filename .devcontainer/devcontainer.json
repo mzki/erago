@@ -3,11 +3,11 @@
 {
 	"name": "Go-Dev",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	// "image": "mcr.microsoft.com/devcontainers/go:0-1.19-bullseye",
-	"dockerFile": "../dockerfiles/mobile/Dockerfile",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.21-bookworm",
+	// "dockerFile": "../dockerfiles/mobile/Dockerfile",
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.19"
+			"version": "1.21"
 		}
 	},
 
@@ -21,7 +21,13 @@
 	"postCreateCommand": "go version",
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.vscode-github-actions"
+			]
+		}
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"

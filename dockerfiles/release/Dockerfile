@@ -1,3 +1,4 @@
+ARG GOVARIANTS=1.19-bullseye
 FROM alpine:3.12 as install-tool
 
 # install download tools
@@ -9,14 +10,16 @@ RUN curl -L https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_
 RUN tar zxvf ghr_v0.13.0_linux_amd64.tar.gz
 
 #==================================================
-FROM golang:1.19-bullseye AS install-go-tool
+ARG GOVARIANTS
+FROM golang:${GOVARIANTS} AS install-go-tool
 
 # build as static binary to run it on alpine image.
 RUN CGO_ENABLED=0 go install -ldflags="-s -w -extldflags \"-static\"" github.com/google/go-licenses@v1.5.0
 
 #==================================================
 # actual running image.
-FROM golang:1.19-bullseye as final
+ARG GOVARIANTS
+FROM golang:${GOVARIANTS} as final
 
 LABEL maintainer mzki
 LABEL image-tag  release-cmd
