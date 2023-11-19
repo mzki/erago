@@ -11,4 +11,4 @@ docker run --rm -t \
   -v $DOCKER_VOLUME_NAME_GOPKG:/go/pkg \
   -w $DIR_ON_DOCKER \
   $DOCKER_IMAGE_NAME_CROSS \
-  bash scripts/cross -o $DIR_ON_DOCKER/build
+  scripts/gh-action-entrypoint.sh bash scripts/cross -o $DIR_ON_DOCKER/build

@@ -12,4 +12,4 @@ docker run --rm -t \
   -v $PWD:$DIR_ON_DOCKER \
   -w $DIR_ON_DOCKER \
   $DOCKER_IMAGE_NAME_RELEASE \
-  bash scripts/credits -o $OUTPUTDIR
+  scripts/gh-action-entrypoint.sh bash scripts/credits -o $OUTPUTDIR

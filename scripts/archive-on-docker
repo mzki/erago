@@ -12,6 +12,6 @@ docker run --rm -t \
   -v $PWD:$DIR_ON_DOCKER \
   -w $DIR_ON_DOCKER \
   $DOCKER_IMAGE_NAME_CROSS \
-  bash scripts/archive $OUTPUTDIR
+  scripts/gh-action-entrypoint.sh bash scripts/archive $OUTPUTDIR
 
 #make -f $DIR_ON_DOCKER/Makefile.docker cross-archive

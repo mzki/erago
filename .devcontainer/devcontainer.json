@@ -20,6 +20,9 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "go version",
 
+	// Workaround to use git command under containerWorkspaceFolder which have different owners, root and vscode.
+	//"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {

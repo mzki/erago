@@ -19,4 +19,4 @@ docker run --rm -t \
   -v ${DOCKER_VOLUME_NAME_GOPKG}:/go/pkg \
   -w ${TARGET_ROOT}/app/cmd \
   $BUILD_DOCKER_IMAGE \
-  make $BUILD_TARGET
+  scripts/gh-action-entrypoint.sh make $BUILD_TARGET
