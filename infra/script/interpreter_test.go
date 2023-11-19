@@ -90,6 +90,7 @@ func TestInterpreterDoFiles(t *testing.T) {
 		"preloads.lua",
 		"require.lua",
 		"lua_function.lua",
+		"pairs.lua",
 	} {
 		if err := ip.DoFile(filepath.Join(scriptDir, file)); err != nil {
 			t.Error(err)
