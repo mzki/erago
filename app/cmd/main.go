@@ -59,6 +59,7 @@ const (
 var (
 	LogFile              string  = app.DefaultLogFile
 	LogLevel             string  = app.LogLevelInfo
+	LogLimitMegaByte     int64   = app.DefaultLogLimitMegaByte
 	Font                 string  = app.DefaultFont
 	FontSize             float64 = app.DefaultFontSize
 	TestingTimeoutSecond int     = app.DefaultTestingTimeoutSecond
@@ -67,6 +68,7 @@ var (
 const (
 	flagNameLogFile  = "logfile"
 	flagNameLogLevel = "loglevel"
+	flagNameLogLimit = "loglimitmb"
 	flagNameFont     = "font"
 	flagNameFontSize = "fontsize"
 
@@ -81,6 +83,7 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 	flags.StringVar(&LogFile, flagNameLogFile, LogFile, "`output-file` to write log. { stdout | stderr } is OK.")
 	flags.StringVar(&LogLevel, flagNameLogLevel, LogLevel, "`level` = { info | debug }.\n\t"+
 		"info outputs information level log only, and debug also outputs debug level log.")
+	flags.Int64Var(&LogLimitMegaByte, flagNameLogLimit, LogLimitMegaByte, "`log-limit-megabyte` to limits output data size for logging.")
 	flags.StringVar(&Font, flagNameFont, Font, "`font-path` to print text on the screen. use builtin default if empty")
 	flags.Float64Var(&FontSize, flagNameFontSize, FontSize, "`font-size` to print text on the screen, in point(Pt.).")
 
@@ -129,6 +132,8 @@ func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
 			config.LogFile = LogFile
 		case flagNameLogLevel:
 			config.LogLevel = LogLevel
+		case flagNameLogLimit:
+			config.LogLimitMegaByte = LogLimitMegaByte
 		case flagNameFont:
 			config.Font = Font
 		case flagNameFontSize:

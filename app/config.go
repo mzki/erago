@@ -19,9 +19,10 @@ const (
 	LogFileStdErr  = "stderr"    // specify log outputs to stderr
 	DefaultLogFile = "erago.log" // default output log file.
 
-	LogLevelInfo    = "info"  // logging only information level.
-	LogLevelDebug   = "debug" // logging all levels, debug and info.
-	DefaultLogLevel = LogLevelInfo
+	LogLevelInfo            = "info"  // logging only information level.
+	LogLevelDebug           = "debug" // logging all levels, debug and info.
+	DefaultLogLevel         = LogLevelInfo
+	DefaultLogLimitMegaByte = 10 // 10 * 1000 * 1000 Bytes
 
 	DefaultFont     = ""   // font file. empty means use builtin font.
 	DefaultFontSize = 12.0 // font size in pt
@@ -35,8 +36,9 @@ const (
 // Configure for the Applicaltion.
 // To build this, use NewConfig instead of struct constructor, AppConfig{}.
 type Config struct {
-	LogFile  string `toml:"logfile"`
-	LogLevel string `toml:"loglevel"`
+	LogFile          string `toml:"logfile"`
+	LogLevel         string `toml:"loglevel"`
+	LogLimitMegaByte int64  `toml:"loglimit_megabytes"`
 
 	Font     string  `toml:"font"`     // path for fontfile. empty means that use builtin font.
 	FontSize float64 `toml:"fontsize"` // font size in pt.
@@ -66,6 +68,7 @@ func NewConfig(baseDir string) *Config {
 	return &Config{
 		LogFile:          DefaultLogFile,
 		LogLevel:         DefaultLogLevel,
+		LogLimitMegaByte: DefaultLogLimitMegaByte,
 		Font:             DefaultFont,
 		FontSize:         DefaultFontSize,
 		Width:            DefaultWidth,

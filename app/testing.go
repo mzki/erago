@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/mzki/erago"
@@ -15,10 +17,10 @@ func Testing(appConf *Config, scriptFiles []string) bool {
 	}
 
 	// returned value must be called once.
-	// returned value must be called once.
 	reset, err := SetLogConfig(appConf)
 	if err != nil {
-		log.Infoln("Error: Can't create log file:", err)
+		// TODO: what is better way to handle fatal error in this case?
+		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)
 		return false
 	}
 	defer reset()

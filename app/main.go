@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -82,10 +83,31 @@ func SetLogConfig(appConf *Config) (func(), error) {
 		writer = fp
 		closeFunc = func() { fp.Close() }
 	}
-	log.SetOutput(writer)
+	logLimit := appConf.LogLimitMegaByte * 1000 * 1000
+	if logLimit < 0 {
+		logLimit = 0
+	}
+	log.SetOutput(log.LimitWriter(writer, logLimit))
+	if err := testingLogOutput("log output sanity check..."); err != nil {
+		closeFunc()
+		return nil, err
+	}
 	log.Infof("Output log to %s", dstString)
 
 	return closeFunc, nil
+}
+
+func testingLogOutput(msg string) error {
+	log.Debug(msg)
+	err := log.Err()
+	switch {
+	case errors.Is(err, log.ErrOutputDiscardedByLevel):
+	case errors.Is(err, io.EOF):
+	case err == nil:
+	default:
+		return fmt.Errorf("log output error: %w", err)
+	}
+	return nil // normal operation
 }
 
 // entry point of main application. appconf nil is OK,
@@ -99,7 +121,8 @@ func Main(title string, appConf *Config) {
 	// returned value must be called once.
 	reset, err := SetLogConfig(appConf)
 	if err != nil {
-		log.Infoln("Error: Can't create log file:", err)
+		// TODO: what is better way to handle fatal error in this case?
+		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)
 		return
 	}
 	defer reset()

@@ -35,6 +35,13 @@ func TestOverwriteFlag(t *testing.T) {
 		{flagNameLogLevel, "<nolevel>", func(conf *app.Config, v interface{}) bool {
 			return conf.LogLevel == v.(string)
 		}},
+		{flagNameLogLimit, "1024", func(conf *app.Config, v interface{}) bool {
+			i, err := strconv.ParseInt(v.(string), 10, 64)
+			if err != nil {
+				return false
+			}
+			return conf.LogLimitMegaByte == i
+		}},
 		{flagNameFont, "<nofont>", func(conf *app.Config, v interface{}) bool {
 			return conf.Font == v.(string)
 		}},

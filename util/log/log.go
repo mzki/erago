@@ -3,6 +3,7 @@
 package log
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -23,50 +24,46 @@ const (
 // So DebugPrefix places right by the most left prefix and left by the outputting text.
 const DebugPrefix = "DEBUG: "
 
+// ErrWriteDiscadedByLevel indicates log output is discarded by different level, e.g. Debug() with info level.
+var ErrOutputDiscardedByLevel = errors.New("log output discarded by different log level")
+
+// Simple logger which has only 2 levels, info and debug only.
+// Its output error is not retruned for convinient purpose. the latest output error
+// is recorded internally and can be retrived later from Err() API.
 type Logger struct {
 	logger *log.Logger
 
-	mu    sync.Mutex
-	level int // output level, under the mutex.
+	mu          sync.Mutex
+	level       int // output level, under the mutex.
+	internalErr error
 }
 
-func (l *Logger) Info(v ...interface{}) {
-	l.logger.Output(2, fmt.Sprint(v...))
+func (l *Logger) internalInfo(calldepth int, msg string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	err := l.logger.Output(calldepth, msg)
+	l.internalErr = err
 }
 
-func (l *Logger) Infoln(v ...interface{}) {
-	l.logger.Output(2, fmt.Sprintln(v...))
-}
+func (l *Logger) Info(v ...interface{})                 { l.internalInfo(3, fmt.Sprint(v...)) }
+func (l *Logger) Infoln(v ...interface{})               { l.internalInfo(3, fmt.Sprintln(v...)) }
+func (l *Logger) Infof(format string, v ...interface{}) { l.internalInfo(3, fmt.Sprintf(format, v...)) }
 
-func (l *Logger) Infof(format string, v ...interface{}) {
-	l.logger.Output(2, fmt.Sprintf(format, v...))
-}
-
-func (l *Logger) Debug(v ...interface{}) {
+func (l *Logger) internalDebug(calldepth int, msg string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.level < DebugLevel {
+		l.internalErr = ErrOutputDiscardedByLevel
 		return
 	}
-	l.logger.Output(2, DebugPrefix+fmt.Sprint(v...))
+	err := l.logger.Output(calldepth, DebugPrefix+msg)
+	l.internalErr = err
 }
 
-func (l *Logger) Debugln(v ...interface{}) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.level < DebugLevel {
-		return
-	}
-	l.logger.Output(2, DebugPrefix+fmt.Sprintln(v...))
-}
-
+func (l *Logger) Debug(v ...interface{})   { l.internalDebug(3, fmt.Sprint(v...)) }
+func (l *Logger) Debugln(v ...interface{}) { l.internalDebug(3, fmt.Sprintln(v...)) }
 func (l *Logger) Debugf(format string, v ...interface{}) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.level < DebugLevel {
-		return
-	}
-	l.logger.Output(2, DebugPrefix+fmt.Sprintf(format, v...))
+	l.internalDebug(3, fmt.Sprintf(format, v...))
 }
 
 func (l *Logger) SetOutput(w io.Writer) {
@@ -107,6 +104,22 @@ func (l *Logger) Prefix() string {
 	return l.logger.Prefix()
 }
 
+// Err returns last internal erorr in logger.
+// Even If the internal error is occured pastly, but last time succeeded and no error (nil) then internal error is
+// replaced by last time result (nil).
+//
+//	logger.Info("1") --> something error
+//	logger.Info("2") --> no erorr
+//	logger.Err() --> nil
+//
+// If discarding output message by log level, for example Debug() is discarded with info level,
+// Err() should returns ErrOutputDiscardedByLevel.
+func (l *Logger) Err() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.internalErr
+}
+
 const (
 	// These flags are same as log package's.
 	Ldate         = log.Ldate         // the date in the local time zone: 2009/01/23
@@ -121,50 +134,36 @@ const (
 // construct new Logger. default output level is InfoLevel.
 func New(out io.Writer, prefix string, flag int) *Logger {
 	return &Logger{
-		logger: log.New(out, prefix, flag),
-		level:  InfoLevel,
+		logger:      log.New(out, prefix, flag),
+		level:       InfoLevel,
+		internalErr: nil,
 	}
 }
 
 var std = New(os.Stdout, "", LstdFlags)
 
 func Info(v ...interface{}) {
-	std.logger.Output(2, fmt.Sprint(v...))
+	std.internalInfo(3, fmt.Sprint(v...))
 }
 
 func Infoln(v ...interface{}) {
-	std.logger.Output(2, fmt.Sprintln(v...))
+	std.internalInfo(3, fmt.Sprintln(v...))
 }
 
 func Infof(format string, v ...interface{}) {
-	std.logger.Output(2, fmt.Sprintf(format, v...))
+	std.internalInfo(3, fmt.Sprintf(format, v...))
 }
 
 func Debug(v ...interface{}) {
-	std.mu.Lock()
-	defer std.mu.Unlock()
-	if std.level < DebugLevel {
-		return
-	}
-	std.logger.Output(2, DebugPrefix+fmt.Sprint(v...))
+	std.internalDebug(3, fmt.Sprint(v...))
 }
 
 func Debugln(v ...interface{}) {
-	std.mu.Lock()
-	defer std.mu.Unlock()
-	if std.level < DebugLevel {
-		return
-	}
-	std.logger.Output(2, DebugPrefix+fmt.Sprintln(v...))
+	std.internalDebug(3, fmt.Sprintln(v...))
 }
 
 func Debugf(format string, v ...interface{}) {
-	std.mu.Lock()
-	defer std.mu.Unlock()
-	if std.level < DebugLevel {
-		return
-	}
-	std.logger.Output(2, DebugPrefix+fmt.Sprintf(format, v...))
+	std.internalDebug(3, fmt.Sprintf(format, v...))
 }
 
 func SetOutput(w io.Writer) {
@@ -197,6 +196,10 @@ func Prefix() string {
 	return std.Prefix()
 }
 
+func Err() error {
+	return std.Err()
+}
+
 // SilentWriter implements io.Writer.
 // it writes no content and return no error so that
 // any writing is ignored.
@@ -204,4 +207,32 @@ type SilentWriter struct{}
 
 func (SilentWriter) Write([]byte) (int, error) {
 	return 0, nil
+}
+
+// https://go-review.googlesource.com/c/go/+/319593/12/src/internal/iointernal/limited_writer.go
+
+// LimitWriter returns a Writer that writes to w
+// but stops with EOF after n bytes.
+// The underlying implementation is a *LimitedWriter.
+func LimitWriter(w io.Writer, n int64) io.Writer { return &LimitedWriter{w, n} }
+
+// A LimitedWriter writes to W but limits the amount of
+// data returned to just N bytes. Each call to Write
+// updates N to reflect the new amount remaining.
+// Read returns EOF when N <= 0 or when the underlying W returns EOF.
+type LimitedWriter struct {
+	W io.Writer // underlying writer
+	N int64     // max bytes remaining
+}
+
+func (l *LimitedWriter) Write(p []byte) (n int, err error) {
+	if l.N <= 0 {
+		return 0, io.EOF
+	}
+	if int64(len(p)) > l.N {
+		p = p[0:l.N]
+	}
+	n, err = l.W.Write(p)
+	l.N -= int64(n)
+	return
 }
