@@ -14,7 +14,8 @@ ARCHIVE_DOC="document"
 ARCHIVE_SRC_LINUX=`find ${OUTPUTDIR} -name "erago*_linux_*"   -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
 #ARCHIVE_SRC_DARWIN=`find ${OUTPUTDIR} -name "erago*_darwin_*"  -a -not -name "*.tar.gz"  | head -n 1 | xargs basename`
 ARCHIVE_SRC_DARWIN="" # empty
-ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_*.exe" | head -n 1 | xargs basename`
+ARCHIVE_SRC_WINDOWS=`find ${OUTPUTDIR} -name "erago*_windows_amd64.exe" | head -n 1 | xargs basename`
+ARCHIVE_SRC_WINDOWS_CLI=`find ${OUTPUTDIR} -name "erago*_windows_amd64_cli.exe" | head -n 1 | xargs basename`
 ARCHIVE_SRC_ANDROID=`find ${OUTPUTDIR} -name "erago*_android_*.aar" | head -n 1 | xargs basename`
 ARCHIVE_SRC_DOC=$ARCHIVE_DOC
 ARCHIVE_SRC_CREDITS_DESKTOP="CREDITS_list_desktop"
@@ -29,6 +30,7 @@ ARCHIVE_DIR=`absolute_archive_path ${OUTPUTDIR} ${VERSION}`
 ARCHIVE_DST_LINUX=${ARCHIVE_DIR}/${ARCHIVE_SRC_LINUX}.tar.gz
 ARCHIVE_DST_DARWIN=${ARCHIVE_DIR}/${ARCHIVE_SRC_DARWIN}.tar.gz
 ARCHIVE_DST_WINDOWS=${ARCHIVE_DIR}/${ARCHIVE_SRC_WINDOWS//.exe/.zip}
+ARCHIVE_DST_WINDOWS_CLI=${ARCHIVE_DIR}/${ARCHIVE_SRC_WINDOWS_CLI//.exe/.zip}
 ARCHIVE_DST_ANDROID=${ARCHIVE_DIR}/${ARCHIVE_SRC_ANDROID//.aar/.zip}
 ARCHIVE_DST_DOC=${ARCHIVE_DIR}/document.zip
 
@@ -73,6 +75,18 @@ if [ -f "${ARCHIVE_SRC_WINDOWS}" ]; then
   popd
   rm -rf tmp
 fi
+if [ -f "${ARCHIVE_SRC_WINDOWS_CLI}" ]; then
+  : "packing for windows cli..."
+  PKG_DIR_BASE=${ARCHIVE_SRC_WINDOWS_CLI//.exe/}
+  mkdir -p tmp/${PKG_DIR_BASE}
+  cp -t ./tmp/${PKG_DIR_BASE}/ ${ARCHIVE_SRC_WINDOWS_CLI} ${ARCHIVE_MISC} 
+  cp ${ARCHIVE_SRC_CREDITS_DESKTOP} ./tmp/${PKG_DIR_BASE}/CREDITS 
+  pushd tmp
+  zip -T ${ARCHIVE_DST_WINDOWS_CLI} ${PKG_DIR_BASE}/*
+  popd
+  rm -rf tmp
+fi
+
 if [ -f "${ARCHIVE_SRC_ANDROID}" ]; then
   : "packing for android library..."
   PKG_DIR_BASE=${ARCHIVE_SRC_ANDROID//.aar/}

@@ -28,4 +28,5 @@ mkdir -p $OUTPUTDIR
 OUTPUTDIR=`absolute_dir_path $OUTPUTDIR`
 OUTPUTDIR=$OUTPUTDIR make -C $CROSS_BUILD_DIR -f Makefile linux
 OUTPUTDIR=$OUTPUTDIR make -C $CROSS_BUILD_DIR -f Makefile windows
+OUTPUTDIR=$OUTPUTDIR make -C $CROSS_BUILD_DIR -f Makefile windows_cli
 # OUTPUTDIR=$OUTPUTDIR make -C $CROSS_BUILD_DIR -f Makefile darwin

@@ -8,6 +8,7 @@ SOURCENAME=main.go
 BINARYNAME_X11=erago_$(VERSION_FOR_FILE)_linux_amd64
 BINARYNAME_MAC=erago_$(VERSION_FOR_FILE)_darwin_amd64
 BINARYNAME_WIN=erago_$(VERSION_FOR_FILE)_windows_amd64.exe
+BINARYNAME_WIN_CLI=erago_$(VERSION_FOR_FILE)_windows_amd64_cli.exe
 
 OUTPUTDIR ?= .
 
@@ -19,10 +20,12 @@ GOGCFLAGS =-trimpath=$(GOPATH)
 GOASMFLAGS=-trimpath=$(GOPATH)
 
 GOLDFLAGS_WIN=$(GOLDFLAGS) -H windowsgui # disable launching console on windows
+GOLDFLAGS_WIN_CLI=$(GOLDFLAGS)
 
 GOOPTION_X11 = -ldflags="$(GOLDFLAGS)" -gcflags="$(GOGCFLAGS)" -asmflags="$(GOASMFLAGS)"
 GOOPTION_MAC = -ldflags="$(GOLDFLAGS)" -gcflags="$(GOGCFLAGS)" -asmflags="$(GOASMFLAGS)"
 GOOPTION_WIN = -ldflags="$(GOLDFLAGS_WIN)" -gcflags="$(GOGCFLAGS)" -asmflags="$(GOASMFLAGS)"
+GOOPTION_WIN_CLI = -ldflags="$(GOLDFLAGS_WIN_CLI)" -gcflags="$(GOGCFLAGS)" -asmflags="$(GOASMFLAGS)"
 
 # environment
 X11ENV=CC=gcc CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOROOT_FINAL="GOROOT" GO111MODULE=on
@@ -40,6 +43,9 @@ darwin: $(SOURCENAME)
 
 windows: $(SOURCENAME)
 	$(WINENV) $(GOBUILD) $(GOOPTION_WIN) -o $(OUTPUTDIR)/$(BINARYNAME_WIN)
+
+windows_cli: $(SOURCENAME)
+	$(WINENV) $(GOBUILD) $(GOOPTION_WIN_CLI) -o $(OUTPUTDIR)/$(BINARYNAME_WIN_CLI)
 
 binary: $(SOURCENAME)
 	$(GOBUILD) 
