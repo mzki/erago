@@ -10,10 +10,12 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"html/template"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -71,6 +73,10 @@ func newSceneDecl(name string) *sceneDecl {
 	}
 }
 
+func (decl sceneDecl) Callbacks() callbacks {
+	return decl.callbacks
+}
+
 type callbacks []funcDecl
 
 type funcDecl struct {
@@ -88,6 +94,98 @@ const NamePlaceHolder = "{{.Name}}"
 func (decl funcDecl) Definition() string {
 	return strings.Replace(decl.Template, NamePlaceHolder, decl.Name, 1)
 }
+
+var (
+	signaturePatternRet   = regexp.MustCompile(`(.*) = (.*)\((.*)?\)`)
+	signaturePatternNoRet = regexp.MustCompile(`(.*)\((.*)?\)`)
+)
+
+func (decl funcDecl) findDefinitionParts() (retPart, funcPart, argPart string) {
+	def := decl.Definition()
+	if match := signaturePatternRet.FindStringSubmatch(def); match != nil {
+		retPart, funcPart, argPart = match[1], match[2], match[3]
+	} else if match := signaturePatternNoRet.FindStringSubmatch(def); match != nil {
+		funcPart, argPart = match[1], match[2]
+	}
+	return
+}
+
+func (decl funcDecl) ArgList() []ParamDecl {
+	_, _, argPart := decl.findDefinitionParts()
+	params := make([]ParamDecl, 0, 2)
+	for _, arg := range trimSplit(argPart, ",") {
+		if len(arg) > 0 {
+			params = append(params, parseNameAndType(arg))
+		}
+	}
+	return params
+}
+
+func (decl funcDecl) RetList() []ParamDecl {
+	retPart, _, _ := decl.findDefinitionParts()
+	params := make([]ParamDecl, 0, 2)
+	for _, arg := range trimSplit(retPart, ",") {
+		if len(arg) > 0 {
+			params = append(params, parseNameAndType(arg))
+		}
+	}
+	return params
+}
+
+func trimSplit(s, sep string) []string {
+	ss := strings.Split(s, sep)
+	for i, field := range ss {
+		ss[i] = strings.TrimSpace(field)
+	}
+	return ss
+}
+
+type ParamDecl struct {
+	Name string
+	Type string
+}
+
+func parseNameAndType(param string) ParamDecl {
+	if len(param) == 0 {
+		return ParamDecl{}
+	}
+
+	ss := trimSplit(param, ":")
+	var name, typ string
+	if l := len(ss); l >= 2 {
+		name = ss[0]
+		typ = ss[1]
+	} else if l == 1 {
+		name = ss[0]
+		typ = "any"
+	} else {
+		name = "unknown"
+		typ = "any"
+	}
+	return ParamDecl{Name: name, Type: typ}
+}
+
+func joinParamFunc(params []ParamDecl, fn func(p ParamDecl) string) string {
+	ss := make([]string, 0, len(params))
+	for _, p := range params {
+		ss = append(ss, fn(p))
+	}
+	return strings.Join(ss, ", ")
+}
+
+func joinParamNames(params []ParamDecl) (names string) {
+	return joinParamFunc(params, func(p ParamDecl) string { return p.Name })
+}
+
+func joinParamTypes(params []ParamDecl) (types string) {
+	return joinParamFunc(params, func(p ParamDecl) string { return p.Type })
+}
+
+func joinParams(params []ParamDecl) (nameAndTypes string) {
+	return joinParamFunc(params, func(p ParamDecl) string { return p.Name + ": " + p.Type })
+}
+
+// ==================== MAIN ====================
 
 func main() {
 	var outputDir string
@@ -126,6 +224,10 @@ func ParseAST(dir string, outputDir string) error {
 	}
 
 	err = writeAsMarkdown(filepath.Join(outputDir, "erago-system-callbacks.md"), callbacks, keys)
+	if err != nil {
+		return err
+	}
+	err = writeAsLuaLSAddon(outputDir, callbacks, keys)
 	return err
 }
 
@@ -356,16 +458,168 @@ callback関数は、命名規則 [scene-name]_[callback-type]_[funcion-name] に
 
 func makeDefaultCallback(scene_name string) callbacks {
 	scene_decl := funcDecl{
-		Template: scene_name + "_scene()",
+		Template: "{{.Name}}()",
+		Name:     scene_name + "_scene",
 		Doc: strings.Split(`この関数は、もし定義されていれば、シーンの最も始めに呼ばれ、
 シーン全体の処理を置き換えます。
 この関数内では、必ず次のシーンを指定しなければならないことに注意してください。`, "\n"),
 	}
 
 	event_decl := funcDecl{
-		Template: scene_name + "_event_start()",
+		Template: "{{.Name}}()",
+		Name:     scene_name + "_event_start",
 		Doc:      strings.Split(`この関数は、もし定義されていれば、シーンの始めに呼ばれます。`, "\n"),
 	}
 
 	return callbacks{scene_decl, event_decl}
+}
+
+// --- LuaLS meta definitions ---------------------------------------------------------------------
+
+var luaLSLuaArgEscapeList = []struct {
+	name    string
+	pattern *regexp.Regexp
+	repr    string
+}{
+	{name: "arbitrary-arg", pattern: regexp.MustCompile(`.*(\.\.\.).*`), repr: `$1`},
+	{name: "optional-arg", pattern: regexp.MustCompile(`(\[?)([^\[\]]+)(\]?)`), repr: `$2`},
+	{name: "default-arg", pattern: regexp.MustCompile(`([^ ]+)[ ]*=[ ]*([^ ]+)`), repr: `$1`},
+	{name: "string-literal", pattern: regexp.MustCompile(`"([^"]+)"`), repr: `str_literal`},
+}
+
+var luaLSMetaTmpl = template.Must(
+	template.
+		New("LuaLS-Meta").
+		Funcs(template.FuncMap{
+			"joinArgNames": func(params []ParamDecl) string {
+				return joinParamNames(params)
+			},
+			"joinRetTypes": func(params []ParamDecl) string {
+				s := joinParamTypes(params)
+				if len(s) == 0 {
+					return "nil"
+				} else {
+					return s
+				}
+			},
+			"joinArgs": func(params []ParamDecl) string {
+				return joinParams(params)
+			},
+		}).
+		Parse(`
+{{- define "CALLBACK_DEFINITION" -}}
+{{- with $funcDecl := . }}
+---{{ .Definition }}
+{{ range $idx, $comment := $funcDecl.Doc -}}
+---{{ $comment }}
+{{ end -}}
+{{- $argList := $funcDecl.ArgList -}}
+{{- range $i, $arg := $argList -}}
+{{- if gt (len $arg.Name) 0 -}}
+---@param {{$arg.Name}} {{$arg.Type}}
+{{ else -}}
+{{- end -}}
+{{ end -}}
+{{- $retList := $funcDecl.RetList -}}
+{{- range $i, $ret := $retList -}}
+{{- if gt (len $ret.Name) 0 -}}
+---@return {{$ret.Type}} {{$ret.Name}}
+{{ else -}}
+{{- end -}}
+{{ end -}}
+---@type fun({{joinArgs $argList}}): {{joinRetTypes $retList}}
+era.{{$funcDecl.Name}} = nil
+{{end -}}{{- /* end with func */ -}}
+{{- end -}}
+
+{{- /* ------------------- Content Body -------------------------- */ -}}
+---@meta erago-callback
+		
+--generated by gendoc.go, parsing pakcage infra/script@{{ .Version }}.
+--DO NOT EDIT MANUALLY.
+
+era = {}
+{{ $sceneDeclList := .SceneDeclList -}}
+{{ range $sceneIdx, $sceneDecl := $sceneDeclList -}}
+{{ range $funcIdx, $funcDecl := $sceneDecl.Callbacks -}}
+{{ template "CALLBACK_DEFINITION" $funcDecl }}
+{{ end -}}
+{{ end -}}
+`))
+
+const luaLSConfigJSONContent = `
+{
+    "name": "Erago Callbacks",
+
+    "settings": {
+		"Lua.runtime.version": "Lua 5.1",
+
+        "Lua.diagnostics.globals" : [
+            "era",
+        ]
+    }
+}
+`
+
+func getVersionStr() string {
+	var revision string = "unknown"
+	if err := exec.Command("git", "--help").Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "git command not found")
+	} else {
+		// parse revision from `git describe`
+		cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+		out, err := cmd.Output()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "can not runs git rev-parse")
+		} else {
+			revision = strings.TrimSpace(string(out))
+		}
+	}
+	return revision
+}
+
+func writeAsLuaLSAddon(outputDir string, callbacks_list sceneDeclMap, sceneOrder []string) error {
+	// See Addon folder structure https://github.com/LuaLS/lua-language-server/wiki/Addons#manually-enabling
+	addonDir := filepath.Join(outputDir, "addons", "erago-lua-callback")
+	libraryDir := filepath.Join(addonDir, "library")
+	if err := os.MkdirAll(libraryDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	{
+		configFile := filepath.Join(addonDir, "config.json")
+		if err := os.WriteFile(configFile, []byte(luaLSConfigJSONContent), os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	metaFile := filepath.Join(libraryDir, "erago-callback.lua")
+	fp, err := os.Create(metaFile)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	var sceceDeclList []*sceneDecl
+	for _, s := range sceneOrder {
+		if sd, ok := callbacks_list[s]; ok {
+			sceceDeclList = append(sceceDeclList, sd)
+		}
+	}
+
+	// append default callbacks for each scene.
+	for i, ss := range sceceDeclList {
+		ss.callbacks = append(makeDefaultCallback(ss.Name), ss.callbacks...)
+		sceceDeclList[i] = ss
+	}
+
+	templateContext := struct {
+		Version       string
+		SceneDeclList []*sceneDecl
+	}{
+		Version:       getVersionStr(),
+		SceneDeclList: sceceDeclList,
+	}
+	err = luaLSMetaTmpl.Execute(fp, &templateContext)
+	return err
 }

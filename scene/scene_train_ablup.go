@@ -55,7 +55,7 @@ const (
 	// 調教対象のステータスの表示をこの関数で行います。
 	ScrTrainUserShowStatus = "train_user_show_status"
 
-	// +callback: ok = {{.Name}}(input_num)
+	// +callback: ok: boolean = {{.Name}}(input_num: integer)
 	// 選択番号input_numに対応するコマンドが、現在実行可能であるかを
 	// true/falseで返します。ここで実行可能であったコマンド群が、
 	// 画面に表示され、train_user_cmd()が実行されます。
@@ -65,14 +65,14 @@ const (
 	// ユーザー定義のコマンド群の表示をこの関数で行います。
 	ScrTrainReplaceShowOtherCmd = "train_replace_show_other_cmd"
 
-	// +callback: handled = {{.Name}}(input_num)
+	// +callback: handled: boolean = {{.Name}}(input_num: integer)
 	// 選択番号input_numに対応するコマンドを実行します。
 	// コマンドを処理した場合、trueを返してください。
 	// trueを返した場合、train_user_check_source()を実行し、
 	// 定義されていれば train_event_cmd_end()が実行されます。
 	ScrTrainUserCmd = "train_user_cmd"
 
-	// +callback: handled = {{.Name}}(input_num)
+	// +callback: handled: boolean = {{.Name}}(input_num: integer)
 	// 通常のコマンドが実行不能のとき代わりに呼ばれます。
 	// 選択番号input_numに対応するユーザー定義のコマンドを実行します。
 	// コマンドを処理した場合、trueを返してください。
@@ -314,7 +314,7 @@ const (
 	// +callback: {{.Name}}()
 	ScrAblUpUserShowMenu = "ablup_user_show_menu"
 
-	// +callback: ok = {{.Name}}(input_num)
+	// +callback: ok: boolean = {{.Name}}(input_num: integer)
 	ScrAblUpUserMenuSelected = "ablup_user_menu_selected" // +number -> bool
 )
 

@@ -165,7 +165,7 @@ const (
 	// baseシーンにおける、行動の選択肢を表示します。
 	ScrBaseUserShowMenu = "base_user_show_menu"
 
-	// +callback: handled = {{.Name}}(input_num)
+	// +callback: handled: boolean = {{.Name}}(input_num: integer)
 	// 行動の選択肢を表示した後、ユーザーからの入力番号を得て、
 	// その入力番号input_numと共に、この関数が呼ばれます。
 	// もし、入力番号input_numに対して何らかの処理を行った場合、
@@ -228,7 +228,7 @@ const (
 	// クリックできるボタンの形式で全て表示する。
 	ScrShopReplaceShowMenu = "shop_replace_show_menu"
 
-	// +callback: handled = {{.Name}}(input_num)
+	// +callback: handled: boolean = {{.Name}}(input_num: integer)
 	// 入力番号input_numと共に呼ばれ、それに対する処理を行う。
 	// もし、何らかの処理を行った場合、この関数の戻り値としてtrueを
 	// 返してください。tureを返した場合、次のシーンの遷移先の確認を行います。
@@ -237,7 +237,7 @@ const (
 	// 戻り値としてfalseを返した場合、通常の購入処理を続行します。
 	ScrShopEventMenuSelected = "shop_event_menu_selected"
 
-	// +callback: done = {{.Name}}(buy_item_number)
+	// +callback: done: boolean = {{.Name}}(buy_item_number: integer)
 	// 購入処理の後に呼ばれます。購入に成功した場合、buy_item_number
 	// には正数が渡されます。失敗していた場合は、-1 が渡されます。
 	// 戻り値として true を返した場合、次のシーンの遷移先の確認を行います。
