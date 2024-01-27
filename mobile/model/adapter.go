@@ -31,6 +31,10 @@ func (a *uiAdapter) MeasureImageSize(string, int, int) (int, int, error) {
 	panic("Not implemented")
 }
 
+func (a *uiAdapter) PrintSpace(int) error {
+	panic("Not implemented")
+}
+
 // implement uiadapter.RequestChangedListener
 func (a *uiAdapter) OnRequestChanged(req uiadapter.InputRequestType) {
 	switch req {

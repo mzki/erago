@@ -41,6 +41,9 @@ type Printer interface {
 	// before calling PrintImage.
 	MeasureImageSize(file string, widthInRW, heightInLC int) (width, height int, err error)
 
+	// Print blank space sized with rune-width.
+	PrintSpace(widthInRW int) error
+
 	// Set and Get Color using 0xRRGGBB for 24bit color
 	SetColor(color uint32) error
 	GetColor() (color uint32, err error)
@@ -109,8 +112,7 @@ type Layouter interface {
 // Thus, you can implement only Printer interface
 // for complete UI interface:
 //
-//   UI = SingleUI{implements_only_printer}
-//
+//	UI = SingleUI{implements_only_printer}
 type SingleUI struct {
 	Printer
 }

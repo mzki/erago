@@ -63,6 +63,13 @@ func (p Printer) PrintLine(sym string) {
 	}
 }
 
+// implements erago/uiadapter/UI.
+func (p Printer) PrintSpace(widthInRW int) {
+	if err := p.e.WriteSpace(widthInRW); err != nil {
+		panic(err) // TODO return error?
+	}
+}
+
 // implemnts erago/uiadapter/UI.
 func (p Printer) SetColor(c uint32) {
 	Color := &p.e.Color

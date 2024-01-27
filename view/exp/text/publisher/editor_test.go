@@ -1284,6 +1284,35 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 	}
 }
 
+func TestEditor_PrintSpace(t *testing.T) {
+	gs := setupGlobals(t)
+	editor := gs.editor
+	defer gs.cancel()
+
+	const expectW = 12
+
+	type args struct {
+		widthInRW int
+	}
+	tests := []struct {
+		name    string
+		e       *publisher.Editor
+		args    args
+		wantErr bool
+	}{
+		{"print space", editor, args{expectW}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.e.PrintSpace(tt.args.widthInRW)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Editor.MeasureImageSize() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
 func BenchmarkPrintOnlyText(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

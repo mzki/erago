@@ -263,6 +263,12 @@ func (v *TextView) MeasureImageSize(file string, widthInRW, heightInLC int) (wid
 	}
 }
 
+func (v *TextView) PrintSpace(widthInRW int) (err error) {
+	v.Printer.PrintSpace(widthInRW)
+	v.sender.Mark(v, node.MarkNeedsPaintBase)
+	return nil
+}
+
 func (v *TextView) NewPage() error {
 	v.Printer.NewPage()
 	v.sender.Mark(v, node.MarkNeedsPaintBase)

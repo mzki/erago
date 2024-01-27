@@ -2,6 +2,7 @@ package stub
 
 import (
 	"fmt"
+	"strings"
 
 	attr "github.com/mzki/erago/attribute"
 )
@@ -37,6 +38,11 @@ func (ui gameUIStub) PrintImage(file string, widthInRW, heigthInLC int) error {
 
 func (ui gameUIStub) MeasureImageSize(file string, widthInRW, heigthInLC int) (int, int, error) {
 	return 10, 10, nil
+}
+
+func (ui gameUIStub) PrintSpace(widthInRW int) error {
+	_, err := fmt.Print(strings.Repeat(" ", widthInRW))
+	return err
 }
 
 func (ui gameUIStub) SetColor(color uint32) error           { return nil }

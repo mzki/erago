@@ -2,6 +2,7 @@ package script
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -68,6 +69,7 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 		"printPlain":       ft.printPlain,
 		"printImage":       ft.printImage,
 		"measureImageSize": ft.measureImageSize,
+		"printSpace":       ft.printSpace,
 		"newPage":          ft.newPage,
 		"clearLineAll":     ft.clearLineAll,
 		"clearLine":        ft.clearLine,
@@ -784,6 +786,12 @@ func (ft functor) textBar(L *lua.LState) int {
 //	era.printImage("path/to/image.png", 30)
 //	-- 30x30 のサイズで image2.png を表示。元画像のアスペクト比が 1:1 出ない場合、縦横いずれかに引き伸ばされて表示。
 //	era.printImage("path/to/image2.png", 30, 30)
+//
+// 画像の横にテキスト配置する場合、画像表示領域の1行目のみがデータがある実体として扱われることに注意が必要です。
+// printImage に続けて、文字列をprintすると、画像の直ぐ右隣からテキストが出力されます。
+// 一方で、画像表示領域の2行目以降はデータの実体がなく、画像描画領域とテキスト出力位置とが重なります。
+// そのため、2行目以降からそのまま文字列を print すると画像とテキストが重なって表示されます。
+// 画像と重ならずにテキストを表示したい場合は、画像表示領域分、テキスト出力位置を右にスキップする必要があります。
 func (ft functor) printImage(L *lua.LState) int {
 	imgPath, widthInTW, heightInLC := checkImageParams(L, 1)
 	err := ft.game.PrintImage(imgPath, widthInTW, heightInLC)
@@ -817,6 +825,35 @@ func (ft functor) measureImageSize(L *lua.LState) int {
 	L.Push(lua.LNumber(retW))
 	L.Push(lua.LNumber(retH))
 	return 2
+}
+
+// +gendoc "Era Module"
+// * era.printSpace(width_in_tw)
+//
+// width_in_tw で指定されたテキスト幅の空白を出力します。
+// 半角スペースのような空白文字を print で表示する場合には空白文字そのものでの描画が発生し、画面を塗りつぶします。
+// 一方で、printSpace で空白を表示した場合は描画が発生せず、画面を塗りつぶしません。
+// この機能は、printImage によって２行目以降に渡って表示されている画像に対して、
+// 画像領域を塗りつぶさずにテキスト出力開始位置を右にシフトすることができます。printImage の説明も参照してください。
+//
+// 　w, h = era.measureImageSize(image_path, width_in_tw)
+// 　era.printImage(image_path, width_in_tw)
+// 　era.printl("")
+// 　-- ２行目以降、画像領域をスキップして、画像の右隣からテキスト出力を始める
+// 　for i = 2, w do
+// 　  era.printSpace(w)
+// 　  era.printl("画像横のテキスト"..i.."行目")
+// 　end
+func (ft functor) printSpace(L *lua.LState) int {
+	runeW := L.CheckInt(1)
+	if runeW <= 0 {
+		L.ArgError(1, fmt.Sprintf("width_in_tw must be > 0, but got: %v", runeW))
+	}
+	err := ft.game.PrintSpace(runeW)
+	if err != nil {
+		raiseErrorf(L, "script.printSpace(): %w", err)
+	}
+	return 0
 }
 
 func checkImageParams(L *lua.LState, startPos int) (imgPath string, widthInTW, heightInLC int) {

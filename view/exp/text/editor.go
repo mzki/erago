@@ -241,6 +241,21 @@ func (e *Editor) WriteImage(imgFile string, widthInRW, heightInLC int) (err erro
 	return
 }
 
+func (e *Editor) WriteSpace(widthInRW int) (err error) {
+	if widthInRW <= 0 {
+		return fmt.Errorf("widthInRW must be greater than zero, but %d", widthInRW)
+	}
+
+	e.frame.mu.Lock()
+	defer e.frame.mu.Unlock()
+
+	spaceText := fmt.Sprintf("<space width=%d />", widthInRW)
+	err = e.appendText(spaceText, &spaceBox{
+		spaceRuneWidth: widthInRW,
+	})
+	return
+}
+
 // It appends text into frame's text buffer
 // then returns whether text is appended?
 // Passed ijbox is used to hold appended text.

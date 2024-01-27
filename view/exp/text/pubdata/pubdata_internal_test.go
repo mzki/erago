@@ -42,9 +42,16 @@ func TestParagraph_JsonDump(t *testing.T) {
 									DataFetchType:   0,
 								},
 							},
+							&SpaceBox{
+								BoxCommon{
+									CommonRuneWidth:     7,
+									CommonLineCountHint: 1,
+									CommonContentType:   ContentTypeSpace,
+								},
+							},
 						},
 					},
-					RuneWidth: 10 + 10,
+					RuneWidth: 10 + 10 + 7,
 				},
 			},
 		},

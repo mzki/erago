@@ -282,3 +282,35 @@ func (box *imageBox) Draw(d *font.Drawer, v *View) {
 	// advance d.Dot.X by width of image drawn region
 	d.Dot.X += fpSize.X
 }
+
+// space box is alsmost same as labelBox, is non splitable,
+// but does not contain any content.
+// It is used for spacing with runeWidth and lineCount=1 for the area and
+// used for complex layout. The difference from lableBox with multile space
+// character " " is that there is no drawing at the area while the labelBox
+// with space draws space characters, means filling the area by font color.
+// For example, suppose [Space] is space box and others are text box then
+// view area will be shown as like below.
+// >> Some text...
+// >> [Space]Indented Some text...
+// >> Some text...[Space]Trailing text...
+type SpaceBox interface {
+	TextBox
+
+	SpaceRuneWidth() int
+}
+
+type spaceBox struct {
+	textBox
+	spaceRuneWidth int
+}
+
+func (sb *spaceBox) RuneWidth(*Frame) int { return sb.SpaceRuneWidth() }
+func (sb *spaceBox) SpaceRuneWidth() int  { return sb.spaceRuneWidth }
+
+func (sb *spaceBox) Draw(f *font.Drawer, v *View) {
+	// space box write no content.
+	// just move toward right so that next box can write next to this box.
+	advanceX := int26_6_Mul(fixed.I(sb.RuneWidth(v.frame)), v.faceSingleWidth)
+	f.Dot.X += advanceX
+}

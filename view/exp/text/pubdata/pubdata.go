@@ -19,6 +19,7 @@ const (
 	ContentTypeText       = "text"
 	ContentTypeTextButton = "text_button"
 	ContentTypeImage      = "image"
+	ContentTypeSpace      = "space"
 )
 
 const (
@@ -154,8 +155,13 @@ type ImageBox struct {
 	BoxData ImageData `json:"data"`
 }
 
-// TextButtonData returns *TextButtonData.
+// ImageData returns *ImageData.
 func (t *ImageBox) ImageData() *ImageData { return &t.BoxData }
+
+// SpaceBox holds space data.
+type SpaceBox struct {
+	BoxCommon
+}
 
 // Boxes is intermediation for []Box, used for gomobile export.
 type Boxes struct {

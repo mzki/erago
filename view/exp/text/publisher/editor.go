@@ -246,6 +246,11 @@ func (e *Editor) createBox(bb text.Box) pubdata.Box {
 	case text.ImageBox:
 		bcommon.CommonContentType = pubdata.ContentTypeImage
 		return e.createImageBox(bcommon, typed_bb)
+	case text.SpaceBox:
+		bcommon.CommonContentType = pubdata.ContentTypeSpace
+		return &pubdata.SpaceBox{
+			BoxCommon: bcommon,
+		}
 	case text.ButtonBox:
 		bcommon.CommonContentType = pubdata.ContentTypeTextButton
 		return &pubdata.TextButtonBox{
@@ -445,6 +450,18 @@ func (e *Editor) MeasureImageSize(file string, widthInRW, heightInLC int) (retW,
 	})
 	err = e.sendAndWait(e.ctx, msg)
 	return
+}
+
+// Print Space in output area.
+// widthInRW is blank space width in runewidth, should be > 0.
+func (e *Editor) PrintSpace(widthInRW int) error {
+	msg := e.createAsyncTask(func() {
+		if err := e.editor.WriteSpace(widthInRW); err != nil {
+			e.setAsyncErr(err)
+			e.looper.Close()
+		}
+	})
+	return e.send(e.ctx, msg)
 }
 
 // Set and Get Color using 0xRRGGBB for 24bit color

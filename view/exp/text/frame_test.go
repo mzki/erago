@@ -102,6 +102,44 @@ func TestWriteImage(t *testing.T) {
 	}
 }
 
+func TestWriteSpace(t *testing.T) {
+	f := NewFrame(nil)
+	f.SetMaxRuneWidth(30)
+	e := f.Editor()
+	defer e.Close()
+
+	spaceWidth := 10
+	if err := e.WriteSpace(spaceWidth); err != nil {
+		t.Fatal(err)
+	}
+	if pcount := f.ParagraphCount(); pcount != 1 {
+		t.Fatalf("invalid Paragraph count, expect: %d, got: %d", 1, pcount)
+	}
+
+	if got, expect := e.CurrentRuneWidth(), spaceWidth; got != expect {
+		t.Errorf("current rune width is not matchd, expect: %d, got: %d", expect, got)
+	}
+
+	// exceeds max rune width. wrap around newly added image box to next line.
+	spaceWidth = 25
+	if err := e.WriteSpace(spaceWidth); err != nil {
+		t.Fatal(err)
+	}
+	if pcount := f.ParagraphCount(); pcount != 1 {
+		t.Fatalf("invalid Paragraph count, expect: %d, got: %d", 1, pcount)
+	}
+
+	if got, expect := e.CurrentRuneWidth(), spaceWidth; got != expect {
+		t.Errorf("current rune width is not matchd, expect: %d, got: %d", expect, got)
+	}
+
+	// 0 width not allowed
+	spaceWidth = 0
+	if err := e.WriteSpace(spaceWidth); err == nil {
+		t.Fatal("must be error but returns no error")
+	}
+}
+
 func TestWriteLine(t *testing.T) {
 	f := NewFrame(nil)
 	f.SetMaxRuneWidth(30)
