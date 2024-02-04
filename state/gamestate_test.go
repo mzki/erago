@@ -90,6 +90,7 @@ func TestNewCharacter(t *testing.T) {
 func TestMarshalSystemData(t *testing.T) {
 	gamestate := NewGameState(CSVDB, Repo)
 	const CHARA_ID = 1 // it must exist
+	const MASTER_IDX = 1
 
 	chara, err := gamestate.SystemData.Chara.AddID(CHARA_ID)
 	if err != nil {
@@ -102,6 +103,15 @@ func TestMarshalSystemData(t *testing.T) {
 
 	base.SetByStr("体力", 100)
 	t.Logf("before marshal %#v", base)
+
+	// Set Master relation
+	chara2, err := gamestate.SystemData.Chara.AddID(CHARA_ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := gamestate.SystemData.Master.Set(MASTER_IDX, chara2); err != nil {
+		t.Fatal(err)
+	}
 
 	// marshal gamestate
 	dump, err := json.Marshal(&gamestate.SystemData)
@@ -133,6 +143,15 @@ func TestMarshalSystemData(t *testing.T) {
 	} else if v != 100 {
 		t.Errorf("loaded %s has differenct value, epxect %v, got %v", "Base", 100, v)
 		t.Logf("after unmarshal %#v", loadedBase)
+	}
+
+	master := newGamestate.SystemData.Master.GetChara(MASTER_IDX)
+	if master == nil {
+		t.Fatalf("Nil Master after unmarshal at %v", MASTER_IDX)
+	}
+	chara2New := newGamestate.SystemData.Chara.Get(1)
+	if master != chara2New {
+		t.Errorf("Difference master and original chara after unmarshal: master = %p, org_chara = %p", master, chara2New)
 	}
 }
 

@@ -31,7 +31,8 @@ func (cref CharaReferences) GetChara(idx int) *Character {
 	if !cref.checkRange(idx) {
 		return nil
 	}
-	return cref.src.Get(idx)
+	srcI := cref.GetIndex(idx)
+	return cref.src.Get(srcI)
 }
 
 // get index of Character at i. if i is out of range return -1.
