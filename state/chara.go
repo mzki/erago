@@ -181,6 +181,12 @@ func (cs *Characters) AddID(ID int64) (*Character, error) {
 	return nil, fmt.Errorf("chara ID %d is not found in CSV", ID)
 }
 
+// IsAddableID returns true when Character ID is addable into Characters, otherwise returns false.
+func (cs *Characters) IsAddableID(ID int64) bool {
+	_, ok := cs.csv.CharaMap[ID]
+	return ok
+}
+
 // the size of characters increases this size.
 const characterAppendSize = 16
 

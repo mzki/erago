@@ -120,6 +120,11 @@ assert(era.player)
 
 -- chara access
 
+assert(era.chara:isaddable(1) == true)
+assert(era.chara:isaddable(45678) == false)
+local _ = era.chara:addEmpty()
+era.chara:remove(#era.chara-1)
+
 local chara = era.chara:add(1)
 -- builtins
 assert(chara.id)

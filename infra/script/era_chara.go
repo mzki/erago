@@ -136,11 +136,12 @@ func newLuaCharaList(L *lua.LState, cs *state.Characters) luaCharaList {
 	return luaCharaList{
 		Characters: cs,
 		methods: map[string]*lua.LFunction{
-			"len":      L.NewFunction(lenScalable),
-			"add":      L.NewFunction(charaListAdd),
-			"addEmpty": L.NewFunction(charaListAddEmpty),
-			"remove":   L.NewFunction(charaListRemove),
-			"clear":    L.NewFunction(charaListClear),
+			"len":       L.NewFunction(lenScalable),
+			"add":       L.NewFunction(charaListAdd),
+			"addEmpty":  L.NewFunction(charaListAddEmpty),
+			"isaddable": L.NewFunction(charaListIsAddable),
+			"remove":    L.NewFunction(charaListRemove),
+			"clear":     L.NewFunction(charaListClear),
 			// TODO: implement charas_methods_table["range"] = L.NewFunction(
 			// TODO: implement charas_methods_table["find"] = L.NewFunction(
 			// TODO: implement charas_methods_table["sort"] = L.NewFunction(
@@ -207,6 +208,16 @@ func charaListAddEmpty(L *lua.LState) int {
 	empty_chara := charas.AddEmptyCharacter()
 	ud := newUserDataWithMt(L, empty_chara, L.GetTypeMetatable(luaCharacterMetaName))
 	L.Push(ud)
+	return 1
+}
+
+// +gendoc "Characters"
+// * is_addable: boolean = CharaList:isaddable(id: integer)
+func charaListIsAddable(L *lua.LState) int {
+	charas := checkLuaCharaList(L, 1)
+	id := L.CheckInt64(2)
+	ret := charas.IsAddableID(id)
+	L.Push(lua.LBool(ret))
 	return 1
 }
 

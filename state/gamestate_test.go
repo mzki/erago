@@ -86,6 +86,19 @@ func TestNewCharacter(t *testing.T) {
 	}
 }
 
+func TestCharacterNotAddableID(t *testing.T) {
+	gamestate := NewGameState(CSVDB, Repo)
+	const CHARA_ID = 45678 // it must not exist
+
+	if isAddable := gamestate.SystemData.Chara.IsAddableID(CHARA_ID); isAddable {
+		t.Errorf("Chara ID:%v should not addable, but got :%v", CHARA_ID, isAddable)
+	}
+	_, err := gamestate.SystemData.Chara.AddID(CHARA_ID)
+	if err == nil {
+		t.Errorf("Chara ID:%v should not addable, but succeeded to add new character", CHARA_ID)
+	}
+}
+
 // testing for that system-data object can be marshalizable and unmarshalizable.
 func TestMarshalSystemData(t *testing.T) {
 	gamestate := NewGameState(CSVDB, Repo)
