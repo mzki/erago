@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0 # for all history and tags
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
@@ -82,7 +82,7 @@ jobs:
         run: mkdir -p ./build
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
@@ -125,7 +125,7 @@ jobs:
 
       # needs Go since use go generate internally. 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
@@ -155,7 +155,7 @@ jobs:
 
       # needs Go since use go generate internally. 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
