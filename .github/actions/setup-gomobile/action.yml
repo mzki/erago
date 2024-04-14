@@ -19,7 +19,7 @@ runs:
     # below commands are highy depending on runner image envrionment.
     # See ubuntu-2022 https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: "^1.19.x"
         cache: false

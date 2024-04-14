@@ -22,12 +22,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # for all history and tags
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -59,7 +59,7 @@ jobs:
           tar zcf ./cross-binaries.tar.gz ./build/*
 
       - name: Upload built binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cross-binaries
           path: ./cross-binaries.tar.gz
@@ -74,7 +74,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # for all history and tags
 
@@ -82,7 +82,7 @@ jobs:
         run: mkdir -p ./build
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -104,7 +104,7 @@ jobs:
         run: ./scripts/build-mobile-v2 ./build
 
       - name: Upload built binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mobile-binaries
           path: ./build
@@ -119,13 +119,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # for all history and tags
 
       # needs Go since use go generate internally. 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -134,7 +134,7 @@ jobs:
         run: bash scripts/gendoc -o build/document
 
       - name: Upload built binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: generated-document
           path: ./build/document
@@ -149,13 +149,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1 # just need HEAD files.
 
       # needs Go since use go generate internally. 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -168,7 +168,7 @@ jobs:
         run: bash scripts/credits -o build
 
       - name: Upload built credits
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: generated-credits
           path: ./build
@@ -187,13 +187,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare directory
         run: mkdir -p build/document
  
       - name: Download cross-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cross-binaries
           path: ./
@@ -205,19 +205,19 @@ jobs:
           tar zxf cross-binaries.tar.gz
 
       - name: Download mobile-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: mobile-binaries
           path: build
 
       - name: Download generated documents
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: generated-document
           path: build/document
 
       - name: Download generated credits
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: generated-credits
           path: build
@@ -229,7 +229,7 @@ jobs:
         run: bash scripts/archive build
 
       - name: Upload archive 
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./build/archive
@@ -244,7 +244,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Download archive
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: archive
           path: build/archive
