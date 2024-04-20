@@ -120,13 +120,15 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 
 	flowModFuncMap := map[string]lua.LGFunction{
 		// Module for controling game or scene flow.
-		"quit":          quitScript,
-		"longReturn":    longReturnScript,
-		"setNextScene":  ft.setNextScene,
-		"gotoNextScene": ft.gotoNextScene,
-		"saveScene":     ft.saveScene,
-		"loadScene":     ft.loadScene,
-		"doTrains":      ft.doTrains,
+		"quit":            quitScript,
+		"longReturn":      longReturnScript,
+		"setNextScene":    ft.setNextScene,
+		"getNextScene":    ft.getNextScene,
+		"getCurrentScene": ft.getCurrentScene,
+		"gotoNextScene":   ft.gotoNextScene,
+		"saveScene":       ft.saveScene,
+		"loadScene":       ft.loadScene,
+		"doTrains":        ft.doTrains,
 	}
 	// flow module need not to wrap keep alive WDT since it backs controll to
 	// platform side which stops WDT or just does additional subroutine which
@@ -1091,6 +1093,30 @@ func (ft functor) setNextScene(L *lua.LState) int {
 	err := ft.game.SetNextSceneByName(name)
 	raiseErrorIf(L, err)
 	return 0
+}
+
+// +gendoc "Flow Module"
+// * scene_name: string = flow.getNextScene()
+//
+// it gets next scene name. If next scene is not set, it returns empty string ""
+//
+// 次のシーン名を取得します。次のシーン名が設定されていない場合は、空文字列 "" を返します。
+func (ft functor) getNextScene(L *lua.LState) int {
+	name := ft.game.NextSceneName()
+	L.Push(lua.LString(name))
+	return 1
+}
+
+// +gendoc "Flow Module"
+// * scene_name: string = flow.getCurrentScene()
+//
+// it gets current scene name which system runs.
+//
+// 現在システムが実行中のシーン名を取得します。
+func (ft functor) getCurrentScene(L *lua.LState) int {
+	name := ft.game.CurrentSceneName()
+	L.Push(lua.LString(name))
+	return 1
 }
 
 // +gendoc "Flow Module"

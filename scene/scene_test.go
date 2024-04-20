@@ -2,6 +2,7 @@ package scene
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/mzki/erago/stub"
@@ -58,5 +59,73 @@ func TestSceneExists(t *testing.T) {
 	m.UnRegisterScene(SceneNameTitle)
 	if has := m.SceneExists(SceneNameTitle); has {
 		t.Errorf("After UnRegisterScene, SceneManager must NOT have the scene %s, but does", SceneNameTitle)
+	}
+}
+
+func TestSceneCurrentName(t *testing.T) {
+	m := buildSceneManager()
+	defer m.Free()
+
+	for _, tt := range []struct {
+		name string
+		next string
+	}{
+		{name: "test_scene_name1", next: "test_scene_name2"},
+		{name: "test_scene_name2", next: "__unknown__"},
+	} {
+		ttt := tt // to captrue current value into closure.
+		m.RegisterSceneFunc(tt.name, func() (string, error) {
+			if name := m.CurrentSceneName(); name != ttt.name {
+				t.Errorf("CurrentSceneName is unmatch, expect: %v, got: %v", ttt.name, name)
+			}
+			return ttt.next, nil
+		})
+	}
+
+	ctx := context.Background()
+	err := m.Run(ctx, "test_scene_name1")
+	if errors.Is(err, ErrorRunNextSceneNotFound) {
+		// intended error. ignore.
+	} else {
+		t.Fatal(err)
+	}
+}
+
+func TestSceneNextName(t *testing.T) {
+	m := buildSceneManager()
+	defer m.Free()
+
+	for _, tt := range []struct {
+		name              string
+		next              string
+		shouldNoErrAtNext bool
+	}{
+		{name: "test_scene_name1", next: "test_scene_name2", shouldNoErrAtNext: true},
+		{name: "test_scene_name2", next: "test_scene_name3", shouldNoErrAtNext: true},
+		{name: "test_scene_name3", next: "__unknown__", shouldNoErrAtNext: false},
+	} {
+		ttt := tt // to captrue current value into closure.
+		m.RegisterSceneFunc(tt.name, func() (string, error) {
+			if name := m.NextSceneName(); name != "" {
+				t.Errorf("NextSceneName should empty at scene, expect: %v, got: %v", "", name)
+			}
+			if err := m.SetNextSceneByName(ttt.next); ttt.shouldNoErrAtNext && err != nil {
+				t.Error(err)
+			}
+			if name := m.NextSceneName(); ttt.shouldNoErrAtNext && name != ttt.next {
+				t.Errorf("NextSceneName unmatch, expect: %v, got: %v", ttt.next, name)
+			} else if !ttt.shouldNoErrAtNext && name != "" {
+				t.Errorf("NextSceneName should empty at next scene not found, expect:%v, got:%v", "", name)
+			}
+			return ttt.next, nil
+		})
+	}
+
+	ctx := context.Background()
+	err := m.Run(ctx, "test_scene_name1")
+	if errors.Is(err, ErrorRunNextSceneNotFound) {
+		// intended error. ignore.
+	} else {
+		t.Fatal(err)
 	}
 }

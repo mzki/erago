@@ -56,6 +56,8 @@ era.clearShare()
 era.saveShare()
 era.loadShare()
 
+assert(era.flow.getCurrentScene())
+assert(era.flow.getNextScene())
 era.flow.setNextScene "test"
 era.flow.saveScene()
 era.flow.loadScene()

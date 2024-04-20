@@ -2,6 +2,7 @@ package scene
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/mzki/erago/state"
@@ -161,6 +162,20 @@ func (sm *SceneManager) SetReplaceText(config ConfigReplaceText) error {
 // not found return error.
 func (sm SceneManager) SetNextSceneByName(scene_name string) error {
 	return sm.sf.scenes.SetNextByName(scene_name)
+}
+
+// NextSceneName returns next scene name. If next scene is not set, return empty string.
+func (sm *SceneManager) NextSceneName() string {
+	if scenes := sm.sf.scenes; scenes.HasNext() {
+		return scenes.Next().Name()
+	} else {
+		return ""
+	}
+}
+
+// CurrentSceneName returns current scene name.
+func (sm *SceneManager) CurrentSceneName() string {
+	return sm.currentScene.Name()
 }
 
 // register user-defined scene into scene trainsition

@@ -21,6 +21,12 @@ type GameController interface {
 	// set next scene specified by its name.
 	SetNextSceneByName(name string) error
 
+	// get next scene name.
+	NextSceneName() string
+
+	// get current scene name.
+	CurrentSceneName() string
+
 	// register new scene flow using its name and the function desclibeing its flow.
 	// next_func must return next scene name to move to next flow.
 	RegisterSceneFunc(name string, next_func func() (string, error))
