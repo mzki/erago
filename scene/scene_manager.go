@@ -70,25 +70,29 @@ func (sm *SceneManager) Run(ctx context.Context, start_scene string) (err error)
 
 		next, err := sm.currentScene.Next()
 
-		switch err {
-		case nil:
+		switch {
+		case err == nil:
 			// no error, do nothing.
-		case ErrorSceneNext:
+		case errors.Is(err, ErrorSceneNext):
 			// indicates force moving to next scene.
 			next = sm.sf.Scenes().Next()
 			if next == nil {
-				return fmt.Errorf("SceneManager.Run(): got going to next scene, but next scene does not set")
+				return fmt.Errorf("SceneManager.Run(): got going to next scene, but next scene does not set: %w", ErrorRunNextSceneNotFound)
 			}
-		case ErrorQuit:
+		case errors.Is(err, ErrorQuit):
 			// indicates force quit or normal termination.
 			return nil
+		case errors.Is(err, ErrorSceneNameNotRegistered):
+			// assumes get next Scene but not registered.
+			err = errors.Join(err, ErrorRunNextSceneNotFound)
+			fallthrough
 		default:
-			log.Debugf("SceneManager.Run(): %v in %v", err, sm.currentScene.Name())
+			log.Debugf("SceneManager.Run(): %v in scene(%v)", err, sm.currentScene.Name())
 			return err // error context, example is uiadpter.ErrorPipelineClosed, is remained.
 		}
 
 		if next == nil {
-			return fmt.Errorf("SceneManager.Run(): scene %v returns nil as next scene", sm.currentScene.Name())
+			return fmt.Errorf("SceneManager.Run(): scene %v returns nil as next scene: cause by %w", sm.currentScene.Name(), ErrorRunNextSceneNotFound)
 		}
 
 		sceneHolder.SetPrev(sm.currentScene)

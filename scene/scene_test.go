@@ -30,9 +30,10 @@ func TestSceneManager(t *testing.T) {
 	ctx := context.Background()
 	if err := manager.Run(ctx, SceneNameTitle); err == nil {
 		t.Error("must be error( not found next scene )")
+	} else if errors.Is(err, ErrorRunNextSceneNotFound) {
+		// intended error. ignore
 	} else {
-		t.Log("SceneManager.Run() returns:")
-		t.Log(err)
+		t.Fatal(err)
 	}
 
 	manager.UnRegisterScene(SceneNameTitle)

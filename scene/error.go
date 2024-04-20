@@ -17,3 +17,9 @@ var ErrorSceneNext = errors.New("go to next scene")
 // to implement this, all of game controller funtions returns error.
 // because running script is interrupted by error defined above.
 // var ErrorRestartTitle
+
+// ErrorRunNextSceneNotFound indicates SceneManager could not found next scene anymore.
+var ErrorRunNextSceneNotFound = errors.New("Next Scene is not found")
+
+// ErrorSceneNameNotRegistered indicates the snene name not registered.
+var ErrorSceneNameNotRegistered = errors.New("Scene Name is not registered")

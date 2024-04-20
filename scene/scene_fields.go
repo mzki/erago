@@ -93,12 +93,14 @@ func (sh *sceneHolder) SetPrev(s Scene) Scene {
 	return sh.prev
 }
 
+// GetScene returns Scene specifyed by name.
+// If name is not registered yet, it returns nil scene and error including ErrorSceneNameNotRegistered.
 func (sh sceneHolder) GetScene(name string) (Scene, error) {
 	s, ok := sh.scenes[name]
 	if ok {
 		return s, nil
 	}
-	return nil, fmt.Errorf(`scene "%v" is not found`, name)
+	return nil, fmt.Errorf(`scene "%v" is not found: %w`, name, ErrorSceneNameNotRegistered)
 }
 
 // register scene to add new flow for the scene transition.
