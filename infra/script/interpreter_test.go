@@ -498,6 +498,7 @@ func TestInterpreterTestingLibs(t *testing.T) {
 		Error    error
 	}{
 		{"era_input_queue.lua", nil},
+		{"era_flow_pcall.lua", nil},
 	} {
 		if err := ip.DoFile(filepath.Join(scriptDir, testcase.FileName)); err != testcase.Error {
 			t.Errorf("in %v, Error expect: %v, got: %v", testcase.FileName, testcase.Error, err)

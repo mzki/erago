@@ -1,8 +1,10 @@
 package script
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/mzki/erago/scene"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -37,6 +39,16 @@ func registerIsTesting(L *lua.LState, isTesting bool) {
 
 const regKeyTestingController = "era_testing_controller"
 
+// OpenTestingLibs enables the features used for only testing.
+// Such features are useful for development purpose such as unit testing.
+// The test feature is disabled at default.
+func (ip *Interpreter) OpenTestingLibs(tc TestingController) {
+	L := ip.vm
+	registerIsTesting(L, true)
+	registerInputQueuer(L, tc)
+	registerFlowPCall(L, ip)
+}
+
 // +gendoc "Era Module"
 // * inputQ: InputQueue = era.inputQueue()
 //
@@ -47,13 +59,7 @@ const regKeyTestingController = "era_testing_controller"
 // InputQueue オブジェクトを返します。inputQueueオブジェクトはユーザーの入力を疑似的にシミュレートし、
 // era.inputXXX などの入力関数からユーザの入力を取り出すことができます。
 
-// OpenTestingLibs enables the features used for only testing.
-// Such features are useful for development purpose such as unit testing.
-// The test feature is disabled at default.
-func (ip *Interpreter) OpenTestingLibs(tc TestingController) {
-	L := ip.vm
-	registerIsTesting(L, true)
-
+func registerInputQueuer(L *lua.LState, inputQ InputQueuer) {
 	funcMap := L.SetFuncs(L.NewTable(), inputQueueFuncMap)
 	meta := getOrNewMetatable(L, "era_input_queue", map[string]lua.LValue{
 		"__index": funcMap,
@@ -62,7 +68,7 @@ func (ip *Interpreter) OpenTestingLibs(tc TestingController) {
 	})
 
 	ud := L.NewUserData()
-	ud.Value = tc
+	ud.Value = inputQ
 	ud.Metatable = meta
 	reg := L.Get(lua.RegistryIndex).(*lua.LTable)
 	reg.RawSetString(regKeyTestingController, ud)
@@ -75,6 +81,44 @@ func (ip *Interpreter) OpenTestingLibs(tc TestingController) {
 				return 1
 			}),
 		),
+	)
+}
+
+// +gendoc: "Flow Module"
+// * ok: boolean, ...: any = flow.pcall(fun: function, ...: any)
+//
+// It is enabled only in testing mode. It will call fun with args and catch the jumping execution step by calling
+// flow control functions inside fun such as flow.gotoNextScene.
+// It returns the execution status of fun at 1st result and the result of fun at 2nd result.
+// When the 1st result is true, there is no any calling flow control functions. The 2nd result and later
+// are the result of calling fun.
+// when the 1st result is false, there is calling flow control functions.
+// The 2nd result is string message that shows which flow control is happened.
+// NOTE: flow control functions are flow.gotoNextScene, flow.longReturn and flow.quit .
+//
+// flow.saveScene and flow.LoadScene are complex case. when flow control functions are called inside save/loadScene
+// flow.pcall will catch the jumping, In other case save/loadScene will back to the caller position and proceed next
+// execution steps.
+//
+// この機能はテスト環境でのみ有効です。
+// 受け取った fun を args を引数に呼び出します。呼び出し中に発生したフロー制御関数による実行ステップのジャンプ
+// (例: flow.gotoNextScene) を補足し、実行ステータスとして通知します。
+// 1番目の戻り値が true の場合、フロー制御関数の呼び出しはありません。 2番目以降の戻り値は fun を呼び出した結果です。
+// 1番目の戻り値が false の場合、フロー制御関数が呼び出されています。 2番目の結果は、どのフロー制御が行われたかを示す文字列メッセージです。
+// 備考: フロー制御関数とは flow.gotoNextScene, flow.longReturn, flow.quit です。
+//
+// flow.saveScene と flow.LoadScene は複雑です。 save/loadScene の中でフロー制御関数が実行された場合、実行ステップの
+// ジャンプが補足されます。一方, save/loadScene の元の呼び出し位置に戻るケースでは、通常通り実行ステップが続行されます。
+
+func registerFlowPCall(L *lua.LState, ip *Interpreter) {
+	flowMod, ok := mustGetEraModule(L).RawGetString(eraFlowModName).(*lua.LTable)
+	if !ok {
+		panic(EraModuleName + "." + eraFlowModName + " is not a module")
+	}
+
+	flowMod.RawSetString(
+		"pcall",
+		L.NewFunction(wrapLFlowPCall(ip)),
 	)
 }
 
@@ -175,4 +219,46 @@ func linputQueueSize(L *lua.LState) int {
 	inputQ := checkInputQueuer(L, 1)
 	L.Push(lua.LNumber(inputQ.Size()))
 	return 1
+}
+
+var flowControlFuncErrorMap = map[error]string{
+	scene.ErrorQuit:      "flow.quit",
+	scene.ErrorSceneNext: "flow.gotoNextScene",
+	errScriptLongReturn:  "flow.longReturn",
+}
+
+func wrapLFlowPCall(ip *Interpreter) lua.LGFunction {
+	return func(L *lua.LState) int {
+		fun := L.CheckFunction(1)
+		args := make([]lua.LValue, 0, 2)
+		for i := 2; i <= L.GetTop(); i++ {
+			v := L.Get(i)
+			args = append(args, v)
+		}
+		base := L.GetTop()
+
+		err := L.CallByParam(lua.P{
+			Fn:      fun,
+			NRet:    lua.MultRet,
+			Protect: true,
+		}, args...)
+		if err == nil {
+			L.Insert(lua.LTrue, base+1)
+			return (L.GetTop() - base)
+		} else { // something error happend
+			if intErr := ip.extractScriptInterruptError(err.Error()); intErr != nil {
+				for funcErr, msg := range flowControlFuncErrorMap {
+					if errors.Is(intErr, funcErr) {
+						L.Push(lua.LFalse)
+						L.Push(lua.LString(msg))
+						return 2
+					}
+				}
+				// intErr is not result of flow control function. rethrow original error instead of intErr
+				// to keep original context. Later it will be catched at root of script call stack.
+			}
+			raiseErrorE(L, err)
+			return 0
+		}
+	}
 }
