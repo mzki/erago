@@ -45,6 +45,15 @@ func main() {
 			fmt.Fprintln(os.Stderr, "FAILED")
 			os.Exit(1)
 		}
+	case runPackaging:
+		ok := app.Packaging("./", appConf, appConfigPath, args)
+		if ok {
+			fmt.Fprintln(os.Stderr, "DONE")
+			os.Exit(0)
+		} else {
+			fmt.Fprintln(os.Stderr, "FAILED")
+			os.Exit(1)
+		}
 	}
 	os.Exit(0)
 }
@@ -54,7 +63,10 @@ type runningMode int
 const (
 	runMain runningMode = iota
 	runTest
+	runPackaging
 )
+
+const appConfigPath = app.ConfigFile
 
 var (
 	LogFile              string  = app.DefaultLogFile
@@ -74,6 +86,7 @@ const (
 
 	flagNameTest        = "test"
 	flagNameTestTimeout = "test.timeoutsec"
+	flagNamePackaging   = "packaging"
 	flagNameVersion     = "version"
 )
 
@@ -93,6 +106,10 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 	flags.BoolVar(&testing, flagNameTest, testing, "run tests and quit. after given this flag,"+
 		" script files to test are required in the command-line arguments")
 
+	packaging := false
+	flags.BoolVar(&packaging, flagNamePackaging, packaging, "run package creation and quit. after given this flag,"+
+		" extra arguments are treated as the additional files to be included in the package.")
+
 	showVersion := false
 	flags.BoolVar(&showVersion, flagNameVersion, showVersion, "show version info and quit.")
 
@@ -107,6 +124,9 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 	// return running mode
 	if testing {
 		return runTest, flags.Args()
+	}
+	if packaging {
+		return runPackaging, flag.Args()
 	}
 	return runMain, nil
 }
@@ -145,7 +165,7 @@ func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
 }
 
 func loadConfigOrDefault() *app.Config {
-	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	appConf, err := app.LoadConfigOrDefault(appConfigPath)
 	switch err {
 	case app.ErrDefaultConfigGenerated:
 		// TODO this message is shown at app.Main which starts logger?
