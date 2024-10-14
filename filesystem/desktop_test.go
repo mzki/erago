@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"io"
+	"io/fs"
 	"strings"
 	"testing"
 )
@@ -51,4 +52,19 @@ func TestStringLoader(t *testing.T) {
 	if string(content) != source {
 		t.Errorf("different content")
 	}
+}
+
+func TestOSOpenFS(t *testing.T) {
+	var fsys FileSystem = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
+	fsfs, ok := fsys.(fs.FS)
+	if !ok {
+		t.Fatal("OSFileSystem does not implement fs.FS interface")
+	}
+
+	const fpath = "./desktop_test.go"
+	file, err := fsfs.Open(fpath)
+	if err != nil {
+		t.Fatalf("failed to Open: %v", fpath)
+	}
+	defer file.Close()
 }

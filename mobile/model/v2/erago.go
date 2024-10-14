@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/app"
@@ -34,8 +35,11 @@ func Init(ui UI, baseDir string, imageFetchType int) error {
 	}
 
 	// setup mobile filesystem to properly access resources.
-	mobileFS := filesystem.Mobile
-	mobileFS.CurrentDir = baseDir
+	absBaseDir, err := filepath.Abs(baseDir)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get absolute path for: %v, %v", baseDir, err))
+	}
+	mobileFS := filesystem.AbsDirFileSystem(absBaseDir)
 	filesystem.Default = mobileFS // replace file system used by erago
 
 	// load config file

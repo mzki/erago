@@ -1,13 +1,39 @@
 package filesystem
 
 import (
+	"fmt"
 	"io"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
 const MobileLoadSource = "mobile_test.go"
+
+func TestAbsDirFileSystem(t *testing.T) {
+	dirPath, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirFs := AbsDirFileSystem(dirPath)
+	reader, err := dirFs.Load(MobileLoadSource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+}
+
+func TestAbsDirFileSystemAtUnknownLocation(t *testing.T) {
+	const unknownDir = "/path/to/unknown"
+	dirFs := AbsDirFileSystem(unknownDir)
+	reader, err := dirFs.Load(MobileLoadSource)
+	if err == nil {
+		defer reader.Close()
+		t.Fatalf("Expected to raise some error for unknown path(%v), but no error", filepath.Join(unknownDir, MobileLoadSource))
+	}
+	// do not need to call reader.Close as err is not nil here.
+}
 
 func TestMobileLoader(t *testing.T) {
 	var FS FileSystem = Mobile
@@ -91,4 +117,56 @@ func TestAbsPathFileSystemResolvePath(t *testing.T) {
 	if !strings.HasPrefix(string(content), "package filesystem") {
 		t.Errorf("can not read first line of this file")
 	}
+}
+
+func TestAbsFileSystemOpenFS(t *testing.T) {
+	parentPath, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var filesystem FileSystem = &AbsPathFileSystem{CurrentDir: parentPath}
+	fsfs, ok := filesystem.(fs.FS)
+	if !ok {
+		t.Fatal("AbsPathFileSystem should support fs.FS interface, but not")
+	}
+
+	const fpath = "./mobile_test.go"
+	file, err := fsfs.Open(fpath)
+	if err != nil {
+		t.Fatalf("failed to Open: %v", fpath)
+	}
+	defer file.Close()
+}
+
+var errNotSupportedForTest = fmt.Errorf("not supported")
+
+type emptyFileSystem struct{}
+
+func (emptyFileSystem) Load(fpath string) (io.ReadCloser, error) { return nil, errNotSupportedForTest }
+func (emptyFileSystem) Store(fpath string) (io.WriteCloser, error) {
+	return nil, errNotSupportedForTest
+}
+func (emptyFileSystem) Exist(fpath string) bool { return false }
+
+func TestAbsFileSystemOpenFSNotSupport(t *testing.T) {
+	parentPath, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var filesystem FileSystem = &AbsPathFileSystem{
+		CurrentDir: parentPath,
+		Backend:    &emptyFileSystem{},
+	}
+	fsfs, ok := filesystem.(fs.FS)
+	if !ok {
+		t.Fatal("AbsPathFileSystem should support fs.FS interface, but not")
+	}
+
+	const fpath = "./mobile_test.go"
+	file, err := fsfs.Open(fpath)
+	if err == nil {
+		file.Close()
+		t.Fatalf("expected to have error but got nil for path: %v", fpath)
+	}
+	t.Logf("expected err content: %v", err)
 }

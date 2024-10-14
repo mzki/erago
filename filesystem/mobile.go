@@ -3,6 +3,7 @@ package filesystem
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"path/filepath"
 )
 
@@ -10,7 +11,7 @@ var (
 	// Mobile is a FileSystem for the mobile environment that
 	// requires absolute path to access file since the notion of
 	// current directory is different from desktop.
-	Mobile = &AbsPathFileSystem{
+	Mobile FileSystemPR = &AbsPathFileSystem{
 		CurrentDir: "",
 		Backend:    Desktop,
 	}
@@ -21,9 +22,21 @@ var (
 // or made by file.Join(CurrentDir, relativePath) when CurrentDir is set.
 // The Backend is used to access File API. and The OSFileSystem is used as Backend when
 // it is nil.
+//
+// AbsPathFileSystem implements FileSystem, and fs.FS interface.
 type AbsPathFileSystem struct {
 	CurrentDir string
 	Backend    FileSystem
+}
+
+// AbsDirFileSystem create new FileSystem in which all files are under the dirPath.
+// absDirPath must be aboslute path. Otherwise method call like Load will fail.
+// Backend FileSystem is used for Default. User can modify Backend for specific purpose.
+func AbsDirFileSystem(absDirPath string) *AbsPathFileSystem {
+	return &AbsPathFileSystem{
+		CurrentDir: absDirPath,
+		Backend:    Default,
+	}
 }
 
 // ResolvePath complete parent directory path to fpath when fpath is a relative path.
@@ -75,4 +88,28 @@ func (absfs *AbsPathFileSystem) Store(fpath string) (writer io.WriteCloser, err 
 	}
 	backend := absfs.mustBackend()
 	return backend.Store(fpath)
+}
+
+// implements fs.FS interface.
+func (absfs *AbsPathFileSystem) Open(fpath string) (file fs.File, err error) {
+	fpath, err = absfs.ResolvePath(fpath)
+	if err != nil {
+		return nil, err
+	}
+
+	backend := absfs.mustBackend()
+	if fsys, ok := backend.(fs.FS); ok {
+		return fsys.Open(fpath)
+	}
+
+	r, err := backend.Load(fpath)
+	if err != nil {
+		return nil, err
+	}
+	if file, ok := r.(fs.File); ok {
+		return file, nil
+	} else {
+		r.Close()
+		return nil, &fs.PathError{Op: "open", Path: fpath, Err: fmt.Errorf("not supported")}
+	}
 }

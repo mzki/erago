@@ -3,6 +3,7 @@ package filesystem
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,7 @@ const (
 
 var (
 	// Desktop is a FileSystem for the desktop environment
-	Desktop = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
+	Desktop FileSystemPR = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
 	// String is a adaptation of strings.Buffer with Loader interface.
 	String Loader = LoaderFunc(StringReadCloser)
 )
@@ -36,6 +37,8 @@ func (fn LoaderFunc) Exist(filepath string) bool {
 }
 
 // OSFileSystem is a adaptation of the os.Open() with Loader interface.
+//
+// OSFileSystem implements FileSystem, and fs.FS interface.
 type OSFileSystem struct {
 	MaxFileSize int64 // in bytes
 }
@@ -74,6 +77,23 @@ func (osfs *OSFileSystem) Store(fpath string) (writer io.WriteCloser, err error)
 		return nil, fmt.Errorf("can not create store file: %v", err)
 	}
 	return fp, nil
+}
+
+// Implement fs.FS interface
+func (osfs *OSFileSystem) Open(fpath string) (fs.File, error) {
+	ospath := filepath.FromSlash(fpath)
+	r, err := osfs.Load(ospath)
+	if err != nil {
+		return nil, err
+	}
+
+	if file, ok := r.(fs.File); ok {
+		return file, nil
+	} else {
+		// This case should not be happened but handle it as safety.
+		r.Close()
+		return nil, &fs.PathError{Op: "open", Path: ospath, Err: fmt.Errorf("not supported")}
+	}
 }
 
 // StringReadCloser is helper function which creates io.ReadCloser from a entire content
