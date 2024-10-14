@@ -9,7 +9,7 @@ inputs:
     default: true
   gomobile-commit:
     description: "specify gomobile versionby git commit hash or tag"
-    default: "43a0384520996c8376bfb8637390f12b44773e65"
+    default: "08a83c5af9f8c7088ee059144335eec7fbbdb32c"
   setup-go:
     description: "Setup go before setup gomobile"
     default: true

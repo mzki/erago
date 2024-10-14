@@ -29,7 +29,10 @@ BUILD_FLAGS="-gcflags=-trimpath=${GOPATH}"
 TARGET_FLAGS=android # can use "android/arm,android/amd64" to shrink data size
 # build mobile library
 echo "building ${OUTPUT}..."
-# needs -androidapi 19 to use modern android SDK and NDK
+# needs -androidapi XX (e.g. 19) to use modern android SDK and NDK
 # See https://github.com/golang/go/issues/52470.
+# The minimum api level is increased according to NDK version in the builder image, 
+# such as github action runner image.
+# See https://github.com/actions/runner-images for runner image details.
 # TODO: Embed build version into binary like -x main.commit_hash=${COMMIT_HASH}?
-gomobile bind ${BUILD_FLAGS} -androidapi 19 -target ${TARGET_FLAGS} -o ${OUTPUT} . || exit 1
+gomobile bind ${BUILD_FLAGS} -androidapi 21 -target ${TARGET_FLAGS} -o ${OUTPUT} . || exit 1

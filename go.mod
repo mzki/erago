@@ -9,21 +9,20 @@ require (
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/ugorji/go/codec v1.2.7
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64
-	// I could not upgrade exp/shiny package from this versoin.
-	// By upgrading exp package from this version, exp/shiny adds go.mod then
-	// the versions of exp and exp/shiny are conflicts on gomobile which requires exp@2019.
-	golang.org/x/exp v0.0.0-20220203164150-d4f80a91470e
-	golang.org/x/image v0.14.0
-	golang.org/x/mobile v0.0.0-20221110043201-43a038452099
-	golang.org/x/sys v0.5.0
-	golang.org/x/text v0.14.0
+	golang.org/x/image v0.16.0
+	golang.org/x/mobile v0.0.0-20240520174638-fa72addaaa1b
+	golang.org/x/sys v0.20.0
+	golang.org/x/text v0.15.0
 )
 
-require github.com/fsnotify/fsnotify v1.6.0
+require (
+	github.com/fsnotify/fsnotify v1.6.0
+	golang.org/x/exp/shiny v0.0.0-20241009180824-f66d83c29e7c
+)
 
 require (
-	dmitri.shuralyov.com/gpu/mtl v0.0.0-20201218220906-28db891af037 // indirect
-	github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
+	dmitri.shuralyov.com/gpu/mtl v0.0.0-20221208032759-85de2813cf6b // indirect
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20231223183121-56fa3ac82ce7 // indirect
+	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 )
