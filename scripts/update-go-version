@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -eu
+
+# update go-version to be used in this repository
+# Usage: update-go-version "base-version" "update-target-version"
+
+base=$1
+target=$2
+
+grep -Frl \
+  --exclude-dir={.git,build} \
+  --exclude={*.log,union_test.go} \
+  "$base" . \
+  | xargs sed -i -e "s/$base/$target/g"
