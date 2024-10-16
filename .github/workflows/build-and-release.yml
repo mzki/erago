@@ -39,7 +39,10 @@ jobs:
         run: go mod download
 
       - name: Testing
-        run: go test -v ./...
+        run: go test -timeout 3m -v ./...
+
+      - name: Race Testing
+        run: go test -race -timeout 5m -v ./...
 
       - name: Create built path
         run: mkdir -p ./build
