@@ -69,8 +69,7 @@ func Packaging(dstDir string, appConf *Config, appConfPath string, extraFiles []
 		return false
 	}
 
-	osFsys := filesystem.Desktop.(fs.FS)
-	if outputFile, err := pkg.ArchiveAsZip(dstFsys, archiveName, osFsys, targetFiles); err != nil {
+	if outputFile, err := pkg.ArchiveAsZip(dstFsys, archiveName, filesystem.Desktop, targetFiles); err != nil {
 		log.Infof("output as Zip failed: %v", err)
 		return false
 	} else {

@@ -56,7 +56,7 @@ RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS_
     "platform-tools"
 
 # Install NDK
-ENV NDK_VER="25.1.8937393"
+ENV NDK_VER="27.1.12297006"
 RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager "ndk;$NDK_VER"
 # gomobile adapt new ndk path, so this is no longer needed.
 # RUN ln -sf $ANDROID_HOME/ndk/$NDK_VER $ANDROID_HOME/ndk-bundle
@@ -65,7 +65,7 @@ RUN $ANDROID_TOOLS_HOME/tools/bin/sdkmanager "ndk;$NDK_VER"
 # After initialization, remove gomobile repository and its dependency
 RUN git clone https://github.com/golang/mobile.git mobile \
   && cd mobile \
-  && git checkout 43a0384520996c8376bfb8637390f12b44773e65 \
+  && git checkout 08a83c5af9f8c7088ee059144335eec7fbbdb32c \
   && cd cmd/gomobile \
   && go install . \
   && go clean -cache -modcache \

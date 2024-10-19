@@ -113,3 +113,17 @@ func (absfs *AbsPathFileSystem) Open(fpath string) (file fs.File, err error) {
 		return nil, &fs.PathError{Op: "open", Path: fpath, Err: fmt.Errorf("not supported")}
 	}
 }
+
+// Implements FileSystemGlob interface.
+func (absfs *AbsPathFileSystem) Glob(pattern string) ([]string, error) {
+	pattern, err := absfs.ResolvePath(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("AbsPathFileSystem.Glob() error: %w", err)
+	}
+	backend := absfs.mustBackend()
+	if globFS, ok := backend.(FileSystemGlob); ok {
+		return GlobFS(globFS, pattern)
+	} else {
+		return nil, fmt.Errorf("Glob is not supported at backend filesystem")
+	}
+}

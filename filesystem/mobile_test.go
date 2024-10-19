@@ -170,3 +170,44 @@ func TestAbsFileSystemOpenFSNotSupport(t *testing.T) {
 	}
 	t.Logf("expected err content: %v", err)
 }
+
+func TestAbsPathFileSystem_Open(t *testing.T) {
+	currentDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type fields struct {
+		CurrentDir string
+		Backend    FileSystem
+	}
+	type args struct {
+		fpath string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{"normal", fields{currentDir, Desktop}, args{"mobile_test.go"}, false},
+		{"not found", fields{currentDir, Desktop}, args{"path/to/not-found"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			absfs := &AbsPathFileSystem{
+				CurrentDir: tt.fields.CurrentDir,
+				Backend:    tt.fields.Backend,
+			}
+			gotFile, err := absfs.Open(tt.args.fpath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AbsPathFileSystem.Open() error = %v, wantErr %v", err, tt.wantErr)
+				gotFile.Close()
+				return
+			}
+			if err == nil {
+				defer gotFile.Close()
+			}
+		})
+	}
+}

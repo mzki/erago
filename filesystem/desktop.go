@@ -15,7 +15,7 @@ const (
 
 var (
 	// Desktop is a FileSystem for the desktop environment
-	Desktop FileSystemPR = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
+	Desktop = &OSFileSystem{MaxFileSize: DefaultMaxFileSize}
 	// String is a adaptation of strings.Buffer with Loader interface.
 	String Loader = LoaderFunc(StringReadCloser)
 )
@@ -94,6 +94,11 @@ func (osfs *OSFileSystem) Open(fpath string) (fs.File, error) {
 		r.Close()
 		return nil, &fs.PathError{Op: "open", Path: ospath, Err: fmt.Errorf("not supported")}
 	}
+}
+
+// Implements FileSystemGlob interface
+func (osfs *OSFileSystem) Glob(pattern string) ([]string, error) {
+	return filepath.Glob(pattern)
 }
 
 // StringReadCloser is helper function which creates io.ReadCloser from a entire content

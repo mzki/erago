@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"io"
-	"path/filepath"
 
 	"github.com/mzki/erago/util/log"
 )
@@ -32,6 +31,18 @@ type PathResolver interface {
 	ResolvePath(path string) (string, error)
 }
 
+// FileSytemGlob has ability for Glob files.
+type FileSystemGlob interface {
+	FileSystem
+	Glob(pattern string) ([]string, error)
+}
+
+// FileSystemGlobPR is FileSystemGlob with implement PathResolver interface.
+type FileSystemGlobPR interface {
+	FileSystemGlob
+	PathResolver
+}
+
 // NopPathResolver implements PathResolver interface.
 type NopPathResolver struct{}
 
@@ -54,7 +65,7 @@ type Loader interface {
 
 var (
 	// Default is a default FileSystem to be used by exported functions.
-	Default FileSystemPR = Desktop
+	Default FileSystemGlobPR = Desktop
 )
 
 func Load(filepath string) (reader io.ReadCloser, err error) {
@@ -78,13 +89,8 @@ func Glob(pattern string) ([]string, error) {
 }
 
 // Glob is wrap function for filepath.Glob with use filesystem.FileSystemPR
-func GlobFS(fs FileSystemPR, pattern string) ([]string, error) {
-	var err error
-	pattern, err = ResolvePathFS(fs, pattern)
-	if err != nil {
-		return nil, err
-	}
-	return filepath.Glob(pattern)
+func GlobFS(fs FileSystemGlob, pattern string) ([]string, error) {
+	return fs.Glob(pattern)
 }
 
 // ResolvePath resolve file path under filesystem.Default.

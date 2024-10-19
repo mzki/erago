@@ -29,17 +29,40 @@ var (
 	initialized    = false
 )
 
-func Init(ui UI, baseDir string, imageFetchType int) error {
+type InitOptions struct {
+	// ImageFetchType indicates how game engine notifies image data to UI.
+	// It should either one of ImageFetch* values. e.g. ImageFetchRawRGBA.
+	ImageFetchType int
+
+	// FileSystem is used for reading and writing files for erago package files.
+	// It can be nil, in that case OS default filesystem is used.
+	FileSystem filesystem.FileSystemGlob
+}
+
+func Init(ui UI, baseDir string, options InitOptions) error {
 	if initialized {
 		panic("game already initialized")
 	}
 
 	// setup mobile filesystem to properly access resources.
-	absBaseDir, err := filepath.Abs(baseDir)
-	if err != nil {
-		panic(fmt.Sprintf("failed to get absolute path for: %v, %v", baseDir, err))
+	var absBaseDir string
+	if filepath.IsAbs(baseDir) {
+		absBaseDir = baseDir
+	} else {
+		var err error
+		absBaseDir, err = filepath.Abs(baseDir)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path for: %v, %w", baseDir, err)
+		}
 	}
+
+	// setup filesystem
 	mobileFS := filesystem.AbsDirFileSystem(absBaseDir)
+	if options.FileSystem != nil {
+		mobileFS.Backend = options.FileSystem
+	} else {
+		mobileFS.Backend = &filesystem.OSFileSystem{MaxFileSize: filesystem.DefaultMaxFileSize}
+	}
 	filesystem.Default = mobileFS // replace file system used by erago
 
 	// load config file
@@ -94,7 +117,7 @@ func Init(ui UI, baseDir string, imageFetchType int) error {
 	closeFuncs = append(closeFuncs, cancel)
 
 	theGame = erago.NewGame()
-	mobileUI, err = newUIAdapter(ctx, ui, imageFetchType)
+	mobileUI, err = newUIAdapter(ctx, ui, options.ImageFetchType)
 	if err != nil {
 		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)
 		log.Infof("%v", theErr)
