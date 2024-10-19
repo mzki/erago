@@ -82,7 +82,7 @@ func addFileToZipWriter(zWriter *zip.Writer, srcFile fs.File, archiveBaseName st
 	if err != nil {
 		return err
 	}
-	header.Name = filepath.Join(archiveBaseName, filePath)
+	header.Name = filepath.ToSlash(filepath.Join(archiveBaseName, filePath))
 	header.Method = zip.Deflate
 	// check wthether potential of zip slip
 	if !strings.HasPrefix(header.Name, archiveBaseName) {

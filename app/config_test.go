@@ -25,7 +25,7 @@ func TestGenGolden(t *testing.T) {
 }
 
 func TestLoadConfigOrDefault(t *testing.T) {
-	confFile, err := testdataFS.Open(filepath.Join("testdata", ConfigFile))
+	confFile, err := testdataFS.Open("testdata/" + ConfigFile)
 	if err != nil {
 		t.Fatal(err)
 	}

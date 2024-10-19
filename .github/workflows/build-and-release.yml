@@ -56,7 +56,7 @@ jobs:
         working-directory: stub
         run: |
           ./main-for-test -version
-          ./main-for-test -testing ELA/game_test.lua
+          ./main-for-test -test ELA/game_test.lua
           ./main-for-test -packaging
 
   build-desktop:
