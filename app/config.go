@@ -97,7 +97,7 @@ func LoadConfigOrDefault(file string) (*Config, error) {
 		return appConf, ErrDefaultConfigGenerated
 	}
 
-	appConf := &Config{}
+	appConf := NewConfig(DefaultBaseDir) // default value will be remain when missing at decoded config.
 	if err := toml.DecodeFile(file, appConf); err != nil {
 		return nil, err
 	}
