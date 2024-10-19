@@ -13,10 +13,12 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+
+  testing:
+    strategy: 
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }} 
     timeout-minutes: 10
 
     steps:
@@ -44,11 +46,48 @@ jobs:
       - name: Race Testing
         run: go test -race -timeout 5m -v ./...
 
-      - name: Create built path
-        run: mkdir -p ./build
+      - name: Build and copy to stub
+        working-directory: app/cmd
+        run: |
+          go build -o main-for-test .
+          cp main-for-test ../../stub
+
+      - name: Check runnable
+        working-directory: stub
+        run: |
+          ./main-for-test -version
+          ./main-for-test -testing ELA/game_test.lua
+          ./main-for-test -packaging
+
+  build-desktop:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [testing]
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # for all history and tags
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Go environment values
+        run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"  
+
+      - name: Go dependency
+        run: go mod download
 
       - name: Cross build for linux, windows (and macOS).
-        run: bash scripts/cross -o ./build
+        run: |
+          mkdir -p ./build
+          bash scripts/cross -o ./build
 
       # Runs built binary (currently linux only)
       - name: Run built binary to confirm it works
@@ -74,6 +113,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [testing]
 
     steps:
       - name: Checkout
@@ -119,6 +159,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: [testing]
 
     steps:
       - name: Checkout
@@ -149,6 +190,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: [testing]
 
     steps:
       - name: Checkout
@@ -181,7 +223,7 @@ jobs:
   # archive artifacts
   archive: 
     runs-on: ubuntu-latest
-    needs: [build, build-mobile, build-document, build-credits]
+    needs: [build-desktop, build-mobile, build-document, build-credits]
     timeout-minutes: 5
     env: 
       ARTIFACT_NAME: archive
