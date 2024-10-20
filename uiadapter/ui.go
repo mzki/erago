@@ -12,6 +12,8 @@ type UI interface {
 
 // output interface.
 // note that these functions may be called asynchronously.
+// If UI is already terminated and Printer no longer available, Printer's methods
+// should return uiadapater.ErrorPipelineClosed to shutdown application without any problem.
 type Printer interface {
 	Syncer // implements Syncer interface
 

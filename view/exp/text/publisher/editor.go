@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mzki/erago/attribute"
+	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/view/exp/text"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/width"
@@ -125,6 +126,10 @@ func (e *Editor) handleLooperError(err error) (result error) {
 			result = e.asyncErr
 		}
 		e.asyncErrMu.Unlock()
+	} else if errors.Is(err, context.Canceled) {
+		// parent context is canceled means user terminates application.
+		// return error with ErrorPipilineClosed to notify quit but no problem.
+		result = errors.Join(err, uiadapter.ErrorPipelineClosed)
 	}
 	return
 }
@@ -321,7 +326,7 @@ func (e *Editor) Sync() error {
 	if err := e.sendAndWait(e.ctx, msg); err != nil {
 		return err
 	}
-	return taskErr
+	return wrapAPIErr("Sync", taskErr)
 }
 
 // Print text to screen.
@@ -333,7 +338,7 @@ func (e *Editor) Print(s string) error {
 			e.looper.Close()
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("Print", e.send(e.ctx, msg))
 }
 
 func (e *Editor) printInternal(s string) error {
@@ -377,7 +382,7 @@ func (e *Editor) PrintLabel(s string) error {
 			e.looper.Close()
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("PrintLabel", e.send(e.ctx, msg))
 }
 
 // Print Clickable button text. it shows caption on screen and emits command
@@ -389,7 +394,7 @@ func (e *Editor) PrintButton(caption string, command string) error {
 			e.looper.Close()
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("PrintButton", e.send(e.ctx, msg))
 }
 
 // Print Line using sym.
@@ -400,7 +405,7 @@ func (e *Editor) PrintLine(sym string) error {
 			e.handleAsyncErr(err)
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("PrintLine", e.send(e.ctx, msg))
 }
 
 func (e *Editor) printLineInternal(sym string) error {
@@ -435,7 +440,7 @@ func (e *Editor) PrintImage(file string, widthInRW, heightInLC int) error {
 			e.looper.Close()
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("PrintImage", e.send(e.ctx, msg))
 }
 
 // Measure Image size in text scale, width in rune-width and height in line-count.
@@ -449,6 +454,7 @@ func (e *Editor) MeasureImageSize(file string, widthInRW, heightInLC int) (retW,
 		retH = ret.TsSize.Height
 	})
 	err = e.sendAndWait(e.ctx, msg)
+	err = wrapAPIErr("MeasureImageSize", err)
 	return
 }
 
@@ -461,7 +467,7 @@ func (e *Editor) PrintSpace(widthInRW int) error {
 			e.looper.Close()
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("PrintSpace", e.send(e.ctx, msg))
 }
 
 // Set and Get Color using 0xRRGGBB for 24bit color
@@ -469,7 +475,7 @@ func (e *Editor) SetColor(color uint32) error {
 	msg := e.createAsyncTask(func() {
 		e.editor.Color = Int32RGBToColorRGBA(int32(color))
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("SetColor", e.send(e.ctx, msg))
 }
 
 func (e *Editor) GetColor() (color uint32, err error) {
@@ -477,6 +483,7 @@ func (e *Editor) GetColor() (color uint32, err error) {
 		color = uint32(ColorRGBAToInt32RGB(e.editor.Color))
 	})
 	err = e.sendAndWait(e.ctx, msg)
+	err = wrapAPIErr("GetColor", err)
 	return
 }
 
@@ -484,7 +491,7 @@ func (e *Editor) ResetColor() error {
 	msg := e.createAsyncTask(func() {
 		e.editor.Color = text.ResetColor
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("ResetColor", e.send(e.ctx, msg))
 }
 
 // Set and Get Alignment
@@ -492,7 +499,7 @@ func (e *Editor) SetAlignment(align attribute.Alignment) error {
 	msg := e.createAsyncTask(func() {
 		e.editor.SetAlignment(text.Alignment(align)) // alignment is same constant value
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("SetAlignment", e.send(e.ctx, msg))
 }
 
 func (e *Editor) GetAlignment() (align attribute.Alignment, err error) {
@@ -500,6 +507,7 @@ func (e *Editor) GetAlignment() (align attribute.Alignment, err error) {
 		align = attribute.Alignment(e.editor.GetAlignment()) // alignment is same constant value
 	})
 	err = e.sendAndWait(e.ctx, msg)
+	wrapAPIErr("GetAlignment", err)
 	return
 }
 
@@ -516,7 +524,7 @@ func (e *Editor) NewPage() error {
 			}
 		}
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("NewPage", e.send(e.ctx, msg))
 }
 
 // Clear lines specified number.
@@ -533,7 +541,7 @@ func (e *Editor) ClearLine(nline int) error {
 		}
 		e.editor.DeleteLastParagraphs(1) // delete current editing line too
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("ClearLine", e.send(e.ctx, msg))
 }
 
 // Clear all lines containing historys.
@@ -545,7 +553,7 @@ func (e *Editor) ClearLineAll() error {
 		}
 		e.editor.DeleteLastParagraphs(1) // delete current editing line too
 	})
-	return e.send(e.ctx, msg)
+	return wrapAPIErr("ClearLineAll", e.send(e.ctx, msg))
 }
 
 // rune width to fill the window width.
@@ -554,7 +562,7 @@ func (e *Editor) WindowRuneWidth() (int, error) {
 	msg := e.createSyncTask(func() {
 		result = e.viewParams.viewLineRuneWidth
 	})
-	return result, e.sendAndWait(e.ctx, msg)
+	return result, wrapAPIErr("WindowRuneWidth", e.sendAndWait(e.ctx, msg))
 }
 
 // line count to fill the window height.
@@ -563,7 +571,7 @@ func (e *Editor) WindowLineCount() (int, error) {
 	msg := e.createSyncTask(func() {
 		result = e.viewParams.viewLineCount
 	})
-	return result, e.sendAndWait(e.ctx, msg)
+	return result, wrapAPIErr("WindowLineCount", e.sendAndWait(e.ctx, msg))
 }
 
 // current rune width in the editting line.
@@ -572,7 +580,7 @@ func (e *Editor) CurrentRuneWidth() (int, error) {
 	msg := e.createSyncTask(func() {
 		result = e.editor.CurrentRuneWidth()
 	})
-	return result, e.sendAndWait(e.ctx, msg)
+	return result, wrapAPIErr("CurrentRuneWidth", e.sendAndWait(e.ctx, msg))
 }
 
 // line count as it increases at outputting new line.
@@ -585,5 +593,5 @@ func (e *Editor) LineCount() (int, error) {
 		result = int(e.publishedCount % math.MaxInt32)
 		//result = e.editor.NewLineCount()
 	})
-	return result, e.sendAndWait(e.ctx, msg)
+	return result, wrapAPIErr("LineCount", e.sendAndWait(e.ctx, msg))
 }
