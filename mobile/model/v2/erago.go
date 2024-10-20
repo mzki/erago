@@ -57,12 +57,7 @@ func Init(ui UI, baseDir string, options InitOptions) error {
 	}
 
 	// setup filesystem
-	mobileFS := filesystem.AbsDirFileSystem(absBaseDir)
-	if options.FileSystem != nil {
-		mobileFS.Backend = options.FileSystem
-	} else {
-		mobileFS.Backend = &filesystem.OSFileSystem{MaxFileSize: filesystem.DefaultMaxFileSize}
-	}
+	mobileFS := createMobileFS(absBaseDir, options.FileSystem)
 	filesystem.Default = mobileFS // replace file system used by erago
 
 	// load config file

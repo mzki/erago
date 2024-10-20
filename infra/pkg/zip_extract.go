@@ -1,5 +1,3 @@
-//go:build !(android || ios || js || wasip1)
-
 package pkg
 
 import (
