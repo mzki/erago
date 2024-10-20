@@ -32,6 +32,7 @@ func TestExtractFromZip(t *testing.T) {
 	tests := []struct {
 		name               string
 		args               args
+		wantStr            string
 		wantErr            bool
 		checkExtractedFile bool
 		extractedFiles     []string
@@ -43,6 +44,7 @@ func TestExtractFromZip(t *testing.T) {
 				srcFsys:    testdataFS,
 				srcZipPath: "testdata/archive-golden.zip",
 			},
+			wantStr:            "archive-golden",
 			wantErr:            false,
 			checkExtractedFile: true,
 			extractedFiles:     absTempDirFiles("archive-golden", CollectFiles(testZipArchiveFS, ".")),
@@ -54,6 +56,7 @@ func TestExtractFromZip(t *testing.T) {
 				srcFsys:    testdataFS,
 				srcZipPath: "testdata/archive-linux.zip",
 			},
+			wantStr:            "archive-linux",
 			wantErr:            false,
 			checkExtractedFile: true,
 			extractedFiles:     absTempDirFiles("archive-linux", CollectFiles(testZipArchiveFS, ".")),
@@ -65,6 +68,7 @@ func TestExtractFromZip(t *testing.T) {
 				srcFsys:    testdataFS,
 				srcZipPath: "testdata/archive-win11-builtin.zip",
 			},
+			wantStr:            "archive-win11-builtin",
 			wantErr:            false,
 			checkExtractedFile: true,
 			extractedFiles:     absTempDirFiles("archive-win11-builtin", CollectFiles(testZipArchiveFS, ".")),
@@ -76,6 +80,7 @@ func TestExtractFromZip(t *testing.T) {
 				srcFsys:    testdataFS,
 				srcZipPath: "testdata/archive-win-7-zip.zip",
 			},
+			wantStr:            "",
 			wantErr:            true, // error by utf8 encoding bit not set.
 			checkExtractedFile: false,
 			extractedFiles:     absTempDirFiles("archive-win-7-zip", CollectFiles(testZipArchiveFS, ".")),
@@ -87,6 +92,7 @@ func TestExtractFromZip(t *testing.T) {
 				srcFsys:    testdataFS,
 				srcZipPath: "testdata/archive-win-7-zip-cuon.zip",
 			},
+			wantStr:            "archive-win-7-zip-cuon",
 			wantErr:            false,
 			checkExtractedFile: true,
 			extractedFiles:     absTempDirFiles("archive-win-7-zip-cuon", CollectFiles(testZipArchiveFS, ".")),
@@ -94,8 +100,14 @@ func TestExtractFromZip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ExtractFromZip(tt.args.dstFsys, tt.args.srcFsys, tt.args.srcZipPath); (err != nil) != tt.wantErr {
+			extractedDir, err := ExtractFromZip(tt.args.dstFsys, tt.args.srcFsys, tt.args.srcZipPath)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("ExtractFromZip() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr == false {
+				if extractedDir != tt.wantStr {
+					t.Errorf("ExtractFromZip() extractedDir = %v, wantStr = %v", extractedDir, tt.wantStr)
+				}
 			}
 			if tt.wantErr == false && tt.checkExtractedFile == true {
 				for _, file := range tt.extractedFiles {
@@ -131,6 +143,7 @@ func TestExtractFromZipReader(t *testing.T) {
 	tests := []struct {
 		name               string
 		args               args
+		wantStr            string
 		wantErr            bool
 		checkExtractedFile bool
 		extractedFiles     []string
@@ -142,6 +155,7 @@ func TestExtractFromZipReader(t *testing.T) {
 				r:     bytes.NewReader(goldenBytes),
 				rSize: int64(len(goldenBytes)),
 			},
+			wantStr:            "archive-golden",
 			wantErr:            false,
 			checkExtractedFile: true,
 			extractedFiles:     absTempDirFiles("archive-golden", CollectFiles(testZipArchiveFS, ".")),
@@ -153,6 +167,7 @@ func TestExtractFromZipReader(t *testing.T) {
 				r:     bytes.NewReader([]byte{0x34, 0x00, 0x11, 0xaa}),
 				rSize: int64(4),
 			},
+			wantStr:            "",
 			wantErr:            true,
 			checkExtractedFile: false,
 			extractedFiles:     []string{},
@@ -160,8 +175,14 @@ func TestExtractFromZipReader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ExtractFromZipReader(tt.args.outFs, tt.args.r, tt.args.rSize); (err != nil) != tt.wantErr {
+			extractedDir, err := ExtractFromZipReader(tt.args.outFs, tt.args.r, tt.args.rSize)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("ExtractFromZipReader() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr == false {
+				if extractedDir != tt.wantStr {
+					t.Errorf("ExtractFromZip() extractedDir = %v, wantStr = %v", extractedDir, tt.wantStr)
+				}
 			}
 			if tt.wantErr == false && tt.checkExtractedFile == true {
 				for _, file := range tt.extractedFiles {

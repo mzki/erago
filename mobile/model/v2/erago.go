@@ -152,15 +152,15 @@ func Main(appContext AppContext) {
 	if theGame == nil {
 		panic("Main(): nil game state")
 	}
-	go func() {
+	go func(game *erago.Game) {
 		// start game engine
-		err := theGame.Main()
+		err := game.Main()
 		if err != nil {
 			theErr := fmt.Errorf("Game.Main() failed: %w", err)
 			log.Infof("%v", theErr)
 		}
 		appContext.NotifyQuit(err)
-	}()
+	}(theGame) // evaluate current value to avoid race condition inside goroutne.
 }
 
 func Quit() {

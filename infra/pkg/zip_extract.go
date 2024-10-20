@@ -9,26 +9,27 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	"github.com/mzki/erago/filesystem"
 )
 
 // ExtractFromZip extracts all files in zip archive of srcZipPath.
-// It returns error if something fails, otherwise nil.
+// It returns extracted root directory name at 1st, and error if something fails, otherwise nil at 2nd.
 // Output directory is abstracted by dstFsys. For example dstFsys = os.DirFS("/example-dir") and
 // zip archive contains test/file.txt, then the result will be stored in /exmaple-dir/test/file.txt.
 // srcZipPath is searched with respect to srcFsys. To be better memory efficiency, the fs.File returned by
 // srcFsys.Open() should implement io.ReaderAt interface.
-func ExtractFromZip(dstFsys filesystem.FileSystem, srcFsys fs.FS, srcZipPath string) error {
+func ExtractFromZip(dstFsys filesystem.FileSystem, srcFsys fs.FS, srcZipPath string) (string, error) {
 	file, err := srcFsys.Open(srcZipPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 
 	finfo, err := file.Stat()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var readerAt io.ReaderAt
@@ -38,7 +39,7 @@ func ExtractFromZip(dstFsys filesystem.FileSystem, srcFsys fs.FS, srcZipPath str
 		// fallback method: put all content in memory. This would be insufficient way.
 		bs, err := io.ReadAll(file)
 		if err != nil {
-			return fmt.Errorf("read content failed for: %v", srcZipPath)
+			return "", fmt.Errorf("read content failed for: %v", srcZipPath)
 		}
 		readerAt = bytes.NewReader(bs)
 	}
@@ -46,24 +47,35 @@ func ExtractFromZip(dstFsys filesystem.FileSystem, srcFsys fs.FS, srcZipPath str
 }
 
 // ExtractFromZipReader is alternative API with io.ReaderAt for ExtractFromZip. See ExtractFromZip documentation for the details.
-func ExtractFromZipReader(outFs filesystem.FileSystem, r io.ReaderAt, rSize int64) error {
+func ExtractFromZipReader(outFs filesystem.FileSystem, r io.ReaderAt, rSize int64) (string, error) {
 	zReader, err := zip.NewReader(r, rSize)
 	if err != nil {
-		return err
+		return "", err
 	}
+	var extractedRootDir string = "./"
 	for _, file := range zReader.File {
 		if file.NonUTF8 {
-			return fmt.Errorf("zip archive containing non-UTF8 file name, is now allowed: file name: %v", file.FileInfo().Name())
+			return extractedRootDir, fmt.Errorf("zip archive containing non-UTF8 file name, is now allowed: file name: %v", file.FileInfo().Name())
 		}
 		if file.FileInfo().IsDir() {
 			continue // to ignore extract directory itself, means empty directory never created.
 		}
 
 		if err := extractZipFileEntry(outFs, file); err != nil {
-			return fmt.Errorf("failed to extract zip file: %w", err)
+			return extractedRootDir, fmt.Errorf("failed to extract zip file: %w", err)
+		}
+
+		// update root dir once
+		if extractedRootDir == "./" {
+			slist := strings.Split(file.Name, "/")
+			if len(slist) > 0 {
+				if root := slist[0]; len(root) > 0 {
+					extractedRootDir = root
+				}
+			}
 		}
 	}
-	return nil
+	return extractedRootDir, nil
 }
 
 func extractZipFileEntry(outFs filesystem.FileSystem, srcFile *zip.File) error {

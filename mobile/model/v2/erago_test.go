@@ -1,9 +1,12 @@
 package model
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/mzki/erago/filesystem"
 )
@@ -98,9 +101,31 @@ func TestInit(t *testing.T) {
 	}
 }
 
-type stubAppContext struct{}
+type stubAppContext struct {
+	ctx  context.Context
+	quit chan error
+}
 
-func (stubAppContext) NotifyQuit(error) {}
+func newStubAppContext(ctx context.Context) *stubAppContext {
+	return &stubAppContext{
+		ctx:  ctx,
+		quit: make(chan error),
+	}
+}
+
+func (stub *stubAppContext) NotifyQuit(err error) {
+	stub.quit <- err
+	close(stub.quit)
+}
+
+func (stub *stubAppContext) Wait() error {
+	select {
+	case <-stub.ctx.Done():
+		return stub.ctx.Err()
+	case err := <-stub.quit:
+		return err
+	}
+}
 
 func TestMain(t *testing.T) {
 	absCurrentDir, err := filepath.Abs("./")
@@ -113,13 +138,12 @@ func TestMain(t *testing.T) {
 	}
 
 	type args struct {
-		appContext AppContext
 	}
 	tests := []struct {
 		name string
 		args args
 	}{
-		{"normal", args{&stubAppContext{}}},
+		{"normal", args{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -131,8 +155,20 @@ func TestMain(t *testing.T) {
 			if err := Init(&stubUI{}, absStubDir, InitOptions{ImageFetchNone, nil}); err != nil {
 				t.Fatal(err)
 			}
-			defer Quit()
-			Main(tt.args.appContext)
+			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+			defer cancel()
+			appContext := newStubAppContext(ctx)
+			Main(appContext)
+			Quit() // immediately
+			err := appContext.Wait()
+			switch {
+			case errors.Is(err, context.DeadlineExceeded):
+				t.Errorf("Main(), failed to quit corretly. Canceled by parent context")
+			case err == nil || errors.Is(err, context.Canceled):
+				// OK
+			default:
+				t.Errorf("Main(), failed to quit correctly. error = %v", err)
+			}
 		})
 	}
 }
