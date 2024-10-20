@@ -2,6 +2,7 @@
 package errutil
 
 import (
+	"errors"
 	"fmt"
 	"io"
 )
@@ -76,9 +77,16 @@ func (me *MultiError) Err() error {
 	if len(me.errs) == 0 {
 		return nil
 	}
+	return errors.Join(me.errs...) // to preserve original error context.
+}
+
+func (me *MultiError) String() string {
+	if len(me.errs) == 0 {
+		return "<no-errors>"
+	}
 	str := "multiple errors:\n"
 	for i, err := range me.errs {
 		str += fmt.Sprintf("  %v. err: %v\n", i, err)
 	}
-	return fmt.Errorf("%v", str)
+	return fmt.Sprintf("%v", str)
 }
