@@ -22,7 +22,7 @@ func FromFS(fsys fs.FS) FileSystemGlobPR {
 }
 
 func fsPath(path string) string {
-	return filepath.Clean(filepath.ToSlash(path))
+	return filepath.ToSlash(filepath.Clean(path))
 }
 
 func (ifs *InteropFileSystem) mustBackend() fs.FS {
@@ -64,6 +64,7 @@ func (ifs *InteropFileSystem) Exist(path string) bool {
 // implements FileSystemGlob interface
 func (ifs *InteropFileSystem) Glob(pattern string) ([]string, error) {
 	if globFS, ok := ifs.mustBackend().(fs.GlobFS); ok {
+		pattern = fsPath(pattern)
 		return globFS.Glob(pattern)
 	} else {
 		return nil, &fs.PathError{Op: "glob", Path: pattern, Err: errors.ErrUnsupported}
@@ -73,6 +74,7 @@ func (ifs *InteropFileSystem) Glob(pattern string) ([]string, error) {
 // implements PathResolver interface.
 func (ifs *InteropFileSystem) ResolvePath(path string) (string, error) {
 	if resolver, ok := ifs.mustBackend().(PathResolver); ok {
+		path = fsPath(path)
 		return resolver.ResolvePath(path)
 	} else {
 		return path, nil

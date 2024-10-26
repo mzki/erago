@@ -54,8 +54,11 @@ func (fsys wrapFileSystemPR) ResolvePath(file string) (string, error) {
 	}
 }
 
+var ErrNoSavFiles = errors.New("no sav file")
+
 // ExportSav exports save files matching the pattern [absEragoDir]/[saveFileDir in the config file]/*.
 // It returns exported save files as zip archive bytes and error if any.
+// If any save files not found, it returns error with ErrNoSavFiles.
 // eragoFsys is used for reading/seaching save files and config file.
 // absEragoDir should be same directory with eragoFsys's current directory.
 func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte, error) {
@@ -73,6 +76,9 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	savFiles, err := eragoFsys.Glob(savPatterns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get save files from %s: %w", savPatterns, err)
+	}
+	if len(savFiles) == 0 {
+		return nil, fmt.Errorf("no save files found for %v: %w", savPatterns, ErrNoSavFiles)
 	}
 
 	// Trimming common directory of file paths. Zip spec needs relative path for each file.

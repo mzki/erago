@@ -101,11 +101,15 @@ func TestExportSav(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	appConfBs, err := zipTestdataFS.ReadFile("testdata/exportsav/erago.conf")
-	if err != nil {
-		t.Fatal(err)
+	var configOnlyFS = fstest.MapFS{}
+	{
+		appConfBs, err := zipTestdataFS.ReadFile("testdata/exportsav/erago.conf")
+		if err != nil {
+			t.Fatal(err)
+		}
+		savTestdataFS["testdata/exportsave/erago.conf"] = &fstest.MapFile{Data: appConfBs}
+		configOnlyFS["erago.conf"] = &fstest.MapFile{Data: appConfBs}
 	}
-	savTestdataFS["testdata/exportsave/erago.conf"] = &fstest.MapFile{Data: appConfBs}
 
 	goldenBs, err := zipTestdataFS.ReadFile("testdata/exportsav/golden.zip")
 	if err != nil {
@@ -134,6 +138,7 @@ func TestExportSav(t *testing.T) {
 		{"normal", args{absEragoDir, filesystem.FromFS(savDataFS)}, goldenBs, false},
 		{"normal with absFS, without byte result comparison", args{absEragoDir, filesystem.AbsDirFileSystem(absEragoDir)}, skipBytes, false},
 		{"error config nor sav not found", args{absTempDir, filesystem.AbsDirFileSystem(absTempDir)}, nil, true},
+		{"error config found but sav pattern not matched", args{absEragoDir, filesystem.FromFS(configOnlyFS)}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
