@@ -41,6 +41,7 @@ func dumpAsString(file string) (string, error) {
 	}
 	content := string(bs)
 
+	content = strings.ReplaceAll(content, "\n", "")
 	bytesAsStr := strings.Split(content, " ")
 	byteList := make([]byte, 0, 32)
 	for _, s := range bytesAsStr {
