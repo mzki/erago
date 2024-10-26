@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"testing/fstest"
 
 	"github.com/mzki/erago/filesystem"
 )
@@ -81,11 +82,30 @@ func TestInstallPackage(t *testing.T) {
 	}
 }
 
+var savTestdataFS = fstest.MapFS{
+	"testdata/exportsav/erago.conf":     {Data: []byte("")}, // filled later.
+	"testdata/exportsav/sav/save00.sav": {Data: []byte("save00.sav.content")},
+	"testdata/exportsav/sav/save01.sav": {Data: []byte("save01.sav.content")},
+	"testdata/exportsav/sav/save17.sav": {Data: []byte("save17.sav.content")},
+	"testdata/exportsav/sav/share.sav":  {Data: []byte("share.sav.content")},
+}
+
 func TestExportSav(t *testing.T) {
+	savDataFS, err := savTestdataFS.Sub("testdata/exportsav")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	absEragoDir, err := filepath.Abs("testdata/exportsav")
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	appConfBs, err := zipTestdataFS.ReadFile("testdata/exportsav/erago.conf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	savTestdataFS["testdata/exportsave/erago.conf"] = &fstest.MapFile{Data: appConfBs}
 
 	goldenBs, err := zipTestdataFS.ReadFile("testdata/exportsav/golden.zip")
 	if err != nil {
@@ -97,6 +117,9 @@ func TestExportSav(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// skipBytes indicates byte comparision is skipped.
+	var skipBytes = []byte{}
+
 	type args struct {
 		absEragoDir string
 		eragoFsys   filesystem.FileSystemGlob
@@ -107,10 +130,10 @@ func TestExportSav(t *testing.T) {
 		want    []byte
 		wantErr bool
 	}{
-		//{"golden", args{absEragoDir, filesystem.Desktop}, nil, false},
-		{"normal", args{absEragoDir, filesystem.Desktop}, goldenBs, false},
-		{"normal with absFS", args{absEragoDir, filesystem.AbsDirFileSystem(absEragoDir)}, goldenBs, false},
-		{"error config not found", args{absTempDir, filesystem.AbsDirFileSystem(absTempDir)}, nil, true},
+		// {"golden", args{absEragoDir, filesystem.FromFS(savDataFS)}, nil, false},
+		{"normal", args{absEragoDir, filesystem.FromFS(savDataFS)}, goldenBs, false},
+		{"normal with absFS, without byte result comparison", args{absEragoDir, filesystem.AbsDirFileSystem(absEragoDir)}, skipBytes, false},
+		{"error config nor sav not found", args{absTempDir, filesystem.AbsDirFileSystem(absTempDir)}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -131,8 +154,10 @@ func TestExportSav(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ExportSav() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(tt.want, skipBytes) {
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("ExportSav() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

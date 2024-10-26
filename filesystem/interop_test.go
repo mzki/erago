@@ -3,6 +3,8 @@ package filesystem
 import (
 	"io/fs"
 	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -171,6 +173,98 @@ func TestInteropFileSystem_Open(t *testing.T) {
 			}
 			if tt.wantErr {
 				return
+			}
+		})
+	}
+}
+
+type globDirFS struct {
+	fs.FS
+	dir string
+}
+
+func newGlobDirFS(dir string) *globDirFS {
+	return &globDirFS{os.DirFS(dir), dir}
+}
+
+func (fsys *globDirFS) Glob(pattern string) ([]string, error) {
+	pattern = filepath.Join(fsys.dir, pattern)
+	return filepath.Glob(pattern)
+}
+
+func TestInteropFileSystem_Glob(t *testing.T) {
+	absCurrentDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type fields struct {
+		Backend fs.FS
+	}
+	type args struct {
+		pattern string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{"normal", fields{newGlobDirFS("./")}, args{"interop_test.go"}, []string{"interop_test.go"}, false},
+		{"error glob not support", fields{&AbsPathFileSystem{absCurrentDir, &emptyFileSystem{}}}, args{"interop_test.go"}, nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ifs := &InteropFileSystem{
+				Backend: tt.fields.Backend,
+			}
+			got, err := ifs.Glob(tt.args.pattern)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("InteropFileSystem.Glob() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("InteropFileSystem.Glob() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInteropFileSystem_ResolvePath(t *testing.T) {
+	absCurrentDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type fields struct {
+		Backend fs.FS
+	}
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{"normal abs path resolved", fields{&AbsPathFileSystem{absCurrentDir, &emptyFileSystem{}}}, args{"interop_test.go"}, filepath.Join(absCurrentDir, "interop_test.go"), false},
+		{"normal but not resolved", fields{newGlobDirFS("./")}, args{"interop_test.go"}, "interop_test.go", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ifs := &InteropFileSystem{
+				Backend: tt.fields.Backend,
+			}
+			got, err := ifs.ResolvePath(tt.args.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("InteropFileSystem.ResolvePath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("InteropFileSystem.ResolvePath() = %v, want %v", got, tt.want)
 			}
 		})
 	}

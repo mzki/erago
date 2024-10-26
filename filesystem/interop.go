@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,7 +15,7 @@ type InteropFileSystem struct {
 }
 
 // FromFS converts fs.FS interface into FileSystem interface.
-func FromFS(fsys fs.FS) FileSystem {
+func FromFS(fsys fs.FS) FileSystemGlobPR {
 	return &InteropFileSystem{
 		Backend: fsys,
 	}
@@ -57,6 +58,24 @@ func (ifs *InteropFileSystem) Exist(path string) bool {
 	} else {
 		file.Close()
 		return true
+	}
+}
+
+// implements FileSystemGlob interface
+func (ifs *InteropFileSystem) Glob(pattern string) ([]string, error) {
+	if globFS, ok := ifs.mustBackend().(fs.GlobFS); ok {
+		return globFS.Glob(pattern)
+	} else {
+		return nil, &fs.PathError{Op: "glob", Path: pattern, Err: errors.ErrUnsupported}
+	}
+}
+
+// implements PathResolver interface.
+func (ifs *InteropFileSystem) ResolvePath(path string) (string, error) {
+	if resolver, ok := ifs.mustBackend().(PathResolver); ok {
+		return resolver.ResolvePath(path)
+	} else {
+		return path, nil
 	}
 }
 
