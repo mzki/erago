@@ -12,10 +12,14 @@ import (
 // It implements fs.FS and FileSystem interface.
 type InteropFileSystem struct {
 	Backend fs.FS
+
+	// StoreFn is used instead of fs.FS when FileSystem.Store is called.
+	// if it is nil then Unsuppoted error would be returned.
+	StoreFn func(path string) (io.WriteCloser, error)
 }
 
 // FromFS converts fs.FS interface into FileSystem interface.
-func FromFS(fsys fs.FS) FileSystemGlobPR {
+func FromFS(fsys fs.FS) *InteropFileSystem {
 	return &InteropFileSystem{
 		Backend: fsys,
 	}
@@ -42,7 +46,9 @@ func (ifs *InteropFileSystem) Load(path string) (io.ReadCloser, error) {
 func (ifs *InteropFileSystem) Store(path string) (io.WriteCloser, error) {
 	path = fsPath(path)
 	backend := ifs.mustBackend()
-	if fsystem, ok := backend.(FileSystem); ok {
+	if ifs.StoreFn != nil {
+		return ifs.StoreFn(path)
+	} else if fsystem, ok := backend.(FileSystem); ok {
 		return fsystem.Store(path)
 	} else {
 		return nil, fmt.Errorf("file create operation is not supported")

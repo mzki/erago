@@ -1,12 +1,15 @@
 package filesystem
 
 import (
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+var _ FileSystemGlob = &InteropFileSystem{}
 
 const testFileInteropTest = "./interop_test.go"
 
@@ -75,6 +78,7 @@ func TestInteropFileSystem_Store(t *testing.T) {
 	tempDir := t.TempDir()
 	type fields struct {
 		Backend fs.FS
+		StoreFn func(string) (io.WriteCloser, error)
 	}
 	type args struct {
 		path string
@@ -85,14 +89,25 @@ func TestInteropFileSystem_Store(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"fs.FS backend will fail for Store", fields{os.DirFS(tempDir)}, args{"newfile.txt"}, true},
-		{"nested-dir-not-found", fields{os.DirFS(tempDir)}, args{"test/newfile.txt"}, true},
-		{"AbsPathFileSystem backend will success for Store", fields{AbsDirFileSystem(tempDir)}, args{"test/newfile2.txt"}, false},
+		{"fs.FS backend will fail for Store", fields{os.DirFS(tempDir), nil}, args{"newfile.txt"}, true},
+		{"nested-dir-not-found", fields{os.DirFS(tempDir), nil}, args{"test/newfile.txt"}, true},
+		{"AbsPathFileSystem backend will success for Store", fields{AbsDirFileSystem(tempDir), nil}, args{"test/newfile2.txt"}, false},
+		{"StoreFn used",
+			fields{
+				os.DirFS(tempDir),
+				func(s string) (io.WriteCloser, error) {
+					path := filepath.Join(tempDir, s)
+					return os.Create(path)
+				},
+			},
+			args{"newfile.txt"},
+			false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ifs := &InteropFileSystem{
 				Backend: tt.fields.Backend,
+				StoreFn: tt.fields.StoreFn,
 			}
 			got, err := ifs.Store(tt.args.path)
 			if (err != nil) != tt.wantErr {
