@@ -125,10 +125,38 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	}
 
 	writer := new(bytes.Buffer)
-	if err := pkg.ArchiveAsZipWriter(writer, "erago-sav", eragoFS, savFiles); err != nil {
+	if err := pkg.ArchiveAsZipWriter(writer, "", eragoFS, savFiles); err != nil {
 		return nil, err
 	}
 	return writer.Bytes(), nil
+}
+
+func ImportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob, savZipBytes []byte) error {
+	oldDefaultFS := filesystem.Default
+	defer func() { filesystem.Default = oldDefaultFS }()
+
+	filesystem.Default = wrapFileSystemPR{eragoFsys}
+
+	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	if err != nil {
+		return fmt.Errorf("failed to get save file directory from config: %w", err)
+	}
+	_, _ = disableDesktopFeatures(appConf)
+
+	// TODO: check sav directory mismatch. Possible ways:
+	// 1. output inmemory outFsys, then check file path
+	// 2. Create wrapped filesystem and inject file path check before passing backend.
+	extractedDir, err := pkg.ExtractFromZipReader(eragoFsys, bytes.NewReader(savZipBytes), int64(len(savZipBytes)))
+	if err != nil {
+		return fmt.Errorf("extract zip failed: %w", err)
+	}
+
+	// post condition check. Actually save files are extracted even if those are invalid path. May break installed package structure.
+	absSavDir := filepath.Join(absEragoDir, appConf.Game.RepoConfig.SaveFileDir)
+	if !strings.Contains(filepath.ToSlash(absSavDir), filepath.ToSlash(extractedDir)) {
+		return fmt.Errorf("invalid sav directory for zip content, save dir = %v, extracted dir = %v", absSavDir, extractedDir)
+	}
+	return nil
 }
 
 // ExportLog exports log file with respect to erago directory. It returns log content as bytes and error if failed.

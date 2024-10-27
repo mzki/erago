@@ -2,6 +2,7 @@ package model
 
 import (
 	"embed"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -264,6 +265,71 @@ func TestExportLog(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ExportLog() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestImportSav(t *testing.T) {
+	savDataFS, err := savTestdataFS.Sub("testdata/exportsav")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	absEragoDir, err := filepath.Abs("testdata/exportsav")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var configOnlyFS = fstest.MapFS{}
+	{
+		appConfBs, err := zipTestdataFS.ReadFile("testdata/exportsav/erago.conf")
+		if err != nil {
+			t.Fatal(err)
+		}
+		savTestdataFS["testdata/exportsave/erago.conf"] = &fstest.MapFile{Data: appConfBs}
+		configOnlyFS["erago.conf"] = &fstest.MapFile{Data: appConfBs}
+	}
+
+	goldenBs, err := zipTestdataFS.ReadFile("testdata/exportsav/golden.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	absTempDir, err := filepath.Abs(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	storeFn := func(s string) (io.WriteCloser, error) {
+		fpath := filepath.Join(absTempDir, s)
+		dir, _ := filepath.Split(fpath)
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return nil, err
+		}
+		return os.Create(fpath)
+	}
+
+	withStoreFn := func(ifs *filesystem.InteropFileSystem) *filesystem.InteropFileSystem {
+		ifs.StoreFn = storeFn
+		return ifs
+	}
+	type args struct {
+		absEragoDir string
+		eragoFsys   filesystem.FileSystemGlob
+		savZipBytes []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"normal", args{absEragoDir, withStoreFn(filesystem.FromFS(savDataFS)), goldenBs}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ImportSav(tt.args.absEragoDir, tt.args.eragoFsys, tt.args.savZipBytes); (err != nil) != tt.wantErr {
+				t.Errorf("ImportSav() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
