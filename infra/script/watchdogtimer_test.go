@@ -256,39 +256,43 @@ func Test_watchDogTimer_Run(t *testing.T) {
 			wdt.Quit()
 			// to ensure quit completely.
 			timeout := time.After(1 * time.Second)
+			ticker := time.Tick(100 * time.Millisecond)
 		running:
-			for wdt.IsRunning() {
+			for !wdt.IsQuit() {
 				select {
 				case <-timeout:
 					// This case indicates quit not ends, detect bug at comparision of got and want.
 					break running
-				default:
+				case <-ticker:
+					// loop next time
 				}
 			}
 			return wdt
 		}, func() args {
 			return args{context.Background(), func() {}}
-		}, true},
+		}, false},
 		{"Run canceled by context", func(args args) *watchDogTimer {
 			wdt := newDefaultWatchDogTimer()
 			wdt.Run(args.ctx)
 			args.cancel()
 			// to ensure cancel completely.
 			timeout := time.After(1 * time.Second)
+			ticker := time.Tick(100 * time.Millisecond)
 		running:
-			for wdt.IsRunning() {
+			for !wdt.IsQuit() {
 				select {
 				case <-timeout:
 					// This case indicates quit not ends, detect bug at comparision of got and want.
 					break running
-				default:
+				case <-ticker:
+					// loop next time
 				}
 			}
 			return wdt
 		}, func() args {
 			ctx, cancel := context.WithCancel(context.Background())
 			return args{ctx, cancel}
-		}, true},
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
