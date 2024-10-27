@@ -131,6 +131,34 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	return writer.Bytes(), nil
 }
 
+// ExportLog exports log file with respect to erago directory. It returns log content as bytes and error if failed.
+// If log file not exist, it returns empty content and no error.
+func ExportLog(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte, error) {
+	oldDefaultFS := filesystem.Default
+	defer func() { filesystem.Default = oldDefaultFS }()
+
+	filesystem.Default = wrapFileSystemPR{eragoFsys}
+
+	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get save file directory from config: %w", err)
+	}
+
+	_, _ = disableDesktopFeatures(appConf)
+	if !eragoFsys.Exist(appConf.LogFile) {
+		// no log case is treated as empty log content and succeeded.
+		return []byte{}, nil
+	}
+
+	reader, err := eragoFsys.Load(appConf.LogFile)
+	if err != nil {
+		return nil, fmt.Errorf("could not read %v: %w", appConf.LogFile, err)
+	}
+	defer reader.Close()
+
+	return io.ReadAll(reader)
+}
+
 // MatchGlobPattern is helper function that checks whether glob pattern matches with path.
 // It returns true if pattern matched, otherwise returns false.
 func MatchGlobPattern(pattern, path string) (bool, error) {

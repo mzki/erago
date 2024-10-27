@@ -209,3 +209,62 @@ func TestMatchGlobPattern(t *testing.T) {
 		})
 	}
 }
+
+var logTestdataFS = fstest.MapFS{
+	"testdata/exportlog/erago.conf": {Data: []byte("")}, // filled later.
+	"testdata/exportlog/erago.log":  {Data: []byte("log file")},
+}
+
+func TestExportLog(t *testing.T) {
+	logDataFS, err := logTestdataFS.Sub("testdata/exportlog")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	absEragoDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	absEragoDir = filepath.Join(absEragoDir, "testdata/exportlog")
+
+	var configOnlyFS = fstest.MapFS{}
+	{
+		appConfBs, err := zipTestdataFS.ReadFile("testdata/exportsav/erago.conf")
+		if err != nil {
+			t.Fatal(err)
+		}
+		logTestdataFS["testdata/exportlog/erago.conf"] = &fstest.MapFile{Data: appConfBs}
+		configOnlyFS["erago.conf"] = &fstest.MapFile{Data: appConfBs}
+	}
+
+	goldenBs, err := logTestdataFS.ReadFile("testdata/exportlog/erago.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type args struct {
+		absEragoDir string
+		eragoFsys   filesystem.FileSystemGlob
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		{"normal", args{absEragoDir, filesystem.FromFS(logDataFS)}, goldenBs, false},
+		{"normal with no log", args{absEragoDir, filesystem.FromFS(configOnlyFS)}, []byte{}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExportLog(tt.args.absEragoDir, tt.args.eragoFsys)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExportLog() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExportLog() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
