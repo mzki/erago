@@ -130,3 +130,9 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	}
 	return writer.Bytes(), nil
 }
+
+// MatchGlobPattern is helper function that checks whether glob pattern matches with path.
+// It returns true if pattern matched, otherwise returns false.
+func MatchGlobPattern(pattern, path string) (bool, error) {
+	return filepath.Match(pattern, path)
+}

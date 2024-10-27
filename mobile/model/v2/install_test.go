@@ -167,3 +167,45 @@ func TestExportSav(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchGlobPattern(t *testing.T) {
+	type args struct {
+		pattern string
+		path    string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		wantFn func(args) (want bool, wantErr bool)
+	}{
+		{
+			name: "normal",
+			args: args{"*_test.go", "install_test.go"},
+			wantFn: func(a args) (want bool, wantErr bool) {
+				ok, err := filepath.Match(a.pattern, a.path)
+				return ok, err != nil
+			},
+		},
+		{
+			name: "normal-os-specific",
+			args: args{filepath.Join("test", "*_test.go"), filepath.Join("test", "install_test.go")},
+			wantFn: func(a args) (want bool, wantErr bool) {
+				ok, err := filepath.Match(a.pattern, a.path)
+				return ok, err != nil
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			want, wantErr := tt.wantFn(tt.args)
+			got, err := MatchGlobPattern(tt.args.pattern, tt.args.path)
+			if (err != nil) != wantErr {
+				t.Errorf("MatchGlobPattern() error = %v, wantErr %v", err, wantErr)
+				return
+			}
+			if got != want {
+				t.Errorf("MatchGlobPattern() = %v, want %v", got, want)
+			}
+		})
+	}
+}
