@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/app"
@@ -73,6 +74,8 @@ func Init(ui UI, baseDir string, options InitOptions) error {
 		theErr := fmt.Errorf("config load error: %w", err)
 		return theErr
 	}
+	confChanged, confChangedMsg := disableDesktopFeatures(appConfig)
+	// confChanged and its message will be handled after log setup done.
 
 	// finalize handler
 	closeFuncs := make([]func(), 0, 4)
@@ -105,6 +108,9 @@ func Init(ui UI, baseDir string, options InitOptions) error {
 
 		// now, log destination is activated, and can be used.
 	}
+	if confChanged {
+		log.Infof("Config changed for mobile specific: %v", confChangedMsg)
+	}
 
 	// create game instance
 	ctx, cancel := context.WithCancel(context.Background())
@@ -126,6 +132,33 @@ func Init(ui UI, baseDir string, options InitOptions) error {
 	theGame.RegisterAllRequestObserver(mobileUI)
 	initialized = true
 	return nil
+}
+
+func disableDesktopFeatures(appConf *app.Config) (changed bool, message string) {
+	msgList := []string{}
+	// ReloadFileChange must be disabled since User interact with single application at the moment,
+	// User does not do play game and edit script in parall. This feature should be for Desktop and developer only.
+	if appConf.Game.ScriptConfig.ReloadFileChange {
+		appConf.Game.ScriptConfig.ReloadFileChange = false
+		changed = true
+		msgList = append(msgList, "Game.Script.ReloadFileChange = false")
+	}
+	// LogFile must be file rather than stdout or stderr since User can not see
+	// stdout nor stderr output in normal way.
+	if appConf.LogFile != app.DefaultLogFile {
+		appConf.LogFile = app.DefaultLogFile
+		changed = true
+		msgList = append(msgList, "LogFile = "+appConf.LogFile)
+	}
+	// LogLimitMegaByte should be less than or equal to Default limit size (10MB)
+	// since larger size would fill up storage which is relatively small than desktop.
+	if appConf.LogLimitMegaByte > app.DefaultLogLimitMegaByte {
+		appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte
+		changed = true
+		msgList = append(msgList, fmt.Sprintf("LogLimitMegaByte = %v", appConf.LogLimitMegaByte))
+	}
+	message = strings.Join(msgList, ",")
+	return
 }
 
 // AppContext manages application context.

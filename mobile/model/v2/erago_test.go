@@ -3,11 +3,14 @@ package model
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/mzki/erago/app"
 	"github.com/mzki/erago/filesystem"
 )
 
@@ -293,6 +296,73 @@ func TestSetTextUnitPx(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := SetTextUnitPx(tt.args.textUnitWidthPx, tt.args.textUnitHeightPx); (err != nil) != tt.wantErr {
 				t.Errorf("SetTextUnitPx() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_disableDesktopFeatures(t *testing.T) {
+	type args struct {
+		appConfFn func() *app.Config
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantChanged bool
+		wantMessage string
+	}{
+		{
+			name: "Game.Script.ReloadFileChanged",
+			args: args{func() *app.Config {
+				appConf := app.NewConfig("./")
+				appConf.Game.ScriptConfig.ReloadFileChange = true
+				return appConf
+			}},
+			wantChanged: true,
+			wantMessage: fmt.Sprintf("Game.Script.ReloadFileChange = %v", false),
+		},
+		{
+			name: "LogFile",
+			args: args{func() *app.Config {
+				appConf := app.NewConfig("./")
+				appConf.LogFile = "stdout"
+				return appConf
+			}},
+			wantChanged: true,
+			wantMessage: "LogFile = " + app.DefaultLogFile,
+		},
+		{
+			name: "LogLimitMegaByte",
+			args: args{func() *app.Config {
+				appConf := app.NewConfig("./")
+				appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte + 1
+				return appConf
+			}},
+			wantChanged: true,
+			wantMessage: fmt.Sprintf("LogLimitMegaByte = %v", app.DefaultLogLimitMegaByte),
+		},
+		{
+			name: "no change",
+			args: args{func() *app.Config {
+				appConf := app.NewConfig("./")
+				appConf.Game.ScriptConfig.ReloadFileChange = false
+				appConf.LogFile = app.DefaultLogFile
+				appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte
+				return appConf
+			}},
+			wantChanged: false,
+			wantMessage: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appConf := tt.args.appConfFn()
+			gotChanged, gotMessage := disableDesktopFeatures(appConf)
+			if gotChanged != tt.wantChanged {
+				t.Errorf("disableDesktopFeatures() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
+			}
+			if !strings.Contains(gotMessage, tt.wantMessage) {
+				t.Errorf("disableDesktopFeatures() gotMessage = %v, want %v", gotMessage, tt.wantMessage)
 			}
 		})
 	}
