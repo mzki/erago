@@ -124,7 +124,9 @@ func (ip *Interpreter) init() {
 		panic(err) // TODO: This sometimes occurs. Need to return error?
 	}
 
-	ip.config.register(L)
+	if err := ip.config.register(L); err != nil {
+		panic(err) // TODO: This sometimes occurs. Need to return error?
+	}
 	initInternalError(L)
 	registerIsTesting(L, false)
 }

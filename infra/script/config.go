@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mzki/erago/filesystem"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -40,18 +41,24 @@ const (
 	registryDebugEnableKey = "_DEBUG_ENABLE"
 )
 
-func (conf Config) register(L *lua.LState) {
+func (conf Config) register(L *lua.LState) error {
+	resLoadDir, err := filesystem.ResolvePath(filepath.Clean(conf.LoadDir))
+	if err != nil {
+		return fmt.Errorf("config value register failed by ResolvePath %s: %w", conf.LoadDir, err)
+	}
+
 	reg := L.CheckTable(lua.RegistryIndex)
 	for _, set := range []struct {
 		key string
 		val lua.LValue
 	}{
 		{registryDebugEnableKey, lua.LBool(conf.IncludeGoStackTrace)},
-		{registryBaseDirKey, lua.LString(filepath.Clean(conf.LoadDir))},
+		{registryBaseDirKey, lua.LString(resLoadDir)},
 	} {
 		reg.RawSetString(set.key, set.val)
 		L.SetGlobal(set.key, set.val)
 	}
+	return nil
 }
 
 // check filepath at argument i.
