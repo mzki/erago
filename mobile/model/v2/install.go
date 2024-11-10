@@ -17,24 +17,24 @@ import (
 
 // NewOsDirFileSystem is helper function to create filesytem under directory of absPath.
 // The backend is OS filesytem to open file.
-func NewOSDirFileSystem(absPath string) filesystem.FileSystem {
+func NewOSDirFileSystem(absPath string) FileSystemGlob {
 	absDirFs := filesystem.AbsDirFileSystem(absPath)
 	absDirFs.Backend = &filesystem.OSFileSystem{MaxFileSize: filesystem.DefaultMaxFileSize}
-	return absDirFs
+	return FromGoFSGlob(absDirFs)
 }
 
 // InstallPackage extract zip archive into outFsys.
 // It may useful to store erago related files into convenient location when platform has file access limitation for default location.
 // It returns base name of extractedDir at 1st and error at 2nd.
 // The path for extracted root directory will be [Directory of outFsys]/[extractedDir].
-func InstallPackage(outFsys filesystem.FileSystem, zipBytes []byte) (extractedDir string, err error) {
-	return pkg.ExtractFromZipReader(outFsys, bytes.NewReader(zipBytes), int64(len(zipBytes)))
+func InstallPackage(outFsys FileSystem, zipBytes []byte) (extractedDir string, err error) {
+	return pkg.ExtractFromZipReader(FromMobileFS(outFsys), bytes.NewReader(zipBytes), int64(len(zipBytes)))
 }
 
-func createMobileFS(absDir string, backend filesystem.FileSystemGlob) filesystem.FileSystemGlobPR {
+func createMobileFS(absDir string, backend FileSystemGlob) filesystem.FileSystemGlobPR {
 	mobileFS := filesystem.AbsDirFileSystem(absDir)
 	if backend != nil {
-		mobileFS.Backend = backend
+		mobileFS.Backend = FromMobileFSGlob(backend)
 	} else {
 		mobileFS.Backend = &filesystem.OSFileSystem{MaxFileSize: filesystem.DefaultMaxFileSize}
 	}
@@ -61,11 +61,11 @@ var ErrNoSavFiles = errors.New("no sav file")
 // If any save files not found, it returns error with ErrNoSavFiles.
 // eragoFsys is used for reading/seaching save files and config file.
 // absEragoDir should be same directory with eragoFsys's current directory.
-func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte, error) {
+func ExportSav(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 	oldDefaultFS := filesystem.Default
 	defer func() { filesystem.Default = oldDefaultFS }()
 
-	filesystem.Default = wrapFileSystemPR{eragoFsys}
+	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
 	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
 	if err != nil {
@@ -73,7 +73,7 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	}
 
 	savPatterns := filepath.Join(appConf.Game.RepoConfig.SaveFileDir, "*")
-	savFiles, err := eragoFsys.Glob(savPatterns)
+	savFiles, err := filesystem.Default.Glob(savPatterns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get save files from %s: %w", savPatterns, err)
 	}
@@ -131,11 +131,11 @@ func ExportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte,
 	return writer.Bytes(), nil
 }
 
-func ImportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob, savZipBytes []byte) error {
+func ImportSav(absEragoDir string, eragoFsys FileSystemGlob, savZipBytes []byte) error {
 	oldDefaultFS := filesystem.Default
 	defer func() { filesystem.Default = oldDefaultFS }()
 
-	filesystem.Default = wrapFileSystemPR{eragoFsys}
+	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
 	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
 	if err != nil {
@@ -146,7 +146,7 @@ func ImportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob, savZipBy
 	// TODO: check sav directory mismatch. Possible ways:
 	// 1. output inmemory outFsys, then check file path
 	// 2. Create wrapped filesystem and inject file path check before passing backend.
-	extractedDir, err := pkg.ExtractFromZipReader(eragoFsys, bytes.NewReader(savZipBytes), int64(len(savZipBytes)))
+	extractedDir, err := pkg.ExtractFromZipReader(FromMobileFS(eragoFsys), bytes.NewReader(savZipBytes), int64(len(savZipBytes)))
 	if err != nil {
 		return fmt.Errorf("extract zip failed: %w", err)
 	}
@@ -161,11 +161,11 @@ func ImportSav(absEragoDir string, eragoFsys filesystem.FileSystemGlob, savZipBy
 
 // ExportLog exports log file with respect to erago directory. It returns log content as bytes and error if failed.
 // If log file not exist, it returns empty content and no error.
-func ExportLog(absEragoDir string, eragoFsys filesystem.FileSystemGlob) ([]byte, error) {
+func ExportLog(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 	oldDefaultFS := filesystem.Default
 	defer func() { filesystem.Default = oldDefaultFS }()
 
-	filesystem.Default = wrapFileSystemPR{eragoFsys}
+	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
 	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
 	if err != nil {

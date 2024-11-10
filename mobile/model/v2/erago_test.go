@@ -69,7 +69,7 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			name:    "normal",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, filesystem.Desktop}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, FromGoFSGlob(filesystem.Desktop)}},
 			wantErr: false,
 		},
 		{
@@ -95,7 +95,7 @@ func TestInit(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
-			if err := Init(tt.args.ui, tt.args.baseDir, tt.args.options); (err != nil) != tt.wantErr {
+			if err := Init(tt.args.ui, tt.args.baseDir, &tt.args.options); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// ensure all resource is released.
@@ -155,7 +155,7 @@ func TestMain(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
-			if err := Init(&stubUI{}, absStubDir, InitOptions{ImageFetchNone, nil}); err != nil {
+			if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, nil}); err != nil {
 				t.Fatal(err)
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -207,7 +207,7 @@ func TestQuit(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, InitOptions{ImageFetchNone, nil}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, nil}); err != nil {
 					t.Fatal(err)
 				}
 			}

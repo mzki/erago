@@ -37,10 +37,10 @@ type InitOptions struct {
 
 	// FileSystem is used for reading and writing files for erago package files.
 	// It can be nil, in that case OS default filesystem is used.
-	FileSystem filesystem.FileSystemGlob
+	FileSystem FileSystemGlob
 }
 
-func Init(ui UI, baseDir string, options InitOptions) error {
+func Init(ui UI, baseDir string, options *InitOptions) error {
 	if initialized {
 		panic("game already initialized")
 	}

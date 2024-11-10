@@ -67,7 +67,7 @@ func TestInstallPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotExtractedDir, err := InstallPackage(tt.args.outFsys, tt.args.zipBytes)
+			gotExtractedDir, err := InstallPackage(FromGoFS(tt.args.outFsys), tt.args.zipBytes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InstallPackage() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -143,7 +143,7 @@ func TestExportSav(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExportSav(tt.args.absEragoDir, tt.args.eragoFsys)
+			got, err := ExportSav(tt.args.absEragoDir, FromGoFSGlob(tt.args.eragoFsys))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExportSav() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -258,7 +258,7 @@ func TestExportLog(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExportLog(tt.args.absEragoDir, tt.args.eragoFsys)
+			got, err := ExportLog(tt.args.absEragoDir, FromGoFSGlob(tt.args.eragoFsys))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExportLog() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -328,7 +328,7 @@ func TestImportSav(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ImportSav(tt.args.absEragoDir, tt.args.eragoFsys, tt.args.savZipBytes); (err != nil) != tt.wantErr {
+			if err := ImportSav(tt.args.absEragoDir, FromGoFSGlob(tt.args.eragoFsys), tt.args.savZipBytes); (err != nil) != tt.wantErr {
 				t.Errorf("ImportSav() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
