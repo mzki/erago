@@ -254,7 +254,7 @@ func TestExportLog(t *testing.T) {
 		wantErr bool
 	}{
 		{"normal", args{absEragoDir, filesystem.FromFS(logDataFS)}, goldenBs, false},
-		{"normal with no log", args{absEragoDir, filesystem.FromFS(configOnlyFS)}, []byte{}, false},
+		{"error no log", args{absEragoDir, filesystem.FromFS(configOnlyFS)}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

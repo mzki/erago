@@ -54,7 +54,17 @@ func (fsys wrapFileSystemPR) ResolvePath(file string) (string, error) {
 	}
 }
 
-var ErrNoSavFiles = errors.New("no sav file")
+var (
+	ErrNoSavFiles = errors.New("no sav file")
+	ErrNoLogFile  = errors.New("no log file")
+)
+
+// IsExportFileNotFound indicates error is happend by export target file(s) are not found.
+// Golang side can detect is by errors.Is(...), but mobile platform side can not.
+// This functions would help to detect such kind of error at mobile platform side.
+func IsExportFileNotFound(err error) bool {
+	return errors.Is(err, ErrNoSavFiles) || errors.Is(err, ErrNoLogFile)
+}
 
 // ExportSav exports save files matching the pattern [absEragoDir]/[saveFileDir in the config file]/*.
 // It returns exported save files as zip archive bytes and error if any.
@@ -160,7 +170,7 @@ func ImportSav(absEragoDir string, eragoFsys FileSystemGlob, savZipBytes []byte)
 }
 
 // ExportLog exports log file with respect to erago directory. It returns log content as bytes and error if failed.
-// If log file not exist, it returns empty content and no error.
+// If log file does not exist, it returns ErrNoLogFile.
 func ExportLog(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 	oldDefaultFS := filesystem.Default
 	defer func() { filesystem.Default = oldDefaultFS }()
@@ -175,7 +185,7 @@ func ExportLog(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 	_, _ = disableDesktopFeatures(appConf)
 	if !eragoFsys.Exist(appConf.LogFile) {
 		// no log case is treated as empty log content and succeeded.
-		return []byte{}, nil
+		return nil, fmt.Errorf("could not found log file %s: %w", appConf.LogFile, ErrNoLogFile)
 	}
 
 	reader, err := eragoFsys.Load(appConf.LogFile)
