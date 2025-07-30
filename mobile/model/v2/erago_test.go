@@ -16,11 +16,11 @@ import (
 
 type stubUI struct{}
 
-func (ui stubUI) OnPublishJson(_ string) (_ error) {
+func (ui stubUI) OnPublishBytes(_ []byte) (_ error) {
 	return nil
 }
 
-func (ui stubUI) OnPublishJsonTemporary(_ string) (_ error) {
+func (ui stubUI) OnPublishBytesTemporary(_ []byte) (_ error) {
 	return nil
 }
 
@@ -69,22 +69,22 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			name:    "normal",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, FromGoFSGlob(filesystem.Desktop)}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop)}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with default filesystem",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, nil}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with relative dir",
-			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, nil}},
+			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
 			wantErr: true,
 		},
 		{
 			name:    "error config nor script files not found",
-			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, nil}},
+			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
 			wantErr: true,
 		},
 	}
@@ -155,7 +155,7 @@ func TestMain(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
-			if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, nil}); err != nil {
+			if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
 				t.Fatal(err)
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
@@ -207,7 +207,7 @@ func TestQuit(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, nil}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
 					t.Fatal(err)
 				}
 			}

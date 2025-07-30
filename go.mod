@@ -19,6 +19,7 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/psanford/memfs v0.0.0-20241019191636-4ef911798f9b
 	golang.org/x/exp/shiny v0.0.0-20241009180824-f66d83c29e7c
+	google.golang.org/protobuf v1.36.6
 )
 
 require (

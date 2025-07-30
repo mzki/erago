@@ -35,6 +35,10 @@ type InitOptions struct {
 	// It should either one of ImageFetch* values. e.g. ImageFetchRawRGBA.
 	ImageFetchType int
 
+	// MessageByteEncoding indicates which byte encoding is used to notify struct
+	// data to UI side on calling APIs of UI interface, typically OnPublishXXX.
+	MessageByteEncoding int
+
 	// FileSystem is used for reading and writing files for erago package files.
 	// It can be nil, in that case OS default filesystem is used.
 	FileSystem FileSystemGlob
@@ -118,7 +122,10 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 	closeFuncs = append(closeFuncs, cancel)
 
 	theGame = erago.NewGame()
-	mobileUI, err = newUIAdapter(ctx, ui, options.ImageFetchType)
+	mobileUI, err = newUIAdapter(ctx, ui, uiAdapterOptions{
+		ImageFetchType:      pbImageFetchType(options.ImageFetchType),
+		MessageByteEncoding: options.MessageByteEncoding,
+	})
 	if err != nil {
 		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)
 		log.Infof("%v", theErr)

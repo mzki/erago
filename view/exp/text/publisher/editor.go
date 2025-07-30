@@ -219,98 +219,104 @@ func (e *Editor) createCurrentParagraph(fixed bool) *pubdata.Paragraph {
 		panic("Paragraph is not found")
 	}
 
-	lines := make([]pubdata.Line, 0, lastP.LineCount(e.frame))
+	lines := make([]*pubdata.Line, 0, lastP.LineCount(e.frame))
 	for ll := lastP.FirstLine(e.frame); ll != nil; ll = ll.Next(e.frame) {
-		boxes := make([]pubdata.Box, 0, 2)
-		totalW := 0
+		boxes := make([]*pubdata.Box, 0, 2)
+		var totalW int32 = 0
 		for bb := ll.FirstBox(e.frame); bb != nil; bb = bb.Next(e.frame) {
 			newBB := e.createBox(bb)
 			boxes = append(boxes, newBB)
-			totalW += newBB.RuneWidth()
+			totalW += newBB.RuneWidth
 		}
-		lines = append(lines, pubdata.Line{
-			Boxes:     pubdata.NewBoxes(boxes),
+		lines = append(lines, &pubdata.Line{
+			Boxes:     boxes,
 			RuneWidth: totalW,
 		})
 	}
-	alignment := pubdata.AlignmentString(attribute.Alignment(e.editor.GetAlignment()))
+	alignment := PdAlignment(attribute.Alignment(e.editor.GetAlignment()))
 	return &pubdata.Paragraph{
-		ID:        int(e.publishedCount % math.MaxInt32),
-		Lines:     pubdata.NewLines(lines),
+		Id:        int64(e.publishedCount % math.MaxInt32),
+		Lines:     lines,
 		Alignment: alignment,
 		Fixed:     fixed,
 	}
 }
 
-func (e *Editor) createBox(bb text.Box) pubdata.Box {
-	bcommon := pubdata.BoxCommon{
-		CommonRuneWidth:     bb.RuneWidth(e.frame),
-		CommonLineCountHint: bb.LineCountHint(e.frame),
+func (e *Editor) createBox(bb text.Box) *pubdata.Box {
+	bcommon := &pubdata.Box{
+		RuneWidth:     int32(bb.RuneWidth(e.frame)),
+		LineCountHint: int32(bb.LineCountHint(e.frame)),
+		ContentType:   pubdata.ContentType_CONTENT_TYPE_UNKNOWN, // as default
+		Data:          &pubdata.Box_SpaceData{SpaceData: &pubdata.SpaceData{}},
 	}
 	switch typed_bb := bb.(type) {
 	case text.ImageBox:
-		bcommon.CommonContentType = pubdata.ContentTypeImage
+		bcommon.ContentType = pubdata.ContentType_CONTENT_TYPE_IMAGE
 		return e.createImageBox(bcommon, typed_bb)
 	case text.SpaceBox:
-		bcommon.CommonContentType = pubdata.ContentTypeSpace
-		return &pubdata.SpaceBox{
-			BoxCommon: bcommon,
-		}
+		bcommon.ContentType = pubdata.ContentType_CONTENT_TYPE_SPACE
+		bcommon.Data = &pubdata.Box_SpaceData{SpaceData: &pubdata.SpaceData{}}
+		return bcommon
 	case text.ButtonBox:
-		bcommon.CommonContentType = pubdata.ContentTypeTextButton
-		return &pubdata.TextButtonBox{
-			BoxCommon: bcommon,
-			BoxData: pubdata.TextButtonData{
-				TextData: pubdata.TextData{
+		bcommon.ContentType = pubdata.ContentType_CONTENT_TYPE_TEXT_BUTTON
+		bcommon.Data = &pubdata.Box_TextButtonData{
+			TextButtonData: &pubdata.TextButtonData{
+				TextData: &pubdata.TextData{
 					Text:    typed_bb.Text(e.frame),
-					FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
-					BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
+					Fgcolor: ColorRGBAToInt32RGB(typed_bb.FgColor()),
+					Bgcolor: ColorRGBAToInt32RGB(text.ResetColor),
 				},
 				Command: typed_bb.Command(),
 			},
 		}
+		return bcommon
 	case text.TextBox:
-		bcommon.CommonContentType = pubdata.ContentTypeText
-		return &pubdata.TextBox{
-			BoxCommon: bcommon,
-			BoxData: pubdata.TextData{
+		bcommon.ContentType = pubdata.ContentType_CONTENT_TYPE_TEXT
+		bcommon.Data = &pubdata.Box_TextData{
+			TextData: &pubdata.TextData{
 				Text:    typed_bb.Text(e.frame),
-				FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
-				BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
+				Fgcolor: ColorRGBAToInt32RGB(typed_bb.FgColor()),
+				Bgcolor: ColorRGBAToInt32RGB(text.ResetColor),
 			},
 		}
+		return bcommon
 	case text.LineBox:
-		bcommon.CommonContentType = pubdata.ContentTypeText
-		return &pubdata.TextBox{
-			BoxCommon: bcommon,
-			BoxData: pubdata.TextData{
+		bcommon.ContentType = pubdata.ContentType_CONTENT_TYPE_TEXT
+		bcommon.Data = &pubdata.Box_TextData{
+			TextData: &pubdata.TextData{
 				Text:    typed_bb.Text(e.frame),
-				FgColor: int(ColorRGBAToInt32RGB(typed_bb.FgColor())),
-				BgColor: int(ColorRGBAToInt32RGB(text.ResetColor)),
+				Fgcolor: ColorRGBAToInt32RGB(typed_bb.FgColor()),
+				Bgcolor: ColorRGBAToInt32RGB(text.ResetColor),
 			},
 		}
+		return bcommon
 	default:
 		panic("unknown text.Box type")
 	}
 }
 
-func (e *Editor) createImageBox(bcommon pubdata.BoxCommon, imgBox text.ImageBox) *pubdata.ImageBox {
-	loadResult := e.imgLoader.LoadBytes(imgBox.SourceImage(), bcommon.RuneWidth(), bcommon.LineCountHint())
-	// replace by resolved image size.
-	bcommon.CommonRuneWidth = loadResult.TsSize.Width
-	bcommon.CommonLineCountHint = loadResult.TsSize.Height
+func (e *Editor) createImageBox(bcommon *pubdata.Box, imgBox text.ImageBox) *pubdata.Box {
+	loadResult := e.imgLoader.LoadBytes(imgBox.SourceImage(), int(bcommon.RuneWidth), int(bcommon.LineCountHint))
+	rw := int32(loadResult.TsSize.Width)
+	lh := int32(loadResult.TsSize.Height)
 	// create image box
-	return &pubdata.ImageBox{
-		BoxCommon: bcommon,
-		BoxData: pubdata.ImageData{
-			Source:          imgBox.SourceImage(),
-			WidthPx:         loadResult.PxSize.X,
-			HeightPx:        loadResult.PxSize.Y,
-			WidthTextScale:  bcommon.RuneWidth(),
-			HeightTextScale: bcommon.LineCountHint(),
-			Data:            loadResult.Bytes,
-			DataFetchType:   loadResult.FetchType,
-		}}
+	return &pubdata.Box{
+		// replace by resolved image size.
+		RuneWidth:     rw,
+		LineCountHint: lh,
+		ContentType:   pubdata.ContentType_CONTENT_TYPE_IMAGE,
+		Data: &pubdata.Box_ImageData{
+			ImageData: &pubdata.ImageData{
+				Source:          imgBox.SourceImage(),
+				WidthPx:         int32(loadResult.PxSize.X),
+				HeightPx:        int32(loadResult.PxSize.Y),
+				WidthTextScale:  rw,
+				HeightTextScale: lh,
+				Data:            loadResult.Bytes,
+				DataFetchType:   loadResult.FetchType,
+			},
+		},
+	}
 }
 
 // ===== uiadapter.Printer interface APIs ======

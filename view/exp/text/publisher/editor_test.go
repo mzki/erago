@@ -108,7 +108,7 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 	ctrl := gs.ctrl
 	defer gs.cancel()
 
-	publishedCount := 0
+	var publishedCount int64 = 0
 
 	for _, testcase := range []struct {
 		text            string
@@ -119,7 +119,7 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 			func(s string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(2).DoAndReturn(func(p *pubdata.Paragraph) error {
-					if v := p.ID; v != publishedCount {
+					if v := p.Id; v != publishedCount {
 						t.Errorf("Paragraph have invalid ID. want: %v, got: %v", publishedCount, v)
 					}
 					publishedCount++
@@ -128,21 +128,21 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 						t.Errorf("Paragraph should have been fixed. want: %v, got:%v", true, v)
 					}
 
-					if v := p.Lines.Len(); v != 1 {
+					if v := len(p.Lines); v != 1 {
 						t.Logf("%#v", p)
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
 					}
-					line := p.Lines.Get(0)
-					if v := line.Boxes.Len(); v != 1 {
+					line := p.Lines[0]
+					if v := len(line.Boxes); v != 1 {
 						t.Logf("%#v", line)
 						t.Fatalf("Line should have 1 box but not. want: %v, got: %v", 1, v)
 					}
-					box := line.Boxes.Get(0)
-					if v := box.ContentType(); v != pubdata.ContentTypeText {
+					box := line.Boxes[0]
+					if v := box.ContentType; v != pubdata.ContentType_CONTENT_TYPE_TEXT {
 						t.Logf("%#v", box)
-						t.Fatalf("Box should have ContentTypeText but not. want: %v, got: %v", pubdata.ContentTypeText, v)
+						t.Fatalf("Box should have ContentTypeText but not. want: %v, got: %v", pubdata.ContentType_CONTENT_TYPE_TEXT, v)
 					}
-					data := box.TextData()
+					data := box.Data.(*pubdata.Box_TextData).TextData
 					if data.Text != "newline" {
 						t.Errorf("Box.Text not match. want: %v, got: %v", "newline", data.Text)
 					}
@@ -241,8 +241,8 @@ func TestEditorSync(t *testing.T) {
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
-					if p.ID != 0 {
-						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.ID)
+					if p.Id != 0 {
+						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.Id)
 					}
 					if v := p.Fixed; v != false {
 						t.Errorf("Sync() returns non-fixed Paragraph. want:%v, got:%v", false, v)
@@ -257,8 +257,8 @@ func TestEditorSync(t *testing.T) {
 			func() publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
-					if p.ID != 0 {
-						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.ID)
+					if p.Id != 0 {
+						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.Id)
 					}
 					doneCh <- struct{}{}
 					return nil
@@ -492,17 +492,17 @@ func TestEditor_SetColor(t *testing.T) {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				// Print() expectation
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
-					if v := p.Lines.Len(); v != 1 {
+					if v := len(p.Lines); v != 1 {
 						t.Fatalf("Paragraph should have 1 line but not. want: %v, got: %v", 1, v)
 					}
-					line := p.Lines.Get(0)
-					if v := line.Boxes.Len(); v != 1 {
+					line := p.Lines[0]
+					if v := len(line.Boxes); v != 1 {
 						t.Logf("%#v", p)
 						t.Fatalf("Line should have 1 box but not. want: %v, got: %v", 1, v)
 					}
-					box := line.Boxes.Get(0)
-					expect := int(args.color)
-					if v := box.TextData().FgColor; v != expect {
+					box := line.Boxes[0]
+					expect := int32(args.color)
+					if v := box.Data.(*pubdata.Box_TextData).TextData.Fgcolor; v != expect {
 						t.Errorf("Published paragraph should have color by SetColor(). want: %v, got: %v", expect, v)
 					}
 					return nil
@@ -640,7 +640,7 @@ func TestEditor_SetAlignment(t *testing.T) {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				// Print() expectation
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(p *pubdata.Paragraph) error {
-					expect := pubdata.AlignmentString(args.align)
+					expect := publisher.PdAlignment(args.align)
 					if v := p.Alignment; v != expect {
 						t.Errorf("Published paragraph should have alignment by SetAlignment(). want: %v, got: %v", expect, v)
 					}
@@ -1113,17 +1113,17 @@ func TestEditor_MeasureImageSize(t *testing.T) {
 func TestEditor_PrintImage_Published(t *testing.T) {
 	testImagePath := "../../image/testdata/color.png"
 
-	mustImageBoxFunc := func(theP *pubdata.Paragraph) *pubdata.ImageBox {
+	mustImageBoxFunc := func(theP *pubdata.Paragraph) *pubdata.Box_ImageData {
 		t.Helper()
-		if got, expect := theP.Lines.Len(), 1; got != expect {
+		if got, expect := len(theP.Lines), 1; got != expect {
 			t.Fatalf("different line count, expect: %v, got: %v", expect, got)
 		}
-		theL := theP.Lines.Get(0)
-		if got, expect := theL.Boxes.Len(), 2; got < expect {
+		theL := theP.Lines[0]
+		if got, expect := len(theL.Boxes), 2; got < expect {
 			t.Fatalf("different box count, expect: >=%v, got: %v", expect, got)
 		}
-		theB := theL.Boxes.Get(1)
-		imgB, ok := theB.(*pubdata.ImageBox)
+		theB := theL.Boxes[1]
+		imgB, ok := theB.Data.(*pubdata.Box_ImageData)
 		if !ok {
 			t.Fatalf("unexpected box type: expect: ImageBox, but %T", theB)
 		}
@@ -1139,18 +1139,18 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 		{
 			"img_fetch_none",
 			testImagePath,
-			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchNone},
+			publisher.EditorOptions{ImageFetchType: publisher.ImageFetchNone},
 			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
 					imgB := mustImageBoxFunc(theP)
-					if imgB.BoxData.Data != nil {
-						t.Error("image data should be nil but not")
+					if imgB.ImageData == nil {
+						t.Error("image data should not be nil but nil")
 					}
-					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+					if got, expect := imgB.ImageData.Source, imgPath; got != expect {
 						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
 					}
-					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchNone; got != expect {
+					if got, expect := imgB.ImageData.DataFetchType, publisher.ImageFetchNone; got != expect {
 						t.Errorf("image fetch type should be ImageFetchNone(%v) but got %v", expect, got)
 					}
 					return nil
@@ -1163,22 +1163,22 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 		{
 			"img_fetch_raw_rgba",
 			testImagePath,
-			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchRawRGBA},
+			publisher.EditorOptions{ImageFetchType: publisher.ImageFetchRawRGBA},
 			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
 					imgB := mustImageBoxFunc(theP)
-					if imgB.BoxData.Data == nil {
+					if imgB.ImageData == nil {
 						t.Error("image data should not be nil but nil")
 					}
-					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+					if got, expect := imgB.ImageData.Source, imgPath; got != expect {
 						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
 					}
-					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchRawRGBA; got != expect {
+					if got, expect := imgB.ImageData.DataFetchType, publisher.ImageFetchRawRGBA; got != expect {
 						t.Errorf("image fetch type should be ImageFetchRawRGBA(%v) but got %v", expect, got)
 					}
 					var sum uint64 = 0
-					for _, b := range imgB.BoxData.Data {
+					for _, b := range imgB.ImageData.Data {
 						sum += uint64(b)
 					}
 					if got, expect := sum, 0; got == uint64(expect) {
@@ -1194,30 +1194,30 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 		{
 			"img_fetch_png_encoded",
 			testImagePath,
-			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchEncodedPNG},
+			publisher.EditorOptions{ImageFetchType: publisher.ImageFetchEncodedPNG},
 			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
 					imgB := mustImageBoxFunc(theP)
-					if imgB.BoxData.Data == nil {
+					if imgB.ImageData == nil {
 						t.Error("image data should not be nil but nil")
 					}
-					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+					if got, expect := imgB.ImageData.Source, imgPath; got != expect {
 						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
 					}
-					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchEncodedPNG; got != expect {
+					if got, expect := imgB.ImageData.DataFetchType, publisher.ImageFetchEncodedPNG; got != expect {
 						t.Errorf("image fetch type should be ImageFetchEncodedPNG(%v) but got %v", expect, got)
 					}
 					pngMagic := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-					if got, expect := len(imgB.BoxData.Data), len(pngMagic); got < expect {
+					if got, expect := len(imgB.ImageData.Data), len(pngMagic); got < expect {
 						t.Fatalf("image data length shorter than png magic bytes, expect: >=%v, got: %v", expect, got)
 					}
 					var magicMatched = true
 					for i, m := range pngMagic {
-						magicMatched = magicMatched && (imgB.BoxData.Data[i] == m)
+						magicMatched = magicMatched && (imgB.ImageData.Data[i] == m)
 					}
 					if got, expect := magicMatched, true; got != expect {
-						t.Errorf("image magic not matched, expect: %v, got: %v", pngMagic, imgB.BoxData.Data[:len(pngMagic)])
+						t.Errorf("image magic not matched, expect: %v, got: %v", pngMagic, imgB.ImageData.Data[:len(pngMagic)])
 					}
 					return nil
 				})
@@ -1229,22 +1229,22 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 		{
 			"img_fetch_raw_rgba_but_not_found",
 			"path/to/not/exist",
-			publisher.EditorOptions{ImageFetchType: pubdata.ImageFetchRawRGBA},
+			publisher.EditorOptions{ImageFetchType: publisher.ImageFetchRawRGBA},
 			func(ctrl *gomock.Controller, imgPath string) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublish(gomock.Any()).Times(1).DoAndReturn(func(theP *pubdata.Paragraph) error {
 					imgB := mustImageBoxFunc(theP)
-					if imgB.BoxData.Data == nil {
+					if imgB.ImageData == nil {
 						t.Error("image data should not be nil but nil")
 					}
-					if got, expect := imgB.BoxData.Source, imgPath; got != expect {
+					if got, expect := imgB.ImageData.Source, imgPath; got != expect {
 						t.Errorf("image source path is different, expect: %v, got: %v", expect, got)
 					}
-					if got, expect := imgB.BoxData.DataFetchType, pubdata.ImageFetchRawRGBA; got != expect {
+					if got, expect := imgB.ImageData.DataFetchType, publisher.ImageFetchRawRGBA; got != expect {
 						t.Errorf("image fetch type should be ImageFetchRawRGBA(%v) but got %v", expect, got)
 					}
 					var sum uint64 = 0
-					for _, b := range imgB.BoxData.Data {
+					for _, b := range imgB.ImageData.Data {
 						sum += uint64(b)
 					}
 					if got, expect := sum, 0; got > uint64(expect) {
@@ -1366,13 +1366,13 @@ func benchmarkHelperPrintOnlyImage(b *testing.B, opt publisher.EditorOptions) {
 }
 
 func BenchmarkPrintOnlyImageNone(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchNone})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchNone})
 }
 
 func BenchmarkPrintOnlyImageRawRGBA(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchRawRGBA})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchRawRGBA})
 }
 
 func BenchmarkPrintOnlyImageEncodedPNG(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{pubdata.ImageFetchEncodedPNG})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchEncodedPNG})
 }

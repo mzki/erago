@@ -2,7 +2,7 @@ package model
 
 // erago.UI for java bind.
 type UI interface {
-	CallbackJson
+	CallbackBytes
 
 	// it is called when mobile.app requires inputting
 	// user's command.
@@ -16,10 +16,11 @@ type UI interface {
 	OnInputRequestClosed()
 }
 
-// Callbacks with json message if use complex structure.
-type CallbackJson interface {
-	OnPublishJson(string) error
-	OnPublishJsonTemporary(string) error
+// Callbacks with binary message if use complex structure.
+// Binary format used in OnPublishXXX() is depending on MessageByteEncoding in InitOptions.
+type CallbackBytes interface {
+	OnPublishBytes([]byte) error
+	OnPublishBytesTemporary([]byte) error
 	OnRemove(nParagraph int) error
 	OnRemoveAll() error
 }

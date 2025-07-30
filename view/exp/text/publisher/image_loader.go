@@ -100,14 +100,14 @@ func (loader *ImageBytesLoader) loadInternal(src string, widthInRW, heightInLC i
 
 func (loader *ImageBytesLoader) createImageBytes(img image.Image) ([]byte, pubdata.ImageFetchType) {
 	switch loader.fetchType {
-	case pubdata.ImageFetchRawRGBA:
+	case ImageFetchRawRGBA:
 		if rgba, ok := img.(*image.RGBA); ok {
 			return rgba.Pix, loader.fetchType
 		} else {
 			log.Debug("expect RGBA image internally but somohow not")
-			return nil, pubdata.ImageFetchNone
+			return nil, ImageFetchNone
 		}
-	case pubdata.ImageFetchEncodedPNG:
+	case ImageFetchEncodedPNG:
 		if loader.encoder == nil {
 			// lazy creation since other ImageFetchType is not needed the encoder.
 			loader.encoder = &png.Encoder{CompressionLevel: png.BestSpeed}
@@ -116,12 +116,12 @@ func (loader *ImageBytesLoader) createImageBytes(img image.Image) ([]byte, pubda
 		err := loader.encoder.Encode(buf, img)
 		if err != nil {
 			log.Debugf("image encode failed: %v", err)
-			return nil, pubdata.ImageFetchNone
+			return nil, ImageFetchNone
 		}
 		return buf.Bytes(), loader.fetchType
-	case pubdata.ImageFetchNone:
+	case ImageFetchNone:
 		fallthrough
 	default:
-		return nil, pubdata.ImageFetchNone
+		return nil, ImageFetchNone
 	}
 }

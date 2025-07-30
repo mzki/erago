@@ -1,0 +1,110 @@
+// package pubdata intended for exporting data structure for
+// other platforms such as mobile, wasm and so on.
+// All of type of exported struct field and function signature should be
+// restricted by the restriction of platform conversion.
+// e.g. mobile type restrinction is found at
+// https://pkg.go.dev/golang.org/x/mobile/cmd/gobind?utm_source=godoc#hdr-Type_restrictions
+
+syntax = "proto3";
+package pubdata;
+
+option go_package = "github.com/mzki/erago/view/exp/text/pubdata";
+
+enum ContentType {
+	CONTENT_TYPE_UNKNOWN     = 0;
+	CONTENT_TYPE_TEXT        = 1;
+	CONTENT_TYPE_TEXT_BUTTON = 2;
+	CONTENT_TYPE_IMAGE       = 3;
+	CONTENT_TYPE_SPACE       = 4;
+}
+
+enum Alignment {
+	ALIGNMENT_UNKNOWN = 0;
+	ALIGNMENT_LEFT = 1;
+	ALIGNMENT_CENTER = 2;
+	ALIGNMENT_RIGHT = 3;
+}
+
+// ImageFetchType indicates how image pixels to be included in ImageData.Data.
+// This type is aliases for int since it may be encoded to the json format.
+enum ImageFetchType {
+	IMAGE_FETCH_TYPE_UNKNOWN     = 0;
+
+	// ImageFetchTypeNone indicates no image pixel data in ImageData.
+	// Client use URI of image to fetch pixels manually.
+	IMAGE_FETCH_TYPE_NONE        = 1;
+	// ImageFetchRawRGBA indicates image pixels stored in raw RGBA bytes in
+	// ImageData.
+	IMAGE_FETCH_TYPE_RAW_RGBA    = 2;
+	// ImageFetchEncodedPNG indicates image pixels stored in png encoded bytes in
+	// ImageData.
+	IMAGE_FETCH_TYPE_ENCODED_PNG = 3;
+}
+
+// Paragraph is a block of content divided by hard return (\n).
+message Paragraph {
+	int64 id            = 1;
+	repeated Line lines = 2;
+	Alignment alignment = 3;
+	bool fixed          = 4;
+}
+
+// Line is a line in view window.
+message Line {
+	repeated Box boxes = 1;
+	int32 rune_width   = 2;
+}
+
+// Box is abstract content. It holds nomal text, unsplitable text and images and so on.
+// The Box is the smallest element for whole content.
+// The whole content consist with multiple Paragraph-s, which is divided by the hard return (\n).
+// Paragraph consist with multiple Line-s, which is divided by rune width in the maximum width in
+// the view window. The Line consists with multiple Box-s, which is divided by its attributes.
+//
+// The Box type can be validated by type assertion or ContentType().
+message Box {
+	int32 rune_width = 1; // box's width in runewidth.
+	int32 line_count_hint = 2; // box's height hint, typically 1 but sometimes larger than 1.
+	ContentType content_type = 3; // box's content type
+
+	oneof data { // data depending on box content type.
+		TextData text_data = 9;
+		TextButtonData text_button_data = 10;
+		ImageData image_data = 11;
+		SpaceData space_data = 12;
+	}
+}
+
+// TextData is data for ContentTypeText.
+message TextData {
+	// text content should not contain hard return.
+	string text = 1;
+	// Foreground color represents 32bit RGB used to font face color
+	int32 fgcolor = 2;
+	// Background color represents 32bit RGB used to background on text.
+	int32 bgcolor = 3;
+}
+
+// TextButtonData is data for ContentTypeTextButton.
+message TextButtonData {
+	TextData text_data = 1;
+	string command = 2; 
+}
+
+// ImageData is data for ContentTypeImage.
+message ImageData {
+	string source           = 1;
+	int32 width_px          = 2;
+	int32 height_px         = 3;
+	int32 width_text_scale  = 4;
+	int32 height_text_scale = 5;
+
+	bytes data              = 10;
+	ImageFetchType data_fetch_type = 11;
+}
+
+// SpaceBox holds space data.
+message SpaceData {
+	reserved 1;
+}
+
