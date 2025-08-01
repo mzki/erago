@@ -14,7 +14,9 @@ import (
 	"github.com/mzki/erago/filesystem"
 )
 
-type stubUI struct{}
+type stubUI struct {
+	cbOnCommandRequested func()
+}
 
 func (ui stubUI) OnPublishBytes(_ []byte) (_ error) {
 	return nil
@@ -34,7 +36,11 @@ func (ui stubUI) OnRemoveAll() (_ error) {
 
 // it is called when mobile.app requires inputting
 // user's command.
-func (ui stubUI) OnCommandRequested() {}
+func (ui stubUI) OnCommandRequested() {
+	if cb := ui.cbOnCommandRequested; cb != nil {
+		cb()
+	}
+}
 
 // it is called when mobile.app requires just input any command.
 func (ui stubUI) OnInputRequested() {}
@@ -155,13 +161,26 @@ func TestMain(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
-			if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
+			cmdReqCh := make(chan struct{})
+			cbCmdReq := func() {
+				select {
+				case cmdReqCh <- struct{}{}:
+				default:
+					// do nothing
+				}
+			}
+
+			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
 				t.Fatal(err)
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 			defer cancel()
 			appContext := newStubAppContext(ctx)
 			Main(appContext)
+			select {
+			case <-cmdReqCh:
+			case <-ctx.Done():
+			}
 			Quit() // immediately
 			err := appContext.Wait()
 			switch {
