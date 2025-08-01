@@ -2,12 +2,11 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/view/exp/text/publisher"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 // adapter for erago.UI interface.
@@ -21,9 +20,9 @@ type uiAdapter struct {
 
 var (
 	// Export ImageFetchType as int for mobile client.
-	ImageFetchNone       int = int(publisher.ImageFetchNone.Number())
-	ImageFetchRawRGBA    int = int(publisher.ImageFetchRawRGBA.Number())
-	ImageFetchEncodedPNG int = int(publisher.ImageFetchEncodedPNG.Number())
+	ImageFetchNone       int = int(publisher.ImageFetchNone)
+	ImageFetchRawRGBA    int = int(publisher.ImageFetchRawRGBA)
+	ImageFetchEncodedPNG int = int(publisher.ImageFetchEncodedPNG)
 )
 
 var imageFetchTypeIntToEnum = map[int]publisher.ImageFetchType{
@@ -93,19 +92,13 @@ func newParagraphBinaryEncodeFunc(encoding int) paragraphBinaryEncoderFunc {
 	switch encoding {
 	case MessageByteEncodingProtobuf:
 		encoder = func(p *pubdata.Paragraph) ([]byte, error) {
-			return proto.MarshalOptions{
-				Deterministic: true,
-			}.Marshal(p)
+			return p.MarshalVT()
 		}
 	case MessageByteEncodingJson:
 		fallthrough
 	default:
 		encoder = func(p *pubdata.Paragraph) ([]byte, error) {
-			return protojson.MarshalOptions{
-				UseProtoNames:     true,
-				UseEnumNumbers:    true,
-				EmitDefaultValues: true,
-			}.Marshal(p)
+			return json.Marshal(p)
 		}
 	}
 	return encoder

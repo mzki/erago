@@ -105,6 +105,8 @@ message ImageData {
 
 // SpaceBox holds space data.
 message SpaceData {
-	reserved 1;
+	// There is a protoc plugin which could not handle empty message properly.
+	// To avoid the issue, we need to add concrete field instead of reserved feature in protobuf spec 
+	bool reserved = 1;   
 }
 

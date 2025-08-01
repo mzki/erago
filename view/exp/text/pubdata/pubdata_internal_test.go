@@ -1,10 +1,8 @@
 package pubdata
 
 import (
+	"encoding/json"
 	"testing"
-
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestParagraph_JsonDump(t *testing.T) {
@@ -57,36 +55,30 @@ func TestParagraph_JsonDump(t *testing.T) {
 		Fixed:     true,
 	}
 
-	jsonbytes, err := protojson.MarshalOptions{
-		UseProtoNames:  true,
-		UseEnumNumbers: false,
-	}.Marshal(&p)
+	jsonbytes, err := json.Marshal(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("Dumped Json:\n%v", string(jsonbytes))
 
 	var decodedP Paragraph
-	if err := protojson.Unmarshal(jsonbytes, &decodedP); err != nil {
-		t.Logf("skipped gotten error: %v", err)
+	if err := json.Unmarshal(jsonbytes, &decodedP); err != nil {
+		t.Fatalf("Unmarshall error: %v", err)
 	}
-	// Unmarshal is not supported.
-	if !proto.Equal(&p, &decodedP) {
+	if !p.EqualVT(&decodedP) {
 		t.Errorf("Before/After Json dumping Paragraph is not matched. want: %#v got: %#v", &p, &decodedP)
 	}
 
-	pbytes, err := proto.MarshalOptions{
-		Deterministic: true,
-	}.Marshal(&p)
+	pbytes, err := p.MarshalVT()
 	if err != nil {
 		t.Fatal(err)
 	}
 	decodedP.Reset()
-	if err := proto.Unmarshal(pbytes, &decodedP); err != nil {
+	if err := decodedP.UnmarshalVT(pbytes); err != nil {
 		t.Logf("skipped gotten error: %v", err)
 	}
 	// Unmarshal is not supported.
-	if !proto.Equal(&p, &decodedP) {
+	if !p.EqualVT(&decodedP) {
 		t.Errorf("Before/After Proto dumping Paragraph is not matched. want: %#v got: %#v", &p, &decodedP)
 	}
 }

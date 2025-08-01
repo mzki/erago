@@ -1,2 +1,6 @@
-protoc --go_out=. --go_opt=paths=source_relative \
+protoc \
+    --plugin protoc-gen-go-lite="${GOPATH}/bin/protoc-gen-go-lite" \
+    --go-lite_out=.  \
+    --go-lite_opt=features=marshal+unmarshal+size+equal+json \
+    --go-lite_opt=paths=source_relative \
     ./view/exp/text/pubdata/pubdata.proto

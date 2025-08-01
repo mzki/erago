@@ -16,14 +16,15 @@ require (
 )
 
 require (
+	github.com/aperturerobotics/protobuf-go-lite v0.10.0
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/psanford/memfs v0.0.0-20241019191636-4ef911798f9b
 	golang.org/x/exp/shiny v0.0.0-20241009180824-f66d83c29e7c
-	google.golang.org/protobuf v1.36.6
 )
 
 require (
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20221208032759-85de2813cf6b // indirect
+	github.com/aperturerobotics/json-iterator-lite v1.0.0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20231223183121-56fa3ac82ce7 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
