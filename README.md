@@ -75,6 +75,10 @@ bash build.sh
 You can prepare the build environment using Docker and Dockerfile.
 See `erago/dockerfiles/mobile/Dockerfile`. **Warning: This docker image is large, up to 3.6GB** 
 
+### Data schema between UI and model library.
+
+There is a complex data structure to be exchanged between UI and the Model library. It is encoded as protobuf (or json depending on initial setup of library). The protobuf data schema is placed at `view/exp/text/pubdata/pubdata.proto`. The schema can also be found in the release package of the mobile library (e.g. `erago_vX_Y_Z_android_model-v2.zip`). See Protobuf official document for how to use schema file `.proto`
+in UI side development.
 
 ## License
 
