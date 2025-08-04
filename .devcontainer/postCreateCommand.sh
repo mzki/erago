@@ -6,6 +6,6 @@ export PATH="$PATH:$HOME/.local/bin"
 rm protoc-30.2-linux-x86_64.zip
 
 # install go-plugin for protoc
-go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@lates
+go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 # ensure working go executable
 go version
