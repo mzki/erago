@@ -73,6 +73,7 @@ func TestParagraph_JsonDump(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("Dumped proto: %#v\n", pbytes)
 	decodedP.Reset()
 	if err := decodedP.UnmarshalVT(pbytes); err != nil {
 		t.Logf("skipped gotten error: %v", err)
