@@ -112,28 +112,30 @@ func TestInit(t *testing.T) {
 
 type stubAppContext struct {
 	ctx  context.Context
+	err  error
 	quit chan error
 }
 
 func newStubAppContext(ctx context.Context) *stubAppContext {
 	return &stubAppContext{
 		ctx:  ctx,
+		err:  nil,
 		quit: make(chan error),
 	}
 }
 
 func (stub *stubAppContext) NotifyQuit(err error) {
+	stub.err = err
 	stub.quit <- err
 	close(stub.quit)
 }
 
-func (stub *stubAppContext) Wait() error {
-	select {
-	case <-stub.ctx.Done():
-		return stub.ctx.Err()
-	case err := <-stub.quit:
-		return err
-	}
+func (stub *stubAppContext) Done() <-chan error {
+	return stub.quit
+}
+
+func (stub *stubAppContext) Err() error {
+	return stub.err
 }
 
 func TestMain(t *testing.T) {
@@ -161,7 +163,7 @@ func TestMain(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
 			cmdReqCh := make(chan struct{})
@@ -181,17 +183,26 @@ func TestMain(t *testing.T) {
 			Main(appContext)
 			select {
 			case <-cmdReqCh:
+				// OK, go next step
 			case <-ctx.Done():
+				t.Errorf("Main(), exceed timelimit to receive cmdReq, %v", ctx.Err())
+				// NG, but need to continue to call Quit().
 			}
 			Quit() // immediately
-			err := appContext.Wait()
-			switch {
-			case errors.Is(err, context.DeadlineExceeded):
-				t.Errorf("Main(), failed to quit corretly. Canceled by parent context")
-			case err == nil || errors.Is(err, context.Canceled):
-				// OK
-			default:
-				t.Errorf("Main(), failed to quit correctly. error = %v", err)
+			// below cases can be happened together, in such case the result is undeterminded.
+			// someitimes OK, and the others NG.
+			// In case of context done is first, its error is already captured at above. So we can take any result at here.
+			// In case of appContext done is first, it is nomarl terminataion or abonormal one. decided at following steps.
+			select {
+			case <-ctx.Done():
+				t.Errorf("Main(), failed to quit corretly. Canceled by parent context, %v", ctx.Err())
+			case <-appContext.Done():
+				switch err := appContext.Err(); {
+				case err == nil || errors.Is(err, context.Canceled):
+					// OK
+				default:
+					t.Errorf("Main(), failed to quit correctly. error = %v", err)
+				}
 			}
 		})
 	}
