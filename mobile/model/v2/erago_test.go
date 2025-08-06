@@ -161,20 +161,22 @@ func TestMain(t *testing.T) {
 			}
 			defer os.Chdir(absCurrentDir)
 
+			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+			defer cancel()
+
 			cmdReqCh := make(chan struct{})
 			cbCmdReq := func() {
-				select {
-				case cmdReqCh <- struct{}{}:
-				default:
-					// do nothing
-				}
+				go func() { //invoke goroutine to avoid blocking callback.
+					select {
+					case cmdReqCh <- struct{}{}:
+					case <-ctx.Done():
+					}
+				}()
 			}
 
 			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
 				t.Fatal(err)
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-			defer cancel()
 			appContext := newStubAppContext(ctx)
 			Main(appContext)
 			select {
