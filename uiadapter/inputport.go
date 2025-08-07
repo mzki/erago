@@ -2,6 +2,8 @@ package uiadapter
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -248,6 +250,7 @@ func (port *inputPort) WaitWithTimeout(ctx context.Context, timeout time.Duratio
 }
 
 func (port *inputPort) waitWithContext(ctx context.Context) error {
+	port.cbuf.PrepareWaitReceive()
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- port.cbuf.Wait()
@@ -260,6 +263,9 @@ func (port *inputPort) waitWithContext(ctx context.Context) error {
 		<-errCh // wait for ending goroutine.
 		return ctx.Err()
 	case err := <-errCh:
+		if errors.Is(err, ErrorCommandWaitCanceled) {
+			return fmt.Errorf("??? waitWithContext is cancelled by external factor: %w", err)
+		}
 		return err
 	}
 }
@@ -295,6 +301,7 @@ func (port *inputPort) CommandWithTimeout(ctx context.Context, timeout time.Dura
 }
 
 func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
+	port.cbuf.PrepareWaitReceive()
 	cmdCh := make(chan struct {
 		Cmd string
 		Err error
@@ -314,6 +321,9 @@ func (port *inputPort) commandWithContext(ctx context.Context) (string, error) {
 		<-cmdCh // wait for ending goroutine.
 		return "", ctx.Err()
 	case cmd := <-cmdCh:
+		if errors.Is(cmd.Err, ErrorCommandWaitCanceled) {
+			return cmd.Cmd, fmt.Errorf("??? waitWithContext is cancelled by external factor: %w", cmd.Err)
+		}
 		return cmd.Cmd, cmd.Err
 	}
 }

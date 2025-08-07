@@ -2,6 +2,7 @@ package uiadapter
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ func newSyncer() *lineSyncer { return &lineSyncer{SyncerImpl{}} }
 func TestCommandBuffer(t *testing.T) {
 	c := newCommandBuffer()
 	c.Send("cmd")
+	c.PrepareWaitReceive()
 	cmd, err := c.Receive()
 	if err != nil {
 		t.Fatal(err)
@@ -49,6 +51,7 @@ func TestInputState(t *testing.T) {
 	if cmd, ok := port.cbuf.macroQ.DequeCommand(); ok {
 		t.Fatalf("invalid macro command %s", cmd)
 	}
+	port.cbuf.PrepareWaitReceive()
 	cmd, err := port.cbuf.Receive()
 	if err != nil {
 		t.Fatal(err)
@@ -148,6 +151,36 @@ func TestInputWait(t *testing.T) {
 	}
 	if err == ErrorPipelineClosed {
 		t.Error("wait() returns quit signal")
+	}
+}
+
+func TestInputWaitTimeoutCancelled(t *testing.T) {
+	port := newInputPort(newSyncer())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
+	defer port.Quit()
+
+	err := port.WaitWithTimeout(context.Background(), 100*time.Nanosecond)
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || err == nil {
+		// OK
+	} else {
+		t.Fatal(err)
+	}
+}
+
+func TestInputCommandTimeoutCancelled(t *testing.T) {
+	port := newInputPort(newSyncer())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go port.RunFilter(ctx)
+	defer port.Quit()
+
+	_, err := port.CommandWithTimeout(context.Background(), 100*time.Nanosecond)
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || err == nil {
+		// OK
+	} else {
+		t.Fatal(err)
 	}
 }
 

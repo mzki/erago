@@ -10,11 +10,15 @@ import (
 // Error notifying XXXBuffer is Closed.
 var ErrorPipelineClosed = errors.New("pipeline is closed")
 
+// Error indicates XXXBuffer.Wait or Receive are cancelled
+var ErrorCommandWaitCanceled = errors.New("command Wait is cancelled")
+
 // commandBuffer is buffer for input string command.
 type commandBuffer struct {
 	commands []string
 
-	closed bool
+	closed  bool
+	waiting bool
 
 	mu     *sync.Mutex
 	cond   *sync.Cond
@@ -25,6 +29,8 @@ func newCommandBuffer() *commandBuffer {
 	mu := new(sync.Mutex)
 	return &commandBuffer{
 		commands: make([]string, 0, 1),
+		closed:   false,
+		waiting:  false,
 		mu:       mu,
 		cond:     sync.NewCond(mu),
 		macroQ:   newMacroQ(),
@@ -58,6 +64,7 @@ func (cbuf *commandBuffer) Close() {
 	defer cbuf.mu.Unlock()
 
 	cbuf.closed = true
+	// cbuf.waiting = false // waiting is keep as is. to propage ErrorPipelineClosed by closed.
 	cbuf.macroQ.Clear()
 	cbuf.cond.Broadcast()
 }
@@ -77,11 +84,22 @@ func (cbuf *commandBuffer) Send(cmd string) {
 	cbuf.cond.Signal()
 }
 
+// PrepareWaitReceive prepares for subsequent call of Wait, Receive and Cancel.
+// User should call this before those subsequent functions.
+// Wait, Receive and Cancel will be failed, typically be deadlocked, if missing this call.
+func (cbuf *commandBuffer) PrepareWaitReceive() {
+	cbuf.mu.Lock()
+	cbuf.waiting = true
+	cbuf.mu.Unlock()
+}
+
 // wait any input or macro skip
+// It will return err as ErrorPipelineClosed when buffer is closed or
+// return as ErrorCommandWaitCanceled when buffer waiting is cancelled by external.
 func (cbuf *commandBuffer) Wait() error {
 	cbuf.mu.Lock()
 	defer cbuf.mu.Unlock()
-	for {
+	for cbuf.waiting {
 		if cbuf.closed {
 			return ErrorPipelineClosed
 		}
@@ -95,13 +113,16 @@ func (cbuf *commandBuffer) Wait() error {
 		}
 		cbuf.cond.Wait()
 	}
+	return ErrorCommandWaitCanceled
 }
 
 // receive input string from user input.
+// It will return err as ErrorPipelineClosed when buffer is closed or
+// return as ErrorCommandWaitCanceled when buffer waiting is cancelled by external.
 func (cbuf *commandBuffer) Receive() (string, error) {
 	cbuf.mu.Lock()
 	defer cbuf.mu.Unlock()
-	for {
+	for cbuf.waiting {
 		if cbuf.closed {
 			return "", ErrorPipelineClosed
 		}
@@ -115,6 +136,8 @@ func (cbuf *commandBuffer) Receive() (string, error) {
 		}
 		cbuf.cond.Wait()
 	}
+	// cancelled
+	return "", ErrorCommandWaitCanceled
 }
 
 func (cbuf *commandBuffer) receive() (string, bool) {
@@ -129,5 +152,8 @@ func (cbuf *commandBuffer) receive() (string, bool) {
 
 // canceling wait state.
 func (cbuf *commandBuffer) Cancel() {
-	cbuf.Send("")
+	cbuf.mu.Lock()
+	cbuf.waiting = false
+	cbuf.mu.Unlock()
+	cbuf.cond.Broadcast()
 }
