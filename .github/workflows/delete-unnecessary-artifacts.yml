@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/delete-artifacts-in-workflow
         with:
           # need comma-separated string for multiple names
-          names-ignore: archive
+          names-ignore: archive,test-script-log
           workflow-run-id: ${{ github.event.workflow_run.id }} 
 
         

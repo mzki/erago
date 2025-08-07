@@ -46,6 +46,15 @@ jobs:
       - name: Race Testing
         run: go test -race -timeout 5m -v ./...
 
+      - name: Archive test script log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-script-log
+          path: ./stub/erago.log
+          retention-days: 7 # for 1 week
+          if-no-files-found: warn
+
       - name: Build and copy to stub
         working-directory: app/cmd
         run: |
