@@ -248,6 +248,47 @@ func TestQuit(t *testing.T) {
 	}
 }
 
+func TestQuitTwice(t *testing.T) {
+	absCurrentDir, err := filepath.Abs("./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	absStubDir, err := filepath.Abs("../../../stub")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name      string
+		doInit    bool
+		wantPanic bool
+	}{
+		{"twice after init", true, false},
+		{"twice no init", false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if rec := recover(); (tt.wantPanic == false) && (rec != nil) {
+					t.Errorf("%v", rec)
+				}
+			}()
+			if err := os.Chdir(absCurrentDir); err != nil {
+				t.Fatal(err)
+			}
+			defer os.Chdir(absCurrentDir)
+
+			if tt.doInit {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			Quit()
+			Quit()
+		})
+	}
+}
+
 func TestSendCommand(t *testing.T) {
 	type args struct {
 		cmd string

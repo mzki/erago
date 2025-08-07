@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/app"
@@ -28,6 +29,8 @@ var (
 	mobileUI       *uiAdapter
 	logCloseFunc   func()
 	initialized    = false
+
+	mainDone chan struct{} = nil
 )
 
 type InitOptions struct {
@@ -137,6 +140,7 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 		return theErr
 	}
 	theGame.RegisterAllRequestObserver(mobileUI)
+	mainDone = nil // indicates it is not running yet.
 	initialized = true
 	return nil
 }
@@ -187,6 +191,10 @@ func Main(appContext AppContext) {
 	if theGame == nil {
 		panic("Main(): nil game state")
 	}
+	if mainDone != nil {
+		panic("Main(): already running")
+	}
+	mainDone = make(chan struct{})
 	go func(game *erago.Game) {
 		// start game engine
 		err := game.Main()
@@ -194,6 +202,7 @@ func Main(appContext AppContext) {
 			theErr := fmt.Errorf("Game.Main() failed: %w", err)
 			log.Infof("%v", theErr)
 		}
+		close(mainDone)
 		appContext.NotifyQuit(err)
 	}(theGame) // evaluate current value to avoid race condition inside goroutne.
 }
@@ -201,13 +210,26 @@ func Main(appContext AppContext) {
 func Quit() {
 	initialized = false
 
-	if mobileUI != nil {
-		theGame.UnregisterAllRequestObserver()
-		mobileUI = nil
-	}
 	if theGame != nil {
 		theGame.Quit()
+
+		// make sure game.Main goroutine is done when Main() was called.
+		if mainDone != nil {
+			const waitTime = 3 * time.Second
+			select {
+			case <-time.After(waitTime):
+				log.Infof("game.Main is not stopped for %v, attempt to force quit", waitTime)
+			case <-mainDone:
+				// OK
+			}
+			mainDone = nil
+		}
+		// unregister should call after game.Main is done since it is not goroutine safe.
+		theGame.UnregisterAllRequestObserver()
 		theGame = nil
+	}
+	if mobileUI != nil {
+		mobileUI = nil
 	}
 	if logCloseFunc != nil {
 		logCloseFunc()
