@@ -121,8 +121,19 @@ func Main(title string, appConf *Config) {
 	// returned value must be called once.
 	reset, err := SetLogConfig(appConf)
 	if err != nil {
-		// TODO: what is better way to handle fatal error in this case?
 		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Hint: try to change config logfile from %v\n", appConf.LogFile)
+		// sometimes stdout/err are also not avialble, e.g. windows gui application.
+		// try to create "fatal file" to record error.
+		w, fsyserr := filesystem.Store("fatal")
+		if fsyserr != nil {
+			// TODO: this case, we do not have any ways to notify the error to users....
+			fmt.Fprintf(os.Stderr, "failed to create fatal file by %v: previous fail %v\n", fsyserr, err)
+			return
+		}
+		defer w.Close()
+		fmt.Fprintf(w, "log configuration failed: %v\n", err)
+		fmt.Fprintf(w, "Hint: try to change config logfile from %v\n", appConf.LogFile)
 		return
 	}
 	defer reset()
