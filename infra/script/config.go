@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mzki/erago/filesystem"
+	"github.com/mzki/erago/infra/buildinfo"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -37,8 +38,9 @@ func (c Config) loadPattern() string {
 }
 
 const (
-	registryBaseDirKey     = "_BASE_DIRECTORY"
-	registryDebugEnableKey = "_DEBUG_ENABLE"
+	registryBaseDirKey        = "_BASE_DIRECTORY"
+	registryDebugEnableKey    = "_DEBUG_ENABLE"
+	registryRuntimeVersionKey = "_RUNTIME_VERSION"
 )
 
 func (conf Config) register(L *lua.LState) error {
@@ -47,6 +49,7 @@ func (conf Config) register(L *lua.LState) error {
 		return fmt.Errorf("config value register failed by ResolvePath %s: %w", conf.LoadDir, err)
 	}
 
+	binfo := buildinfo.Get()
 	reg := L.CheckTable(lua.RegistryIndex)
 	for _, set := range []struct {
 		key string
@@ -54,6 +57,7 @@ func (conf Config) register(L *lua.LState) error {
 	}{
 		{registryDebugEnableKey, lua.LBool(conf.IncludeGoStackTrace)},
 		{registryBaseDirKey, lua.LString(resLoadDir)},
+		{registryRuntimeVersionKey, lua.LString(binfo.Version)},
 	} {
 		reg.RawSetString(set.key, set.val)
 		L.SetGlobal(set.key, set.val)

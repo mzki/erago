@@ -15,7 +15,7 @@ OUTPUTDIR ?= .
 # build flags
 GOBUILD=go build
 
-GOLDFLAGS =-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT_HASH)
+GOLDFLAGS =-s -w -X github.com/mzki/erago/infra/buildinfo.version=$(VERSION) -X github.com/mzki/erago/infra/buildinfo.commitHash=$(COMMIT_HASH)
 GOGCFLAGS =-trimpath=$(GOPATH)
 GOASMFLAGS=-trimpath=$(GOPATH)
 

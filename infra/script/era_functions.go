@@ -47,9 +47,10 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 		"saveShare":   ft.saveShare,
 		"loadShare":   ft.loadShare,
 		// util
-		"paramlv": ft.paramLv,
-		"explv":   ft.expLv,
-		"typeof":  ft.typeOf,
+		"paramlv":         ft.paramLv,
+		"explv":           ft.expLv,
+		"typeof":          ft.typeOf,
+		"runtime_version": ft.getRuntimeVersion,
 
 		// alignment functions
 		"setAlignment": ft.setAlignment,
@@ -1266,6 +1267,23 @@ func (ft functor) typeOf(L *lua.LState) int {
 		L.Push(lua.LString("builtin"))
 		return 1
 	}
+}
+
+// +gendoc "Era Module"
+// * version: string = era.runtime_version()
+//
+// Get runtime version of era game engine. version string would be like "v1.0.0".
+// It can be useful when need to examine whether new functions added at newer version can be available.
+//
+// era ゲームエンジンのバージョンを取得します。バージョン情報は例えば "v1.0.0" のような文字列です。
+// この関数は、新しいバージョンで追加された新しい関数が使えるか確認するために使用できます。
+func (ft functor) getRuntimeVersion(L *lua.LState) int {
+	var version lua.LString = "v0.0.0"
+	if v := getRegValue(L, registryRuntimeVersionKey); v.Type() == lua.LTString {
+		version = v.(lua.LString)
+	}
+	L.Push(version)
+	return 1
 }
 
 // // View and Screen Layout

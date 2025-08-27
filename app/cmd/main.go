@@ -10,11 +10,11 @@ import (
 	// "runtime"
 
 	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/infra/buildinfo"
 )
 
 var (
-	version string = "dev"
-	commit  string = "none"
+	buildInfo = buildinfo.Get()
 )
 
 const Title = "erago"
@@ -34,7 +34,7 @@ func main() {
 
 	switch mode {
 	case runMain:
-		fullTitle := Title + " " + version + "-" + commit
+		fullTitle := Title + " " + buildInfo.Version + "-" + buildInfo.CommitHash
 		app.Main(fullTitle, appConf)
 	case runTest:
 		ok := app.Testing(appConf, args)
@@ -117,7 +117,7 @@ func parseFlags(flags *flag.FlagSet, argv []string) (runningMode, []string) {
 
 	// show version and exit immediately
 	if showVersion {
-		fmt.Println(version)
+		fmt.Println(buildInfo.Version)
 		os.Exit(0) // normal termination
 	}
 

@@ -56,6 +56,12 @@ era.clearShare()
 era.saveShare()
 era.loadShare()
 
+--- utils
+assert(era.typeof(true) == "builtin")
+assert(era.runtime_version() == "dev")
+
+-- flow
+
 assert(era.flow.getCurrentScene())
 assert(era.flow.getNextScene())
 era.flow.setNextScene "test"
