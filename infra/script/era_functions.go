@@ -49,6 +49,8 @@ func (ip *Interpreter) registerEraModule(L *lua.LState, gamestate *state.GameSta
 		// util
 		"paramlv": ft.paramLv,
 		"explv":   ft.expLv,
+		"typeof":  ft.typeOf,
+
 		// alignment functions
 		"setAlignment": ft.setAlignment,
 		"getAlignment": ft.getAlignment,
@@ -1230,6 +1232,40 @@ func (ft functor) expLv(L *lua.LState) int {
 	exp_lvs := ft.state.CSV.ExpLvs
 	L.Push(lua.LNumber(currentLv(param, exp_lvs)))
 	return 1
+}
+
+// +gendoc "Era Module"
+// * type: string = era.typeof(value: any)
+//
+// It determines type of the value provided from era runtime and returns type name as string.
+// e.g. it will return "IntParam" for IntParam type, "StrParam" for StrParam, and so on.
+// It will returns "builtin" when the value is builtin values in Lua, such as string, number, boolean, table and nil.
+// otherwise, It will returns "unknown".
+// For "builtin" types, user can examine concrete type name by Lua builtin function type().
+//
+// era ランタイムから提供された value のデータ型を判別し、データ型の名前を文字列で返します。
+// 例： IntParam 型のデータには"IntParam"を返し、 StrParam 型のデータには "StrParam" を返します。
+// Lua で提供する基本型. string, number, boolean, table, nil に対しては、 "builtin" を返します。
+// その他の value に対しては、"unknown" を返します。
+// "builtin" 型の value に対しては、 Lua の組み込み関数 type() を使って詳細なデータ型を確認できます。
+func (ft functor) typeOf(L *lua.LState) int {
+	v := L.CheckAny(1)
+	switch v.Type() {
+	case lua.LTUserData:
+		m := v.(*lua.LUserData).Metatable
+		if mv, ok := m.(*lua.LTable); ok {
+			if typeName, ok := getTypeNameMt(L, mv); ok {
+				L.Push(typeName)
+				return 1
+			}
+		}
+		L.Push(lua.LString("unknown")) // unknown userdata, maybe from external.
+		return 1
+	default:
+		// other builtin types, can be distinguish by type()
+		L.Push(lua.LString("builtin"))
+		return 1
+	}
 }
 
 // // View and Screen Layout

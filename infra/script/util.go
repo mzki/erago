@@ -10,7 +10,19 @@ func newMetatable(L *lua.LState, mt_name string, fields map[string]lua.LValue) *
 	for key, lv := range fields {
 		mt.RawSetString(key, lv)
 	}
+	// Use Lua5.3 __name field for double association with Metatable and its name.
+	// See https://stackoverflow.com/questions/38932374/lua-querying-the-name-of-the-metatable-of-a-userdata-object
+	mt.RawSetString("__name", lua.LString(mt_name))
 	return mt
+}
+
+func getTypeNameMt(_ *lua.LState, mt *lua.LTable) (lua.LString, bool) {
+	name := mt.RawGetString("__name")
+	if name.Type() == lua.LTString {
+		return name.(lua.LString), true
+	} else {
+		return lua.LString(""), false
+	}
 }
 
 // get Metatable with mtName if exist and return it,
@@ -56,7 +68,7 @@ func mustGetEraModule(L *lua.LState) *lua.LTable {
 }
 
 // strict table occurs error when accessing undefined keys.
-const strictTableMetaName = "stricttable"
+const strictTableMetaName = "StrictTable"
 
 // not use it directly, getting it by use getStrictTableMetaTable.
 var strictTableMetatable *lua.LTable

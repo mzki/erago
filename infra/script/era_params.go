@@ -23,7 +23,8 @@ const (
 	systemParamsModuleName = "system"
 	sharedParamsModuleName = "share"
 
-	saveInfoDataName = "saveinfo"
+	saveInfoDataName     = "saveinfo"
+	saveInfoDataMetaName = "SaveInfo"
 
 	intParamMetaName = "IntParam"
 	strParamMetaName = "StrParam"
@@ -85,7 +86,7 @@ func registerSystemParams(L *lua.LState, gamestate *state.GameState) {
 	}
 
 	// register save informations
-	ud := newUserDataWithMt(L, gamestate.SaveInfo, newGetterSetterMt(L, saveInfoDataName, getSetSaveInfo))
+	ud := newUserDataWithMt(L, gamestate.SaveInfo, newGetterSetterMt(L, saveInfoDataMetaName, getSetSaveInfo))
 	era_module.RawSetString(saveInfoDataName, ud)
 }
 

@@ -65,9 +65,9 @@ const (
 	luaCharaRefsPlayerName = "player"
 	luaCharaRefsAssiName   = "assi"
 
-	luaCharaListMetaName = "charalist"
-	luaCharaRefsMetaName = "chararefs"
-	luaCharacterMetaName = "character"
+	luaCharaListMetaName = "CharaList"
+	luaCharaRefsMetaName = "CharaRefList"
+	luaCharacterMetaName = "Chara"
 )
 
 // register Chara data, method, metatables.

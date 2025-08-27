@@ -61,7 +61,7 @@ func (ip *Interpreter) OpenTestingLibs(tc TestingController) {
 
 func registerInputQueuer(L *lua.LState, inputQ InputQueuer) {
 	funcMap := L.SetFuncs(L.NewTable(), inputQueueFuncMap)
-	meta := getOrNewMetatable(L, "era_input_queue", map[string]lua.LValue{
+	meta := getOrNewMetatable(L, "TestInputQueue", map[string]lua.LValue{
 		"__index": funcMap,
 		// "__newindex": ,
 		"__metatable": metaProtectObj,

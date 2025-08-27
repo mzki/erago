@@ -22,10 +22,14 @@ const (
 	csvFieldsModuleName = "csvfields"
 	csvIndexModuleName  = "csvindex"
 
-	csvFieldsNumbersMetaName = csvIndexModuleName + ".numbers"
-	csvFieldsStringsMetaName = csvIndexModuleName + ".strings"
+	csvNamesMetaName  = "CsvNames"
+	csvFieldsMetaName = "CsvFields"
+	csvIndexMetaName  = "CsvIndex"
 
-	csvItemPriceMetaName = "item_price"
+	csvFieldsNumbersMetaName = "CsvFieldNumbers"
+	csvFieldsStringsMetaName = "CsvFieldStrings"
+
+	csvItemPriceMetaName = "CsvItemPrice"
 )
 
 var (
@@ -49,7 +53,7 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 		L.SetMetatable(csv_module, getStrictTableMetatable(L))
 		era_module.RawSetString(csvModuleName, csv_module)
 
-		csv_names_meta := newMetatable(L, csvModuleName, map[string]lua.LValue{
+		csv_names_meta := newMetatable(L, csvNamesMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(csvNamesMetaIndex),
 			"__len":       LLenFunction,
 			"__next":      LNextStrFunction,
@@ -91,7 +95,7 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 		L.SetMetatable(csv_index_module, getStrictTableMetatable(L))
 		era_module.RawSetString(csvIndexModuleName, csv_index_module)
 
-		csv_index_meta := newMetatable(L, csvIndexModuleName, map[string]lua.LValue{
+		csv_index_meta := newMetatable(L, csvIndexMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(csvIndexMetaIndex),
 			"__len":       LLenFunction,
 			"__metatable": metaProtectObj,
@@ -120,7 +124,7 @@ func registerCsvParams(L *lua.LState, CSV *csv.CsvManager) {
 		era_module.RawSetString(csvFieldsModuleName, csv_fields_module)
 
 		// register csv index deifined by user.
-		csv_fields_meta := newMetatable(L, csvFieldsModuleName, map[string]lua.LValue{
+		csv_fields_meta := newMetatable(L, csvFieldsMetaName, map[string]lua.LValue{
 			"__index":     L.NewFunction(csvFieldsMetaIndex),
 			"__len":       LLenFunction,
 			"__metatable": metaProtectObj,
