@@ -1,6 +1,6 @@
 # build and copy to shared dir.
 
-set -eu
+set -eux
 
 OUTPUTDIR=./
 
@@ -25,6 +25,7 @@ COMMIT_HASH=`git rev-parse --short HEAD`
 PRODUCT="erago_${VERSION_FOR_FILE}_android_model-v2.aar"
 OUTPUT=$OUTPUTDIR/$PRODUCT
 # flags
+LD_FLAGS="-s -w -X github.com/mzki/erago/infra/buildinfo.version=$VERSION -X github.com/mzki/erago/infra/buildinfo.commitHash=$COMMIT_HASH"
 BUILD_FLAGS="-gcflags=-trimpath=${GOPATH}"
 TARGET_FLAGS=android # can use "android/arm,android/amd64" to shrink data size
 # build mobile library
@@ -35,4 +36,4 @@ echo "building ${OUTPUT}..."
 # such as github action runner image.
 # See https://github.com/actions/runner-images for runner image details.
 # TODO: Embed build version into binary like -x main.commit_hash=${COMMIT_HASH}?
-gomobile bind ${BUILD_FLAGS} -androidapi 21 -target ${TARGET_FLAGS} -o ${OUTPUT} . || exit 1
+gomobile bind ${BUILD_FLAGS} -ldflags="${LD_FLAGS}" -androidapi 21 -target ${TARGET_FLAGS} -o ${OUTPUT} . || exit 1

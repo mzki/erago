@@ -80,6 +80,18 @@ See `erago/dockerfiles/mobile/Dockerfile`. **Warning: This docker image is large
 There is a complex data structure to be exchanged between UI and the Model library. It is encoded as protobuf (or json depending on initial setup of library). The protobuf data schema is placed at `view/exp/text/pubdata/pubdata.proto`. The schema can also be found in the release package of the mobile library (e.g. `erago_vX_Y_Z_android_model-v2.zip`). See Protobuf official document for how to use schema file `.proto`
 in UI side development.
 
+### Supplemental informations at compile time
+
+erago runtime refers build information such v0.10.0 from git repository, which information need to be supplied at compile time.
+Builder should provide build information as below example:
+
+```bash
+VERSION=v0.10.0
+COMMIT_HASH=abedef
+LDFLAGS="-X github.com/mzki/erago/infra/buildinfo.version=$VERSION -X github.com/mzki/erago/infra/buildinfo.commitHash=$COMMIT_HASH"
+go build ldflags="$LDFLAGS"
+```
+
 ## License
 
 Erago is licensed under BSD 3-Clause license, the same as Go. See LICENSE file.
