@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/mzki/erago"
-	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/uiadapter/event/input"
@@ -39,20 +39,20 @@ func Init(ui UI, baseDir string) error {
 	filesystem.Default = mobileFS // replace file system used by erago
 
 	// load config file
-	configPath, err := mobileFS.ResolvePath(app.ConfigFile)
+	configPath, err := mobileFS.ResolvePath(config.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("Can not use base directory %v. err: %v", baseDir, err)
 	}
-	appConfig, err := app.LoadConfigOrDefault(configPath)
+	appConfig, err := config.LoadConfigOrDefault(configPath)
 	switch err {
-	case nil, app.ErrDefaultConfigGenerated:
+	case nil, config.ErrDefaultConfigGenerated:
 	default:
 		return fmt.Errorf("Config load error: %v", err)
 	}
 
 	if appConfig != nil {
 		// set log level, destinations
-		closeFunc, err := app.SetLogConfig(appConfig)
+		closeFunc, err := config.SetupLogConfig(appConfig)
 		if err != nil {
 			return fmt.Errorf("Log configure error: %v", err)
 		}

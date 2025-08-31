@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/infra/pkg"
 	"github.com/psanford/memfs"
@@ -77,7 +77,7 @@ func ExportSav(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 
 	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
-	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	appConf, err := config.LoadConfigOrDefault(config.ConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get save file directory from config: %w", err)
 	}
@@ -147,7 +147,7 @@ func ImportSav(absEragoDir string, eragoFsys FileSystemGlob, savZipBytes []byte)
 
 	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
-	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	appConf, err := config.LoadConfigOrDefault(config.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("failed to get save file directory from config: %w", err)
 	}
@@ -177,7 +177,7 @@ func ExportLog(absEragoDir string, eragoFsys FileSystemGlob) ([]byte, error) {
 
 	filesystem.Default = wrapFileSystemPR{FromMobileFSGlob(eragoFsys)}
 
-	appConf, err := app.LoadConfigOrDefault(app.ConfigFile)
+	appConf, err := config.LoadConfigOrDefault(config.ConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get save file directory from config: %w", err)
 	}

@@ -10,6 +10,7 @@ import (
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/mouse"
 
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/uiadapter"
 	customT "github.com/mzki/erago/view/exp/theme"
 	"github.com/mzki/erago/view/exp/ui"
@@ -32,7 +33,7 @@ type UI struct {
 }
 
 // construct standard UI node tree for the era application.
-func NewUI(presenter *ui.EragoPresenter, appConf *Config) *UI {
+func NewUI(presenter *ui.EragoPresenter, appConf *config.Config) *UI {
 	ui.DefaultTextViewOptions = DefaultAppTextViewOptions
 	if appConf.HistoryLineCount > 0 {
 		ui.DefaultTextViewOptions.MaxParagraphs = int32(appConf.HistoryLineCount)

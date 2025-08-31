@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 )
 
@@ -376,7 +376,7 @@ func TestSetTextUnitPx(t *testing.T) {
 
 func Test_disableDesktopFeatures(t *testing.T) {
 	type args struct {
-		appConfFn func() *app.Config
+		appConfFn func() *config.Config
 	}
 	tests := []struct {
 		name        string
@@ -386,8 +386,8 @@ func Test_disableDesktopFeatures(t *testing.T) {
 	}{
 		{
 			name: "Game.Script.ReloadFileChanged",
-			args: args{func() *app.Config {
-				appConf := app.NewConfig("./")
+			args: args{func() *config.Config {
+				appConf := config.NewConfig("./")
 				appConf.Game.ScriptConfig.ReloadFileChange = true
 				return appConf
 			}},
@@ -396,31 +396,31 @@ func Test_disableDesktopFeatures(t *testing.T) {
 		},
 		{
 			name: "LogFile",
-			args: args{func() *app.Config {
-				appConf := app.NewConfig("./")
+			args: args{func() *config.Config {
+				appConf := config.NewConfig("./")
 				appConf.LogFile = "stdout"
 				return appConf
 			}},
 			wantChanged: true,
-			wantMessage: "LogFile = " + app.DefaultLogFile,
+			wantMessage: "LogFile = " + config.DefaultLogFile,
 		},
 		{
 			name: "LogLimitMegaByte",
-			args: args{func() *app.Config {
-				appConf := app.NewConfig("./")
-				appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte + 1
+			args: args{func() *config.Config {
+				appConf := config.NewConfig("./")
+				appConf.LogLimitMegaByte = config.DefaultLogLimitMegaByte + 1
 				return appConf
 			}},
 			wantChanged: true,
-			wantMessage: fmt.Sprintf("LogLimitMegaByte = %v", app.DefaultLogLimitMegaByte),
+			wantMessage: fmt.Sprintf("LogLimitMegaByte = %v", config.DefaultLogLimitMegaByte),
 		},
 		{
 			name: "no change",
-			args: args{func() *app.Config {
-				appConf := app.NewConfig("./")
+			args: args{func() *config.Config {
+				appConf := config.NewConfig("./")
 				appConf.Game.ScriptConfig.ReloadFileChange = false
-				appConf.LogFile = app.DefaultLogFile
-				appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte
+				appConf.LogFile = config.DefaultLogFile
+				appConf.LogLimitMegaByte = config.DefaultLogLimitMegaByte
 				return appConf
 			}},
 			wantChanged: false,

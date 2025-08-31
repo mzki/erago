@@ -10,6 +10,7 @@ import (
 	// "runtime"
 
 	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/infra/buildinfo"
 )
 
@@ -66,15 +67,15 @@ const (
 	runPackaging
 )
 
-const appConfigPath = app.ConfigFile
+const appConfigPath = config.ConfigFile
 
 var (
-	LogFile              string  = app.DefaultLogFile
-	LogLevel             string  = app.LogLevelInfo
-	LogLimitMegaByte     int64   = app.DefaultLogLimitMegaByte
-	Font                 string  = app.DefaultFont
-	FontSize             float64 = app.DefaultFontSize
-	TestingTimeoutSecond int     = app.DefaultTestingTimeoutSecond
+	LogFile              string  = config.DefaultLogFile
+	LogLevel             string  = config.LogLevelInfo
+	LogLimitMegaByte     int64   = config.DefaultLogLimitMegaByte
+	Font                 string  = config.DefaultFont
+	FontSize             float64 = config.DefaultFontSize
+	TestingTimeoutSecond int     = config.DefaultTestingTimeoutSecond
 )
 
 const (
@@ -141,11 +142,11 @@ func printHelp() {
   any flag values same as '%s' file overwrites the values 
   loaded from the file.
 
-`, progName, progName, app.ConfigFile)
+`, progName, progName, config.ConfigFile)
 	flagSet.PrintDefaults()
 }
 
-func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
+func overwriteConfigByFlag(config *config.Config, flags *flag.FlagSet) {
 	flags.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case flagNameLogFile:
@@ -164,12 +165,12 @@ func overwriteConfigByFlag(config *app.Config, flags *flag.FlagSet) {
 	})
 }
 
-func loadConfigOrDefault() *app.Config {
-	appConf, err := app.LoadConfigOrDefault(appConfigPath)
+func loadConfigOrDefault() *config.Config {
+	appConf, err := config.LoadConfigOrDefault(appConfigPath)
 	switch err {
-	case app.ErrDefaultConfigGenerated:
+	case config.ErrDefaultConfigGenerated:
 		// TODO this message is shown at app.Main which starts logger?
-		fmt.Fprintf(os.Stderr, "Config file (%v) does not exist. Use default config and write it to file.", app.ConfigFile)
+		fmt.Fprintf(os.Stderr, "Config file (%v) does not exist. Use default config and write it to file.", config.ConfigFile)
 		fallthrough
 	case nil:
 		// no errors. do nothing.

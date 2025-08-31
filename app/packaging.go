@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/infra/pkg"
 	"github.com/mzki/erago/state/csv"
@@ -16,13 +17,13 @@ import (
 // The packaging result is stored under dstDir. File name is {{csv.GameBase.Title}}-{{csv.GameBase.Version}}.zip
 // If same file name already exist, packaging will fail.
 // It returns whether operation succeeded or not. internal error is handled by itself.
-func Packaging(dstDir string, appConf *Config, appConfPath string, extraFiles []string) bool {
+func Packaging(dstDir string, appConf *config.Config, appConfPath string, extraFiles []string) bool {
 	if appConf == nil {
 		panic("appConf should not be nil")
 	}
 
 	// returned value must be called once.
-	reset, err := SetLogConfig(appConf)
+	reset, err := config.SetupLogConfig(appConf)
 	if err != nil {
 		// TODO: what is better way to handle fatal error in this case?
 		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)

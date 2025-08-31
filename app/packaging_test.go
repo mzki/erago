@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mzki/erago/app/config"
 )
 
 func TestPackaging(t *testing.T) {
@@ -13,18 +15,18 @@ func TestPackaging(t *testing.T) {
 	}
 	defer os.Chdir("../app") // to back current dir
 
-	appConf, err := LoadConfigOrDefault(ConfigFile)
+	appConf, err := config.LoadConfigOrDefault(config.ConfigFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	appConf.LogFile = "stdout" // to supress generate log file
 
-	var appConfCSVInvalid Config = *appConf
+	var appConfCSVInvalid config.Config = *appConf
 	appConfCSVInvalid.Game.CSVConfig.Dir = "path/to/not-found-dir"
 
 	type args struct {
 		dstDir      string
-		appConf     *Config
+		appConf     *config.Config
 		appConfPath string
 		extraFiles  []string
 	}
@@ -33,10 +35,10 @@ func TestPackaging(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"normal", args{tempDir, appConf, ConfigFile, []string{"doc.go"}}, true},
-		{"error already exist", args{tempDir, appConf, ConfigFile, []string{"doc.go"}}, false},
-		{"error CSV path is invalid", args{tempDir, &appConfCSVInvalid, ConfigFile, []string{"doc.go"}}, false},
-		{"error extra file is not found", args{filepath.Join(tempDir, "extra-file-not-found"), appConf, ConfigFile, []string{"path/to/not-found"}}, false},
+		{"normal", args{tempDir, appConf, config.ConfigFile, []string{"doc.go"}}, true},
+		{"error already exist", args{tempDir, appConf, config.ConfigFile, []string{"doc.go"}}, false},
+		{"error CSV path is invalid", args{tempDir, &appConfCSVInvalid, config.ConfigFile, []string{"doc.go"}}, false},
+		{"error extra file is not found", args{filepath.Join(tempDir, "extra-file-not-found"), appConf, config.ConfigFile, []string{"path/to/not-found"}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

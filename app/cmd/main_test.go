@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 )
 
 var testFlagSet *flag.FlagSet
@@ -27,32 +27,32 @@ func TestOverwriteFlag(t *testing.T) {
 	testcases := []struct {
 		FlagName  string
 		FlagValue string
-		Equals    func(*app.Config, interface{}) bool
+		Equals    func(*config.Config, interface{}) bool
 	}{
-		{flagNameLogFile, "<nolog>", func(conf *app.Config, v interface{}) bool {
+		{flagNameLogFile, "<nolog>", func(conf *config.Config, v interface{}) bool {
 			return conf.LogFile == v.(string)
 		}},
-		{flagNameLogLevel, "<nolevel>", func(conf *app.Config, v interface{}) bool {
+		{flagNameLogLevel, "<nolevel>", func(conf *config.Config, v interface{}) bool {
 			return conf.LogLevel == v.(string)
 		}},
-		{flagNameLogLimit, "1024", func(conf *app.Config, v interface{}) bool {
+		{flagNameLogLimit, "1024", func(conf *config.Config, v interface{}) bool {
 			i, err := strconv.ParseInt(v.(string), 10, 64)
 			if err != nil {
 				return false
 			}
 			return conf.LogLimitMegaByte == i
 		}},
-		{flagNameFont, "<nofont>", func(conf *app.Config, v interface{}) bool {
+		{flagNameFont, "<nofont>", func(conf *config.Config, v interface{}) bool {
 			return conf.Font == v.(string)
 		}},
-		{flagNameFontSize, "-1.0", func(conf *app.Config, v interface{}) bool {
+		{flagNameFontSize, "-1.0", func(conf *config.Config, v interface{}) bool {
 			f, err := strconv.ParseFloat(v.(string), 64)
 			if err != nil {
 				return false
 			}
 			return conf.FontSize == f
 		}},
-		{flagNameTestTimeout, "12", func(conf *app.Config, v interface{}) bool {
+		{flagNameTestTimeout, "12", func(conf *config.Config, v interface{}) bool {
 			i, err := strconv.ParseInt(v.(string), 10, 32)
 			if err != nil {
 				return false

@@ -1,12 +1,16 @@
-package app
+package config
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/mzki/erago"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/infra/serialize/toml"
+	"github.com/mzki/erago/util/log"
 )
 
 const (
@@ -31,6 +35,8 @@ const (
 	DefaultHeight = 600 // initial window height
 
 	DefaultTestingTimeoutSecond = int(erago.DefaultTestingTimeout / time.Second)
+
+	DefaultHistoryLineCount = 1024
 )
 
 // Configure for the Applicaltion.
@@ -73,7 +79,7 @@ func NewConfig(baseDir string) *Config {
 		FontSize:         DefaultFontSize,
 		Width:            DefaultWidth,
 		Height:           DefaultHeight,
-		HistoryLineCount: int(DefaultAppTextViewOptions.MaxParagraphs),
+		HistoryLineCount: DefaultHistoryLineCount,
 		//HistoryBytesPerLine: int(DefaultAppTextViewOptions.MaxParagraphBytes),
 		TestingTimeoutSecond: DefaultTestingTimeoutSecond,
 
@@ -102,4 +108,69 @@ func LoadConfigOrDefault(file string) (*Config, error) {
 		return nil, err
 	}
 	return appConf, nil
+}
+
+// set up log configuration and return finalize function with internal error.
+// when returned error, the finalize function is nil and need not be called.
+func SetupLogConfig(appConf *Config) (func(), error) {
+	// set log level.
+	switch level := appConf.LogLevel; level {
+	case LogLevelInfo:
+		log.SetLevel(log.InfoLevel)
+	case LogLevelDebug:
+		log.SetLevel(log.DebugLevel)
+	default:
+		log.Infof("unknown log level(%s). use 'info' level insteadly.", level)
+		log.SetLevel(log.InfoLevel)
+	}
+
+	// set log distination
+	var (
+		dstString string
+		writer    io.WriteCloser
+		closeFunc func()
+	)
+	switch logfile := appConf.LogFile; logfile {
+	case LogFileStdOut, "":
+		dstString = "Stdout"
+		writer = os.Stdout
+		closeFunc = func() {}
+	case LogFileStdErr:
+		dstString = "Stdout"
+		writer = os.Stderr
+		closeFunc = func() {}
+	default:
+		dstString = logfile
+		fp, err := filesystem.Store(logfile)
+		if err != nil {
+			return nil, err
+		}
+		writer = fp
+		closeFunc = func() { fp.Close() }
+	}
+	logLimit := appConf.LogLimitMegaByte * 1000 * 1000
+	if logLimit < 0 {
+		logLimit = 0
+	}
+	log.SetOutput(log.LimitWriter(writer, logLimit))
+	if err := testingLogOutput("log output sanity check..."); err != nil {
+		closeFunc()
+		return nil, err
+	}
+	log.Infof("Output log to %s", dstString)
+
+	return closeFunc, nil
+}
+
+func testingLogOutput(msg string) error {
+	log.Debug(msg)
+	err := log.Err()
+	switch {
+	case errors.Is(err, log.ErrOutputDiscardedByLevel):
+	case errors.Is(err, io.EOF):
+	case err == nil:
+	default:
+		return fmt.Errorf("log output error: %w", err)
+	}
+	return nil // normal operation
 }

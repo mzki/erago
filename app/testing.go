@@ -6,18 +6,19 @@ import (
 	"time"
 
 	"github.com/mzki/erago"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/util/log"
 )
 
 // Testing test given script files on appConf context.
 // the errors in testing are logged to appConf.LogFile. It returns testing succeded or not.
-func Testing(appConf *Config, scriptFiles []string) bool {
+func Testing(appConf *config.Config, scriptFiles []string) bool {
 	if appConf == nil {
-		appConf = NewConfig(DefaultBaseDir)
+		appConf = config.NewConfig(config.DefaultBaseDir)
 	}
 
 	// returned value must be called once.
-	reset, err := SetLogConfig(appConf)
+	reset, err := config.SetupLogConfig(appConf)
 	if err != nil {
 		// TODO: what is better way to handle fatal error in this case?
 		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)

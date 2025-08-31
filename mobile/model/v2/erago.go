@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/mzki/erago"
-	"github.com/mzki/erago/app"
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/uiadapter/event/input"
@@ -69,14 +69,14 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 	filesystem.Default = mobileFS // replace file system used by erago
 
 	// load config file
-	configPath, err := mobileFS.ResolvePath(app.ConfigFile)
+	configPath, err := mobileFS.ResolvePath(config.ConfigFile)
 	if err != nil {
 		theErr := fmt.Errorf("can not use base directory %v. err: %w", baseDir, err)
 		return theErr
 	}
-	appConfig, err := app.LoadConfigOrDefault(configPath)
+	appConfig, err := config.LoadConfigOrDefault(configPath)
 	switch err {
-	case nil, app.ErrDefaultConfigGenerated:
+	case nil, config.ErrDefaultConfigGenerated:
 	default:
 		theErr := fmt.Errorf("config load error: %w", err)
 		return theErr
@@ -105,7 +105,7 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 
 	if appConfig != nil {
 		// set log level, destinations
-		closeFunc, err := app.SetLogConfig(appConfig)
+		closeFunc, err := config.SetupLogConfig(appConfig)
 		if err != nil {
 			theErr := fmt.Errorf("log configure error: %w", err)
 			return theErr
@@ -145,7 +145,7 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 	return nil
 }
 
-func disableDesktopFeatures(appConf *app.Config) (changed bool, message string) {
+func disableDesktopFeatures(appConf *config.Config) (changed bool, message string) {
 	msgList := []string{}
 	// ReloadFileChange must be disabled since User interact with single application at the moment,
 	// User does not do play game and edit script in parall. This feature should be for Desktop and developer only.
@@ -156,15 +156,15 @@ func disableDesktopFeatures(appConf *app.Config) (changed bool, message string) 
 	}
 	// LogFile must be file rather than stdout or stderr since User can not see
 	// stdout nor stderr output in normal way.
-	if appConf.LogFile != app.DefaultLogFile {
-		appConf.LogFile = app.DefaultLogFile
+	if appConf.LogFile != config.DefaultLogFile {
+		appConf.LogFile = config.DefaultLogFile
 		changed = true
 		msgList = append(msgList, "LogFile = "+appConf.LogFile)
 	}
 	// LogLimitMegaByte should be less than or equal to Default limit size (10MB)
 	// since larger size would fill up storage which is relatively small than desktop.
-	if appConf.LogLimitMegaByte > app.DefaultLogLimitMegaByte {
-		appConf.LogLimitMegaByte = app.DefaultLogLimitMegaByte
+	if appConf.LogLimitMegaByte > config.DefaultLogLimitMegaByte {
+		appConf.LogLimitMegaByte = config.DefaultLogLimitMegaByte
 		changed = true
 		msgList = append(msgList, fmt.Sprintf("LogLimitMegaByte = %v", appConf.LogLimitMegaByte))
 	}

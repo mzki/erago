@@ -1,10 +1,8 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"image"
-	"io"
 	"os"
 	"runtime"
 
@@ -20,6 +18,7 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 
+	"github.com/mzki/erago/app/config"
 	"github.com/mzki/erago/filesystem"
 	"github.com/mzki/erago/util/log"
 	customTheme "github.com/mzki/erago/view/exp/theme"
@@ -27,7 +26,7 @@ import (
 )
 
 // build new theme according to application configure.
-func BuildTheme(appConf *Config) (*theme.Theme, error) {
+func BuildTheme(appConf *config.Config) (*theme.Theme, error) {
 	Theme := customTheme.Default
 	fontFile := appConf.Font
 	if fontFile == "default" || fontFile == "" {
@@ -45,81 +44,16 @@ func BuildTheme(appConf *Config) (*theme.Theme, error) {
 	return &Theme, nil
 }
 
-// set log configuration and return finalize function with internal error.
-// when returned error, the finalize function is nil and need not be called.
-func SetLogConfig(appConf *Config) (func(), error) {
-	// set log level.
-	switch level := appConf.LogLevel; level {
-	case LogLevelInfo:
-		log.SetLevel(log.InfoLevel)
-	case LogLevelDebug:
-		log.SetLevel(log.DebugLevel)
-	default:
-		log.Infof("unknown log level(%s). use 'info' level insteadly.", level)
-		log.SetLevel(log.InfoLevel)
-	}
-
-	// set log distination
-	var (
-		dstString string
-		writer    io.WriteCloser
-		closeFunc func()
-	)
-	switch logfile := appConf.LogFile; logfile {
-	case LogFileStdOut, "":
-		dstString = "Stdout"
-		writer = os.Stdout
-		closeFunc = func() {}
-	case LogFileStdErr:
-		dstString = "Stdout"
-		writer = os.Stderr
-		closeFunc = func() {}
-	default:
-		dstString = logfile
-		fp, err := filesystem.Store(logfile)
-		if err != nil {
-			return nil, err
-		}
-		writer = fp
-		closeFunc = func() { fp.Close() }
-	}
-	logLimit := appConf.LogLimitMegaByte * 1000 * 1000
-	if logLimit < 0 {
-		logLimit = 0
-	}
-	log.SetOutput(log.LimitWriter(writer, logLimit))
-	if err := testingLogOutput("log output sanity check..."); err != nil {
-		closeFunc()
-		return nil, err
-	}
-	log.Infof("Output log to %s", dstString)
-
-	return closeFunc, nil
-}
-
-func testingLogOutput(msg string) error {
-	log.Debug(msg)
-	err := log.Err()
-	switch {
-	case errors.Is(err, log.ErrOutputDiscardedByLevel):
-	case errors.Is(err, io.EOF):
-	case err == nil:
-	default:
-		return fmt.Errorf("log output error: %w", err)
-	}
-	return nil // normal operation
-}
-
 // entry point of main application. appconf nil is OK,
 // use default if it is.
 // its internal errors are handled by itself.
-func Main(title string, appConf *Config) {
+func Main(title string, appConf *config.Config) {
 	if appConf == nil {
-		appConf = NewConfig(DefaultBaseDir)
+		appConf = config.NewConfig(config.DefaultBaseDir)
 	}
 
 	// returned value must be called once.
-	reset, err := SetLogConfig(appConf)
+	reset, err := config.SetupLogConfig(appConf)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "log configuration failed: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Hint: try to change config logfile from %v\n", appConf.LogFile)
@@ -168,7 +102,7 @@ func Main(title string, appConf *Config) {
 }
 
 // references golang.org/x/exp/shiny/widget/widget.go
-func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *Config) error {
+func runWindow(title string, s screen.Screen, t *theme.Theme, appConf *config.Config) error {
 	w, err := s.NewWindow(&screen.NewWindowOptions{
 		Width:  appConf.Width,
 		Height: appConf.Height,

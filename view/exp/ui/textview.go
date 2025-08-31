@@ -2,6 +2,7 @@ package ui
 
 import (
 	"image"
+	"image/color"
 
 	"golang.org/x/exp/shiny/gesture"
 	"golang.org/x/exp/shiny/unit"
@@ -13,6 +14,13 @@ import (
 	attr "github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/view/exp/text"
 )
+
+// SetGlobalDefaultTextColors sets default text colors used to render foreground text for fg, and
+// button text for buttion. It affects globally.
+func SetGlobalDefaultTextColors(fg color.RGBA, button color.RGBA) {
+	text.DefaultForeColor = fg
+	text.DefaultButtonColor = button
+}
 
 // View is interface of text.Frame and its Printer.
 // Any text.Frame is treated through View.

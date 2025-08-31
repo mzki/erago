@@ -11,7 +11,6 @@ import (
 	"golang.org/x/image/math/fixed"
 
 	"github.com/mzki/erago/util/log"
-	"github.com/mzki/erago/view/exp/theme"
 )
 
 // View is view of Frame, which controls
@@ -257,10 +256,10 @@ func (v *View) UnhighlightCommand() bool {
 
 var (
 	// Material White to draw text.
-	DefaultForeColor = theme.DefaultPalette.Foreground().C.(color.RGBA)
+	DefaultForeColor = color.RGBA{0xff, 0xff, 0xff, 0xff}
 
 	// Material LightBlue 400 to draw button text
-	DefaultButtonColor = theme.DefaultPalette.Accent().C.(color.RGBA)
+	DefaultButtonColor = color.RGBA{0x29, 0xf6, 0xf6, 0xff}
 
 	defaultDrawSource = image.NewUniform(DefaultForeColor)
 

@@ -3,6 +3,8 @@ package app
 import (
 	"os"
 	"testing"
+
+	"github.com/mzki/erago/app/config"
 )
 
 func TestTesting(t *testing.T) {
@@ -11,14 +13,14 @@ func TestTesting(t *testing.T) {
 	}
 	defer os.Chdir("../app") // to back current dir
 
-	appConf, err := LoadConfigOrDefault(ConfigFile)
+	appConf, err := config.LoadConfigOrDefault(config.ConfigFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	appConf.LogFile = "stdout" // to supress generate log file
 
 	type args struct {
-		appConf     *Config
+		appConf     *config.Config
 		scriptFiles []string
 	}
 	tests := []struct {
