@@ -513,7 +513,7 @@ func (e *Editor) GetAlignment() (align attribute.Alignment, err error) {
 		align = attribute.Alignment(e.editor.GetAlignment()) // alignment is same constant value
 	})
 	err = e.sendAndWait(e.ctx, msg)
-	wrapAPIErr("GetAlignment", err)
+	err = wrapAPIErr("GetAlignment", err)
 	return
 }
 
