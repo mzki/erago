@@ -49,16 +49,18 @@ func (tv *textVNode) Unfocus() {
 type viewManager struct {
 	// current is currently used TextView to print string.
 	// All of TextView are managed by string-map using view's name.
-	current   *textVNode
-	textViews map[string]*textVNode
+	current      *textVNode
+	textViews    map[string]*textVNode
+	textViewOpts TextViewOptions
 
 	sender *EragoPresenter
 }
 
-func newViewManager(vname string, sender *EragoPresenter) *viewManager {
+func newViewManager(vname string, sender *EragoPresenter, textViewOpts TextViewOptions) *viewManager {
 	vm := &viewManager{
-		textViews: make(map[string]*textVNode, 2),
-		sender:    sender,
+		textViews:    make(map[string]*textVNode, 2),
+		textViewOpts: textViewOpts,
+		sender:       sender,
 	}
 	vm.current = vm.appendTextView(vname)
 	return vm
@@ -148,7 +150,7 @@ func (vm viewManager) getViewNames() []string {
 }
 
 func (vm *viewManager) appendTextView(vname string) *textVNode {
-	newTV := NewTextView(vname, vm.sender)
+	newTV := NewTextView(vname, vm.sender, vm.textViewOpts)
 	f := unfocusFrame(newTV)
 	newSV := NewScrollViewFromNode(f)
 	tv := &textVNode{

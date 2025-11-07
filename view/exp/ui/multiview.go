@@ -35,12 +35,12 @@ type MultipleView struct {
 
 const firstViewName = "default"
 
-func NewMultipleView(sender *EragoPresenter) *MultipleView {
+func NewMultipleView(sender *EragoPresenter, textViewOpts TextViewOptions) *MultipleView {
 	if sender == nil {
 		panic("nil sender is not allowed")
 	}
 	mv := &MultipleView{
-		viewManager:  newViewManager(firstViewName, sender),
+		viewManager:  newViewManager(firstViewName, sender, textViewOpts),
 		sender:       sender,
 		layoutLocker: new(sync.Mutex),
 	}

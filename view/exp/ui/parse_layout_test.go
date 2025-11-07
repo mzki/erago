@@ -24,7 +24,7 @@ var testLayoutData = attr.NewFlowVertical(
 )
 
 func buildTestViewManager() *viewManager {
-	return newViewManager("default", NewEragoPresenter(eventQueueStub{}))
+	return newViewManager("default", NewEragoPresenter(eventQueueStub{}), DefaultTextViewOptions)
 }
 
 var testLayoutDataViewManager = buildTestViewManager()

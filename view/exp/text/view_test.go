@@ -29,6 +29,8 @@ func TestView(t *testing.T) {
 	face := theme.NewDefaultFace(nil)
 	v.SetFace(face)
 
+	v.SetImageCacheSize(1)
+
 	rgba := image.NewRGBA(image.Rect(0, 0, W, H))
 	v.Draw(rgba, image.ZP)
 	// if err := saveImage(rgba); err != nil {
@@ -104,6 +106,7 @@ func TestDraw(t *testing.T) {
 	v := f.View()
 	v.SetSize(image.Point{64, 256})
 	v.SetFace(theme.NewDefaultFace(nil))
+	v.SetImageCacheSize(2)
 
 	const (
 		showIndex   = 38
@@ -172,6 +175,7 @@ func BenchmarkDraw(b *testing.B) {
 	v := f.View()
 	v.SetFace(theme.NewDefaultFace(nil))
 	v.SetSize(rgba.Bounds().Size())
+	v.SetImageCacheSize(2)
 	// drawViewState(v)
 
 	b.ResetTimer()

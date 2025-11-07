@@ -45,12 +45,22 @@ type TextView struct {
 	onScroll func(int, int, int)
 }
 
-type TextViewOptions = text.FrameOptions
+type TextFrameOptions = text.FrameOptions
+
+type TextViewOptions struct {
+	TextFrameOptions
+	ImageCacheSize int
+}
+
+var DefaultCachedImageSize = text.DefaultCachedImageSize
 
 // DefaultTextViewOptions defines the volume of stored text content, which can be visible by scrolling.
 var DefaultTextViewOptions = TextViewOptions{
-	MaxParagraphs:     1024,
-	MaxParagraphBytes: 1024,
+	TextFrameOptions: TextFrameOptions{
+		MaxParagraphs:     1024,
+		MaxParagraphBytes: 1024,
+	},
+	ImageCacheSize: DefaultCachedImageSize,
 }
 
 func NewTextView(name string, sender *EragoPresenter, opts ...TextViewOptions) *TextView {
@@ -63,13 +73,14 @@ func NewTextView(name string, sender *EragoPresenter, opts ...TextViewOptions) *
 	} else {
 		opt = &DefaultTextViewOptions
 	}
-	f := text.NewFrame(opt)
+	f := text.NewFrame(&opt.TextFrameOptions)
 	view := &TextView{
 		name:    name,
 		frame:   f,
 		Printer: NewPrinter(f),
 		sender:  sender,
 	}
+	view.Printer.v.SetImageCacheSize(opt.ImageCacheSize)
 	view.Wrapper = view
 	view.Focus()
 	return view

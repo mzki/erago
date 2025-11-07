@@ -273,7 +273,7 @@ func newTabViewContent(sender *EragoPresenter) *tabViewContent {
 	}
 	v := &tabViewContent{
 		sender:      sender,
-		viewManager: newViewManager(firstViewName, sender),
+		viewManager: newViewManager(firstViewName, sender, DefaultTextViewOptions),
 		nodes:       make(map[string]node.Node, 4),
 	}
 	v.Wrapper = v

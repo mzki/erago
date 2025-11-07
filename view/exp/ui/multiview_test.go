@@ -42,7 +42,7 @@ func (Q eventQueueStub) NextEvent() interface{} { return nil }
 
 func buildMultipleView() *MultipleView {
 	presenter := NewEragoPresenter(eventQueueStub{})
-	mv := NewMultipleView(presenter)
+	mv := NewMultipleView(presenter, DefaultTextViewOptions)
 	Theme := &theme.Default
 	mv.Measure(Theme, screenSize.X, screenSize.Y)
 	mv.Rect = image.Rectangle{Max: screenSize}

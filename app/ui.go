@@ -41,7 +41,13 @@ func NewUI(presenter *ui.EragoPresenter, appConf *config.Config) *UI {
 	// if appConf.HistoryBytesPerLine > 0 {
 	// 	ui.DefaultTextViewOptions.MaxParagraphBytes = int32(appConf.HistoryBytesPerLine)
 	// }
-	mv := ui.NewMultipleView(presenter)
+	mv := ui.NewMultipleView(presenter, ui.TextViewOptions{
+		TextFrameOptions: ui.TextFrameOptions{
+			MaxParagraphs:     int32(appConf.HistoryLineCount),
+			MaxParagraphBytes: ui.DefaultTextViewOptions.MaxParagraphs,
+		},
+		ImageCacheSize: appConf.ImageCacheSize,
+	})
 	bg_cmd := widget.NewUniform(theme.Background,
 		widget.NewPadder(widget.AxisHorizontal, unit.Ems(0.5),
 			ui.NewCommandLine(presenter),

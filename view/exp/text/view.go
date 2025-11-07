@@ -49,7 +49,8 @@ type View struct {
 	accumulatedMoveY float64 // accumulation of mouse moving Y.
 
 	// Image holder
-	imgLoader *TextScaleImageLoader
+	imgLoader          *TextScaleImageLoader
+	imgLoaderCacheSize int
 }
 
 // clickableButton holds its command and position to indicate clicking it.
@@ -79,7 +80,14 @@ func newView(f *Frame) *View {
 			defaultViewFontHeight,
 			defaultViewFontSingleWidth,
 		),
+		imgLoaderCacheSize: viewImageCacheSize,
 	}
+}
+
+// SetImageCacheSize updates image cache size. It also invalidates old image caches.
+func (v *View) SetImageCacheSize(size int) {
+	v.imgLoaderCacheSize = size
+	v.imgLoader = NewTextScaleImageLoader(size, v.faceHeight, v.faceSingleWidth)
 }
 
 // Set font face which must be monospace.
@@ -107,8 +115,8 @@ func (v *View) SetFace(face font.Face) error {
 	v.faceDescent = m.Descent
 	v.faceHeight = v.faceAscent + v.faceDescent
 	v.faceSingleWidth = x_adv
-	// update text scale of Image loader, and invalidate its cache.
-	v.imgLoader = NewTextScaleImageLoader(DefaultCachedImageSize, v.faceHeight, v.faceSingleWidth)
+	// update text scale of Image loader, and invalidate its cache. since those are also related with font face metrics.
+	v.SetImageCacheSize(v.imgLoaderCacheSize)
 
 	v.relayout()
 	return nil
