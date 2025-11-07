@@ -127,6 +127,7 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 	theGame = erago.NewGame()
 	mobileUI, err = newUIAdapter(ctx, ui, uiAdapterOptions{
 		ImageFetchType:      pbImageFetchType(options.ImageFetchType),
+		ImageCacheSize:      appConfig.ImageCacheSize,
 		MessageByteEncoding: options.MessageByteEncoding,
 	})
 	if err != nil {
@@ -167,6 +168,17 @@ func disableDesktopFeatures(appConf *config.Config) (changed bool, message strin
 		appConf.LogLimitMegaByte = config.DefaultLogLimitMegaByte
 		changed = true
 		msgList = append(msgList, fmt.Sprintf("LogLimitMegaByte = %v", appConf.LogLimitMegaByte))
+	}
+	// ImageCacheSize should be much smaller than desktop variant since mobile device has typlically
+	// 6GB-8GB RAM as of 2025, and WASM 32bit has maximum 4GB RAM, while desktop has 8GB-32GB RAM.
+	const KiB = 1 * 1024
+	const MiB = 1024 * KiB
+	const GiB = 1024 * MiB
+	// Assume Image cache bytes can be up to 1GiB and 1 file has maximum 3MiB.
+	if maxSize := ((1 * GiB) / (3 * MiB)); maxSize < appConf.ImageCacheSize {
+		appConf.ImageCacheSize = maxSize
+		changed = true
+		msgList = append(msgList, fmt.Sprintf("ImageCacheSize = %v", appConf.ImageCacheSize))
 	}
 	message = strings.Join(msgList, ",")
 	return

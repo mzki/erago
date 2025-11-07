@@ -20,12 +20,11 @@ import (
 // user need not to import text package explicitly.
 var ResetColor = text.ResetColor
 
-// DefaultCachedImageSize is used as a number of cached images.
-var DefaultCachedImageSize = text.DefaultCachedImageSize
-
 type EditorOptions struct {
 	// ImageFetchType indicates how does image pixels fetched by Editor.
 	ImageFetchType pubdata.ImageFetchType
+	// ImageCacheSize indicates how many image entries are hold in the cache.
+	ImageCacheSize int
 }
 
 // Editor edits just one Paragraph
@@ -70,7 +69,7 @@ func NewEditor(ctx context.Context, opts ...EditorOptions) *Editor {
 		frame:  f,
 		editor: f.Editor(),
 		imgLoader: NewImageBytesLoader(
-			DefaultCachedImageSize,
+			opt.ImageCacheSize,
 			// temporary width/height
 			8,
 			14,
@@ -201,7 +200,7 @@ func (e *Editor) SetTextUnitPx(textUnitPx fixed.Point26_6) error {
 	msg := e.createAsyncTask(func() {
 		// create new loader instance to invalid internal cache.
 		e.imgLoader = NewImageBytesLoader(
-			DefaultCachedImageSize,
+			e.opt.ImageCacheSize,
 			textUnitPx.X,
 			textUnitPx.Y,
 			e.opt.ImageFetchType,

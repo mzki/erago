@@ -46,12 +46,14 @@ const (
 
 type uiAdapterOptions struct {
 	ImageFetchType      publisher.ImageFetchType
+	ImageCacheSize      int
 	MessageByteEncoding int
 }
 
 func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter, error) {
 	editor := publisher.NewEditor(ctx, publisher.EditorOptions{
 		ImageFetchType: opt.ImageFetchType,
+		ImageCacheSize: opt.ImageCacheSize,
 	})
 	// set default
 	if err := editor.SetViewSize(20, 40); err != nil {

@@ -1366,13 +1366,22 @@ func benchmarkHelperPrintOnlyImage(b *testing.B, opt publisher.EditorOptions) {
 }
 
 func BenchmarkPrintOnlyImageNone(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchNone})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{
+		ImageFetchType: publisher.ImageFetchNone,
+		ImageCacheSize: 1,
+	})
 }
 
 func BenchmarkPrintOnlyImageRawRGBA(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchRawRGBA})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{
+		ImageFetchType: publisher.ImageFetchRawRGBA,
+		ImageCacheSize: 1,
+	})
 }
 
 func BenchmarkPrintOnlyImageEncodedPNG(b *testing.B) {
-	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{publisher.ImageFetchEncodedPNG})
+	benchmarkHelperPrintOnlyImage(b, publisher.EditorOptions{
+		ImageFetchType: publisher.ImageFetchEncodedPNG,
+		ImageCacheSize: 1,
+	})
 }

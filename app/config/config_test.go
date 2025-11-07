@@ -39,6 +39,7 @@ func TestLoadConfigOrDefault(t *testing.T) {
 	var confGoldenLack = confGolden
 	confGoldenLack.FontSize = DefaultFontSize
 	confGoldenLack.LogLimitMegaByte = DefaultLogLimitMegaByte
+	confGoldenLack.ImageCacheSize = DefaultImageCacheSize
 
 	tempDir := t.TempDir()
 

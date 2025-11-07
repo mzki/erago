@@ -415,12 +415,23 @@ func Test_disableDesktopFeatures(t *testing.T) {
 			wantMessage: fmt.Sprintf("LogLimitMegaByte = %v", config.DefaultLogLimitMegaByte),
 		},
 		{
+			name: "ImageCacheSize",
+			args: args{func() *config.Config {
+				appConf := config.NewConfig("./")
+				appConf.ImageCacheSize = 342 // int(1 GiB / 3MiB) + 1
+				return appConf
+			}},
+			wantChanged: true,
+			wantMessage: fmt.Sprintf("ImageCacheSize = %v", 341),
+		},
+		{
 			name: "no change",
 			args: args{func() *config.Config {
 				appConf := config.NewConfig("./")
 				appConf.Game.ScriptConfig.ReloadFileChange = false
 				appConf.LogFile = config.DefaultLogFile
 				appConf.LogLimitMegaByte = config.DefaultLogLimitMegaByte
+				appConf.ImageCacheSize = 341
 				return appConf
 			}},
 			wantChanged: false,

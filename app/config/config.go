@@ -37,6 +37,8 @@ const (
 	DefaultTestingTimeoutSecond = int(erago.DefaultTestingTimeout / time.Second)
 
 	DefaultHistoryLineCount = 1024
+
+	DefaultImageCacheSize = 32 // filelimit 3MB * 32 = 96MB
 )
 
 // Configure for the Applicaltion.
@@ -58,6 +60,10 @@ type Config struct {
 	HistoryLineCount int `toml:"history_line_count"`
 	// TODO: This is not implemented yet, but whole byte limits are builtin implemented
 	//HistoryBytesPerLine int `toml:"history_bytes_per_line"`
+
+	// number of image cache entries for printImage. it will reduce image loading time for same image and options,
+	// but will increase memory usage in user device. 0 or negative value can be set and treated as default value.
+	ImageCacheSize int `toml:"image_cache_size"`
 
 	// timeout value for testing mode only, in second.
 	TestingTimeoutSecond int `toml:"testing_timeout_sec"`
@@ -81,6 +87,7 @@ func NewConfig(baseDir string) *Config {
 		Height:           DefaultHeight,
 		HistoryLineCount: DefaultHistoryLineCount,
 		//HistoryBytesPerLine: int(DefaultAppTextViewOptions.MaxParagraphBytes),
+		ImageCacheSize:       DefaultImageCacheSize,
 		TestingTimeoutSecond: DefaultTestingTimeoutSecond,
 
 		Game: erago.NewConfig(baseDir),

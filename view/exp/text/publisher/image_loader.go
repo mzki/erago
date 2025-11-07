@@ -23,15 +23,23 @@ type ImageBytesLoader struct {
 	fetchType pubdata.ImageFetchType
 }
 
+// DefaultCachedImageSize is used as a number of cached images.
+var DefaultCachedImageSize = text.DefaultCachedImageSize
+
 // ImageLoader itself cached result, so it is OK that
 // internal cache has always 1 entry.
 const internalImageLoaderCacheSize = 1
 
+// NewImageBytesLoader create new instance.
+// If cache size is less than or equal to 0, it will be treated as DefaultCachedImageSize
 func NewImageBytesLoader(
 	cacheSize int,
 	fontSingleWidthPx, fontHeightPx fixed.Int26_6,
 	fetchType pubdata.ImageFetchType,
 ) *ImageBytesLoader {
+	if cacheSize <= 0 {
+		cacheSize = DefaultCachedImageSize
+	}
 	return &ImageBytesLoader{
 		cache: lru.New(cacheSize),
 		loader: text.NewTextScaleImageLoader(
