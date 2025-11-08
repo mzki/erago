@@ -45,6 +45,10 @@ type InitOptions struct {
 	// FileSystem is used for reading and writing files for erago package files.
 	// It can be nil, in that case OS default filesystem is used.
 	FileSystem FileSystemGlob
+
+	// EnableDebugTimestamp enables to send debug timestamp at UI interface. If
+	// it is false, debug timestmap is never sent for performance reason.
+	EnableDebugTimestamp bool
 }
 
 func Init(ui UI, baseDir string, options *InitOptions) error {
@@ -126,9 +130,10 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 
 	theGame = erago.NewGame()
 	mobileUI, err = newUIAdapter(ctx, ui, uiAdapterOptions{
-		ImageFetchType:      pbImageFetchType(options.ImageFetchType),
-		ImageCacheSize:      appConfig.ImageCacheSize,
-		MessageByteEncoding: options.MessageByteEncoding,
+		ImageFetchType:       pbImageFetchType(options.ImageFetchType),
+		ImageCacheSize:       appConfig.ImageCacheSize,
+		MessageByteEncoding:  options.MessageByteEncoding,
+		EnableDebugTimestamp: options.EnableDebugTimestamp,
 	})
 	if err != nil {
 		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)

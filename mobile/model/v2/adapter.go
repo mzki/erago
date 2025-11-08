@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/mzki/erago/uiadapter"
 	"github.com/mzki/erago/view/exp/text/pubdata"
@@ -48,6 +49,8 @@ type uiAdapterOptions struct {
 	ImageFetchType      publisher.ImageFetchType
 	ImageCacheSize      int
 	MessageByteEncoding int
+
+	EnableDebugTimestamp bool
 }
 
 func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter, error) {
@@ -65,6 +68,15 @@ func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter,
 			bs, err := binEncode(p)
 			if err != nil {
 				return err
+			}
+			// debug timestamp should be first than Publish so that listener can know
+			// the timestamp to link to the next Publish.
+			if opt.EnableDebugTimestamp {
+				now := time.Now()
+				err = ui.OnDebugTimestamp(p.Id, now.Format(time.RFC3339Nano), now.UnixNano())
+				if err != nil {
+					return err
+				}
 			}
 			return ui.OnPublishBytes(bs)
 		},

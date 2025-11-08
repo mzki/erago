@@ -34,6 +34,10 @@ func (ui stubUI) OnRemoveAll() (_ error) {
 	return nil
 }
 
+func (ui stubUI) OnDebugTimestamp(_ int64, _ string, _ int64) (_ error) {
+	return nil
+}
+
 // it is called when mobile.app requires inputting
 // user's command.
 func (ui stubUI) OnCommandRequested() {
@@ -75,22 +79,27 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			name:    "normal",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop)}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop), false}},
+			wantErr: false,
+		},
+		{
+			name:    "normal with enable debug timestamp",
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop), true}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with default filesystem",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with relative dir",
-			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
+			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
 			wantErr: true,
 		},
 		{
 			name:    "error config nor script files not found",
-			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}},
+			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
 			wantErr: true,
 		},
 	}
@@ -176,7 +185,7 @@ func TestMain(t *testing.T) {
 				}()
 			}
 
-			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
+			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
 				t.Fatal(err)
 			}
 			appContext := newStubAppContext(ctx)
@@ -239,7 +248,7 @@ func TestQuit(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -279,7 +288,7 @@ func TestQuitTwice(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
 					t.Fatal(err)
 				}
 			}
