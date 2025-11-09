@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/mzki/erago/attribute"
 	"github.com/mzki/erago/view/exp/text/pubdata"
 	"github.com/mzki/erago/view/exp/text/publisher"
 	mock_publisher "github.com/mzki/erago/view/exp/text/publisher/mock"
+	gomock "go.uber.org/mock/gomock"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -150,6 +150,7 @@ func TestEditor_Print_PublishedData(t *testing.T) {
 				})
 				// Sync expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Return(nil)
+				cb.EXPECT().OnSync().Return(nil)
 				return cb
 			},
 		},
@@ -247,8 +248,10 @@ func TestEditorSync(t *testing.T) {
 					if v := p.Fixed; v != false {
 						t.Errorf("Sync() returns non-fixed Paragraph. want:%v, got:%v", false, v)
 					}
-					doneCh <- struct{}{}
 					return nil
+				})
+				cb.EXPECT().OnSync().Times(1).Do(func() {
+					doneCh <- struct{}{}
 				})
 				return cb
 			},
@@ -260,8 +263,10 @@ func TestEditorSync(t *testing.T) {
 					if p.Id != 0 {
 						t.Errorf("Sync() returns invalid ID. want: %v, got:%v", 0, p.Id)
 					}
-					doneCh <- struct{}{}
 					return nil
+				})
+				cb.EXPECT().OnSync().Times(1).Do(func() {
+					doneCh <- struct{}{}
 				})
 				return cb
 			},
@@ -289,30 +294,56 @@ func TestEditorSyncTimeout(t *testing.T) {
 	ctrl := gs.ctrl
 	defer gs.cancel()
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-
+	type precond struct {
+		doneCh chan struct{}
+	}
 	for _, testcase := range []struct {
-		newMockCallback func() publisher.Callback
+		name            string
+		newPrecond      func() *precond
+		newMockCallback func(cond *precond) publisher.Callback
 	}{
 		{
-			func() publisher.Callback {
+			name: "timeout at OnPublishTemporary",
+			newPrecond: func() *precond {
+				return &precond{doneCh: make(chan struct{})}
+			},
+			newMockCallback: func(cond *precond) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
-					<-doneCh // infinite loop
+					<-cond.doneCh // infinite loop
+					return nil
+				})
+				cb.EXPECT().OnSync().Times(1) // to be called after initite loop ends.
+				return cb
+			},
+		},
+		{
+			name: "timeout at OnSync",
+			newPrecond: func() *precond {
+				return &precond{doneCh: make(chan struct{})}
+			},
+			newMockCallback: func(cond *precond) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1).DoAndReturn(func() error {
+					<-cond.doneCh // infinite loop
 					return nil
 				})
 				return cb
 			},
 		},
 	} {
-		cb := testcase.newMockCallback()
-		if err := editor.SetCallback(cb); err != nil {
-			t.Fatalf("Can not set callbakc: %v", err)
-		}
-		if err := editor.Sync(); !errors.Is(err, context.DeadlineExceeded) {
-			t.Fatalf("Sync() with not respond from Callback, wantErr: %v, got: %v", context.DeadlineExceeded, err)
-		}
+		cond := testcase.newPrecond()
+		cb := testcase.newMockCallback(cond)
+		t.Run(testcase.name, func(t *testing.T) {
+			defer close(cond.doneCh)
+			if err := editor.SetCallback(cb); err != nil {
+				t.Fatalf("Can not set callbakc: %v", err)
+			}
+			if err := editor.Sync(); !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("Sync() with not respond from Callback, wantErr: %v, got: %v", context.DeadlineExceeded, err)
+			}
+		})
 	}
 }
 
@@ -322,27 +353,52 @@ func TestEditorSyncError(t *testing.T) {
 	ctrl := gs.ctrl
 	defer gs.cancel()
 
-	doneCh := make(chan struct{}, 1)
-
 	var errOnPublishTemporary = errors.New("errOnPublishTemporary")
+	var errOnSync = errors.New("errOnSync")
 
+	type precond struct {
+		doneCh chan struct{}
+	}
 	for _, testcase := range []struct {
-		newMockCallback func() publisher.Callback
+		newPrecond      func() *precond
+		newMockCallback func(cond *precond) publisher.Callback
 		err             error
 	}{
 		{
-			func() publisher.Callback {
+			newPrecond: func() *precond {
+				return &precond{doneCh: make(chan struct{}, 1)}
+			},
+			newMockCallback: func(cond *precond) publisher.Callback {
 				cb := mock_publisher.NewMockCallback(ctrl)
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
-					doneCh <- struct{}{}
+					cond.doneCh <- struct{}{}
 					return errOnPublishTemporary
+				})
+				cb.EXPECT().OnSync().Times(0)
+				return cb
+			},
+			err: errOnPublishTemporary,
+		},
+		{
+			newPrecond: func() *precond {
+				return &precond{doneCh: make(chan struct{}, 1)}
+			},
+			newMockCallback: func(cond *precond) publisher.Callback {
+				cb := mock_publisher.NewMockCallback(ctrl)
+				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).DoAndReturn(func(*pubdata.Paragraph) error {
+					return nil
+				})
+				cb.EXPECT().OnSync().Times(1).DoAndReturn(func() error {
+					cond.doneCh <- struct{}{}
+					return errOnSync
 				})
 				return cb
 			},
-			errOnPublishTemporary,
+			err: errOnSync,
 		},
 	} {
-		cb := testcase.newMockCallback()
+		cond := testcase.newPrecond()
+		cb := testcase.newMockCallback(cond)
 		if err := editor.SetCallback(cb); err != nil {
 			t.Fatalf("Can not set callbakc: %v", err)
 		}
@@ -350,7 +406,7 @@ func TestEditorSyncError(t *testing.T) {
 			t.Errorf("Unexpected Sync() error: want: %v, got:%v", testcase.err, err)
 		}
 		select {
-		case <-doneCh:
+		case <-cond.doneCh:
 			// OK
 		default:
 			t.Fatal("Synchronous call Sync() but done channel not respond")
@@ -509,6 +565,7 @@ func TestEditor_SetColor(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -648,6 +705,7 @@ func TestEditor_SetAlignment(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -744,6 +802,7 @@ func TestEditor_NewPage(t *testing.T) {
 				cb.EXPECT().OnPublish(gomock.Any()).Times(nlines).Return(nil)
 				// Sync expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -790,6 +849,7 @@ func TestEditor_ClearLine(t *testing.T) {
 				cb.EXPECT().OnRemove(args.nline - 1).Times(1).Return(nil)
 				// Sync expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -830,6 +890,7 @@ func TestEditor_ClearLineAll(t *testing.T) {
 				cb.EXPECT().OnRemoveAll().Times(1).Return(nil)
 				// Sync expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -1157,6 +1218,7 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -1188,6 +1250,7 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -1223,6 +1286,7 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},
@@ -1254,6 +1318,7 @@ func TestEditor_PrintImage_Published(t *testing.T) {
 				})
 				// Sync() expectation
 				cb.EXPECT().OnPublishTemporary(gomock.Any()).Times(1).Return(nil)
+				cb.EXPECT().OnSync().Times(1)
 				return cb
 			},
 		},

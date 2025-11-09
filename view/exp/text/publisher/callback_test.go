@@ -57,6 +57,15 @@ func TestCallbackDefault_CallByUserCustom(t *testing.T) {
 			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnRemoveAll() },
 			wantErr:  true,
 		},
+		{
+			name: "OnSync",
+			cb: &CallbackDefault{
+				OnSyncFunc: func() error { return errTestCallbackFuncErrorValue },
+			},
+			args:     args{},
+			testFunc: func(cb *CallbackDefault, args args) error { return cb.OnSync() },
+			wantErr:  true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

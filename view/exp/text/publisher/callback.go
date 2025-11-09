@@ -18,6 +18,8 @@ type Callback interface {
 	// OnRemoveAll is called when game thread requests to remove all paragraphs which have been fixed
 	// by calling OnPublish and also temporal Paragraph by calling OnPublishTemporary.
 	OnRemoveAll() error
+	// OnSync is called when game thread requests to synchronize pending update events to UI, such as publised paragaph and remove request.
+	OnSync() error
 }
 
 // CallbackDefault implements Callback interface.
@@ -28,6 +30,7 @@ type CallbackDefault struct {
 	OnPublishTemporaryFunc func(*pubdata.Paragraph) error
 	OnRemoveFunc           func(nParagraph int) error
 	OnRemoveAllFunc        func() error
+	OnSyncFunc             func() error
 }
 
 // OnPublish is called when Paragraph is fixed by hard return (\n).
@@ -60,6 +63,14 @@ func (cb *CallbackDefault) OnRemove(nParagraph int) error {
 // by calling OnPublish and also temporal Paragraph by calling OnPublishTemporary.
 func (cb *CallbackDefault) OnRemoveAll() error {
 	if f := cb.OnRemoveAllFunc; f != nil {
+		return f()
+	}
+	return nil
+}
+
+// OnSync is called when game thread requests to synchronize pending update events to UI, such as publised paragaph and remove request.
+func (cb *CallbackDefault) OnSync() error {
+	if f := cb.OnSyncFunc; f != nil {
 		return f()
 	}
 	return nil

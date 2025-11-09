@@ -152,6 +152,7 @@ func (e *Editor) sendAndWait(ctx context.Context, msg *Message) error {
 	if msg.Type != MessageSyncTask {
 		panic("Message must be sync type.")
 	}
+	msg.SyncCtx = ctx // to be used for sync task completion.
 	taskid := msg.ID
 	if err := e.looper.Send(ctx, msg); err != nil {
 		return e.handleLooperError(err)
@@ -327,6 +328,10 @@ func (e *Editor) Sync() error {
 	msg := e.createSyncTask(func() {
 		p := e.createCurrentParagraph(false)
 		taskErr = e.callback.OnPublishTemporary(p)
+		if taskErr != nil {
+			return // task Error will be handled at end of Sync.
+		}
+		taskErr = e.callback.OnSync()
 	})
 	if err := e.sendAndWait(e.ctx, msg); err != nil {
 		return err

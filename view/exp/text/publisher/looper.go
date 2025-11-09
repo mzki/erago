@@ -26,9 +26,10 @@ const (
 // Message is task primitive executed in a event loop.
 // Only Task should be set, others are optional.
 type Message struct {
-	ID   MessageID
-	Type MessageType
-	Task func()
+	ID      MessageID
+	Type    MessageType
+	Task    func()
+	SyncCtx context.Context // used for canceling sync task completion. can be nil when async task.
 }
 
 // ErrMEssageLooperClosed indicates API call is failed due to MessageLooper is already closed.
@@ -78,7 +79,11 @@ message_loop:
 				if msg.Task != nil {
 					msg.Task()
 				}
-				looper.sendDone(ctx, msg.ID)
+				var syncCtx context.Context = ctx
+				if msg.SyncCtx != nil {
+					syncCtx = msg.SyncCtx
+				}
+				looper.sendDone(syncCtx, msg.ID)
 			}
 		}
 	}
