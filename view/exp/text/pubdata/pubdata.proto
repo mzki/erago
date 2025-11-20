@@ -41,6 +41,11 @@ enum ImageFetchType {
 	IMAGE_FETCH_TYPE_ENCODED_PNG = 3;
 }
 
+// ParagraphList is list of paragraphs to exchange bundled paragraphs at once.
+message ParagraphList {
+	repeated Paragraph paragraphs = 1;
+}
+
 // Paragraph is a block of content divided by hard return (\n).
 message Paragraph {
 	int64 id            = 1;

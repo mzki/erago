@@ -99,6 +99,23 @@ func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter,
 	}, nil
 }
 
+func newParagraphListBinaryEncodeFunc(encoding int) paragraphListBinaryEncoderFunc {
+	var encoder paragraphListBinaryEncoderFunc
+	switch encoding {
+	case MessageByteEncodingProtobuf:
+		encoder = func(p *pubdata.ParagraphList) ([]byte, error) {
+			return p.MarshalVT()
+		}
+	case MessageByteEncodingJson:
+		fallthrough
+	default:
+		encoder = func(p *pubdata.ParagraphList) ([]byte, error) {
+			return json.Marshal(p)
+		}
+	}
+	return encoder
+}
+
 type paragraphBinaryEncoderFunc func(*pubdata.Paragraph) ([]byte, error)
 
 func newParagraphBinaryEncodeFunc(encoding int) paragraphBinaryEncoderFunc {
