@@ -174,6 +174,35 @@ func Test_newParagraphBinaryEncodeFunc(t *testing.T) {
 	}
 }
 
+func Test_newParagraphListBinaryEncodeFunc(t *testing.T) {
+	type args struct {
+		encoding int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "json", args: args{MessageByteEncodingJson}, wantErr: false},
+		{name: "protobuf", args: args{MessageByteEncodingProtobuf}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encodeFunc := newParagraphListBinaryEncodeFunc(tt.args.encoding)
+			pl := pubdata.ParagraphList{
+				Paragraphs: append([]*pubdata.Paragraph{}, &testDataParagraphMiddle),
+			}
+			bs, err := encodeFunc(&pl)
+			if !tt.wantErr && err != nil {
+				t.Errorf("newParagraphListBinaryEncodeFunc().encode(): got error %v", err)
+			}
+			if len(bs) == 0 {
+				t.Errorf("newParagraphListBinaryEncodeFunc().encode(): returns zero bytes")
+			}
+		})
+	}
+}
+
 func BenchmarkParagraphBinaryEncodeFunc_Middle_Json(b *testing.B) {
 	encodeFunc := newParagraphBinaryEncodeFunc(MessageByteEncodingJson)
 	b.ResetTimer()

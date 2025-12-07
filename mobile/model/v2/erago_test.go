@@ -54,6 +54,7 @@ func (ui stubUI) OnInputRequested() {}
 func (ui stubUI) OnInputRequestClosed() {}
 
 func TestInit(t *testing.T) {
+	const defaultThrottleDuration = 100 * 1000 * 1000
 	absTempDir, err := filepath.Abs(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -79,27 +80,27 @@ func TestInit(t *testing.T) {
 	}{
 		{
 			name:    "normal",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop), false}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, FromGoFSGlob(filesystem.Desktop), false}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with enable debug timestamp",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, FromGoFSGlob(filesystem.Desktop), true}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, FromGoFSGlob(filesystem.Desktop), true}},
 			wantErr: false,
 		},
 		{
 			name:    "normal with default filesystem",
-			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
+			args:    args{&stubUI{}, absStubDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}},
 			wantErr: false,
 		},
 		{
-			name:    "normal with relative dir",
-			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
+			name:    "error with relative dir",
+			args:    args{&stubUI{}, "../../../stub", InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}},
 			wantErr: true,
 		},
 		{
 			name:    "error config nor script files not found",
-			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}},
+			args:    args{&stubUI{}, absTempDir, InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}},
 			wantErr: true,
 		},
 	}
@@ -148,6 +149,7 @@ func (stub *stubAppContext) Err() error {
 }
 
 func TestMain(t *testing.T) {
+	const defaultThrottleDuration = 100 * 1000 * 1000
 	absCurrentDir, err := filepath.Abs("./")
 	if err != nil {
 		t.Fatal(err)
@@ -185,7 +187,7 @@ func TestMain(t *testing.T) {
 				}()
 			}
 
-			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
+			if err := Init(&stubUI{cbOnCommandRequested: cbCmdReq}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}); err != nil {
 				t.Fatal(err)
 			}
 			appContext := newStubAppContext(ctx)
@@ -218,6 +220,7 @@ func TestMain(t *testing.T) {
 }
 
 func TestQuit(t *testing.T) {
+	const defaultThrottleDuration = 100 * 1000 * 1000
 	absCurrentDir, err := filepath.Abs("./")
 	if err != nil {
 		t.Fatal(err)
@@ -248,7 +251,7 @@ func TestQuit(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -258,6 +261,7 @@ func TestQuit(t *testing.T) {
 }
 
 func TestQuitTwice(t *testing.T) {
+	const defaultThrottleDuration = 100 * 1000 * 1000
 	absCurrentDir, err := filepath.Abs("./")
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +292,7 @@ func TestQuitTwice(t *testing.T) {
 			defer os.Chdir(absCurrentDir)
 
 			if tt.doInit {
-				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, nil, false}); err != nil {
+				if err := Init(&stubUI{}, absStubDir, &InitOptions{ImageFetchNone, MessageByteEncodingJson, defaultThrottleDuration, nil, false}); err != nil {
 					t.Fatal(err)
 				}
 			}

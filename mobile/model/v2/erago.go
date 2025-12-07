@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -41,6 +42,15 @@ type InitOptions struct {
 	// MessageByteEncoding indicates which byte encoding is used to notify struct
 	// data to UI side on calling APIs of UI interface, typically OnPublishXXX.
 	MessageByteEncoding int
+
+	// MessageThrottleDurationNSec is time duration in nsec to throttle to send messages from
+	// Engine side to UI side. This value will be normalized in [8.333ms:1sec] if value is out of the range.
+	// Throttling is useful to reduce frequency of message notification which may take overhead every notification.
+	// Higher duration is lower frequency is, in such case multiple message are notified at once, reducing overhead of every notification.
+	// The draw back of higher duration is to delay to notify message to UI side, introducing lagging of UI and user may missed the chance of
+	// input with timeout (such as twait() in script).
+	// Recommended value would be [prefferred FPS / 2], e.g. ThrottleDuratiion = 16.666ms for preffered 30 fps.
+	MessageThrottleDurationNSec int64
 
 	// FileSystem is used for reading and writing files for erago package files.
 	// It can be nil, in that case OS default filesystem is used.
@@ -128,13 +138,17 @@ func Init(ui UI, baseDir string, options *InitOptions) error {
 	theGameContext = ctx
 	closeFuncs = append(closeFuncs, cancel)
 
-	theGame = erago.NewGame()
-	mobileUI, err = newUIAdapter(ctx, ui, uiAdapterOptions{
+	uiOpt := &uiAdapterOptions{
 		ImageFetchType:       pbImageFetchType(options.ImageFetchType),
 		ImageCacheSize:       appConfig.ImageCacheSize,
 		MessageByteEncoding:  options.MessageByteEncoding,
+		ThrottleDuration:     time.Duration(options.MessageThrottleDurationNSec),
 		EnableDebugTimestamp: options.EnableDebugTimestamp,
-	})
+	}
+	uiOpt.Normalize()
+
+	theGame = erago.NewGame()
+	mobileUI, err = newUIAdapter(ctx, ui, *uiOpt)
 	if err != nil {
 		theErr := fmt.Errorf("UIAdapter construction failed: %w", err)
 		log.Infof("%v", theErr)
@@ -246,6 +260,11 @@ func Quit() {
 		theGame = nil
 	}
 	if mobileUI != nil {
+		if err := mobileUI.Close(); errors.Is(err, uiadapter.ErrorPipelineClosed) || errors.Is(err, context.Canceled) {
+			// do nothing
+		} else if err != nil {
+			log.Infof("mobileUI.Close err: %v", err)
+		}
 		mobileUI = nil
 	}
 	if logCloseFunc != nil {

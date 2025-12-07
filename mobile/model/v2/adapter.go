@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/mzki/erago/uiadapter"
@@ -15,8 +16,9 @@ import (
 type uiAdapter struct {
 	uiadapter.Printer
 
-	editor   *publisher.Editor
-	mobileUI UI
+	editor    *publisher.Editor
+	throttler *CallbackThrottler
+	mobileUI  UI
 }
 
 var (
@@ -49,8 +51,20 @@ type uiAdapterOptions struct {
 	ImageFetchType      publisher.ImageFetchType
 	ImageCacheSize      int
 	MessageByteEncoding int
+	ThrottleDuration    time.Duration
 
 	EnableDebugTimestamp bool
+}
+
+// Normalize normalizes optional parameters into valid range.
+func (opt *uiAdapterOptions) Normalize() {
+	const maxDuration = 1 * time.Second
+	const minDuration = 1000 * time.Millisecond / 120 // duration for 120 fps
+	if opt.ThrottleDuration > maxDuration {
+		opt.ThrottleDuration = maxDuration
+	} else if opt.ThrottleDuration < minDuration {
+		opt.ThrottleDuration = minDuration
+	}
 }
 
 func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter, error) {
@@ -62,41 +76,47 @@ func newUIAdapter(ctx context.Context, ui UI, opt uiAdapterOptions) (*uiAdapter,
 	if err := editor.SetViewSize(20, 40); err != nil {
 		return nil, err
 	}
-	binEncode := newParagraphBinaryEncodeFunc(opt.MessageByteEncoding)
-	if err := editor.SetCallback(&publisher.CallbackDefault{
-		OnPublishFunc: func(p *pubdata.Paragraph) error {
-			bs, err := binEncode(p)
+
+	binEncode := newParagraphListBinaryEncodeFunc(opt.MessageByteEncoding)
+	if opt.EnableDebugTimestamp {
+		// override binEncode to cotain DebugTimeStamp feature.
+		orgBinEncode := binEncode
+		binEncode = func(pl *pubdata.ParagraphList) ([]byte, error) {
+			bs, err := orgBinEncode(pl)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			// debug timestamp should be first than Publish so that listener can know
+			// debug timestamp should be first notified to UI than Publish so that listener can know
 			// the timestamp to link to the next Publish.
-			if opt.EnableDebugTimestamp {
+			// Here, use latest paragraph Id as debug timestamp.
+			if lastIdx := len(pl.Paragraphs) - 1; lastIdx >= 0 {
 				now := time.Now()
-				err = ui.OnDebugTimestamp(p.Id, now.Format(time.RFC3339Nano), now.UnixNano())
+				err = ui.OnDebugTimestamp(pl.Paragraphs[lastIdx].Id, now.Format(time.RFC3339Nano), now.UnixNano())
 				if err != nil {
-					return err
+					return nil, err
 				}
 			}
-			return ui.OnPublishBytes(bs)
-		},
-		OnPublishTemporaryFunc: func(p *pubdata.Paragraph) error {
-			bs, err := binEncode(p)
-			if err != nil {
-				return err
-			}
-			return ui.OnPublishBytesTemporary(bs)
-		},
-		OnRemoveFunc:    ui.OnRemove,
-		OnRemoveAllFunc: ui.OnRemoveAll,
-	}); err != nil {
+
+			return bs, nil
+		}
+	}
+	throttler := NewCallbackThrottler(ctx, opt.ThrottleDuration, ui, binEncode)
+	throttler.StartThrottle()
+	if err := editor.SetCallback(throttler); err != nil {
 		return nil, err
 	}
 	return &uiAdapter{
-		Printer:  editor,
-		editor:   editor,
-		mobileUI: ui,
+		Printer:   editor,
+		editor:    editor,
+		throttler: throttler,
+		mobileUI:  ui,
 	}, nil
+}
+
+func (adp *uiAdapter) Close() error {
+	eerr := adp.editor.Close()
+	terr := adp.throttler.Close()
+	return errors.Join(eerr, terr)
 }
 
 func newParagraphListBinaryEncodeFunc(encoding int) paragraphListBinaryEncoderFunc {
@@ -137,12 +157,5 @@ func newParagraphBinaryEncodeFunc(encoding int) paragraphBinaryEncoderFunc {
 
 // implement uiadapter.RequestChangedListener
 func (a *uiAdapter) OnRequestChanged(req uiadapter.InputRequestType) {
-	switch req {
-	case uiadapter.InputRequestCommand, uiadapter.InputRequestRawInput:
-		a.mobileUI.OnCommandRequested()
-	case uiadapter.InputRequestInput:
-		a.mobileUI.OnInputRequested()
-	case uiadapter.InputRequestNone:
-		a.mobileUI.OnInputRequestClosed()
-	}
+	a.throttler.OnRequestChanged(req)
 }
