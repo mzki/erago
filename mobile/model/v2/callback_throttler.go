@@ -259,6 +259,19 @@ func (thr *CallbackThrottler) OnRequestChanged(req uiadapter.InputRequestType) {
 		// TODO: the interface do not have returning error just logging.
 		handledErr := thr.handleLooperError(err)
 		log.Debugf("OnRequestChanged failed to send async task. Maybe application ends or exception happened at anywhere? err: %v", handledErr)
+		return
+	}
+
+	// Input request sometimes have timeout value. Such event should publish as much as fast so that
+	// user can aware input request with timeout and react it on UI.
+	if req == uiadapter.InputRequestCommand || req == uiadapter.InputRequestInput {
+		err := thr.OnSync()
+		if err != nil {
+			// TODO: the interface do not have returning error just logging.
+			handledErr := thr.handleLooperError(err)
+			log.Debugf("OnRequestChanged failed to OnSync. Maybe application ends or exception happened at anywhere? err: %v", handledErr)
+			return
+		}
 	}
 }
 
