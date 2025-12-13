@@ -27,6 +27,8 @@ type EditorOptions struct {
 	ImageCacheSize int
 }
 
+const initialPublishedCount = 0
+
 // Editor edits just one Paragraph
 // It only appends new content into Frame's last.
 //
@@ -52,6 +54,7 @@ type Editor struct {
 	}
 
 	publishedCount uint64
+	publishId      uint64 // distinguished from publishedCount for backward compatibility.
 
 	callback Callback
 }
@@ -75,13 +78,15 @@ func NewEditor(ctx context.Context, opts ...EditorOptions) *Editor {
 			14,
 			opt.ImageFetchType,
 		),
-		opt:           opt,
-		ctx:           ctx,
-		looper:        NewMessageLooper(ctx),
-		currentSyncID: 0,
-		asyncErr:      nil,
-		asyncErrMu:    new(sync.Mutex),
-		callback:      &CallbackDefault{},
+		opt:            opt,
+		ctx:            ctx,
+		looper:         NewMessageLooper(ctx),
+		currentSyncID:  0,
+		asyncErr:       nil,
+		asyncErrMu:     new(sync.Mutex),
+		publishedCount: initialPublishedCount,
+		publishId:      initialPublishedCount,
+		callback:       &CallbackDefault{},
 	}
 	return e
 }
@@ -235,7 +240,7 @@ func (e *Editor) createCurrentParagraph(fixed bool) *pubdata.Paragraph {
 	}
 	alignment := PdAlignment(attribute.Alignment(e.editor.GetAlignment()))
 	return &pubdata.Paragraph{
-		Id:        int64(e.publishedCount % math.MaxInt32),
+		Id:        int64(e.publishId % math.MaxInt32),
 		Lines:     lines,
 		Alignment: alignment,
 		Fixed:     fixed,
@@ -380,6 +385,7 @@ func (e *Editor) publishParagraph() error {
 	}
 	e.editor.DeleteLastParagraphs(1) // delete published content
 	e.publishedCount++
+	e.publishId++
 	return nil
 }
 
@@ -549,6 +555,12 @@ func (e *Editor) ClearLine(nline int) error {
 			e.looper.Close()
 			return
 		}
+		// only publishId is decreased to assign same Id for same position of Paragraph
+		if removeN_u64 := uint64(removeN); removeN_u64 >= e.publishId {
+			e.publishId = initialPublishedCount
+		} else {
+			e.publishId -= removeN_u64
+		}
 		e.editor.DeleteLastParagraphs(1) // delete current editing line too
 	})
 	return wrapAPIErr("ClearLine", e.send(e.ctx, msg))
@@ -561,6 +573,7 @@ func (e *Editor) ClearLineAll() error {
 			e.handleAsyncErr(err)
 			return
 		}
+		e.publishId = initialPublishedCount
 		e.editor.DeleteLastParagraphs(1) // delete current editing line too
 	})
 	return wrapAPIErr("ClearLineAll", e.send(e.ctx, msg))
@@ -604,4 +617,12 @@ func (e *Editor) LineCount() (int, error) {
 		//result = e.editor.NewLineCount()
 	})
 	return result, wrapAPIErr("LineCount", e.sendAndWait(e.ctx, msg))
+}
+
+func (e *Editor) CurrentPublishId() (int64, error) {
+	var result int64 = 0
+	msg := e.createSyncTask(func() {
+		result = int64(e.publishId % math.MaxInt32)
+	})
+	return result, wrapAPIErr("CurrentPublishId", e.sendAndWait(e.ctx, msg))
 }

@@ -3,6 +3,7 @@ package publisher_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -869,6 +870,98 @@ func TestEditor_ClearLine(t *testing.T) {
 	}
 }
 
+func TestEditor_ClearLine_LineCountShouldBeDecreased(t *testing.T) {
+	gs := setupGlobals(t)
+	editor := gs.editor
+	defer gs.cancel()
+
+	const defaultNLines = 20
+
+	type args struct {
+		nline int
+	}
+	tests := []struct {
+		name      string
+		e         *publisher.Editor
+		args      args
+		setUp     func(t *testing.T, e *publisher.Editor)
+		expectPId int64
+	}{
+		{
+			name: "lines > remove",
+			e:    editor,
+			args: args{defaultNLines - 1 + 1}, // +1 for current line
+			setUp: func(t *testing.T, e *publisher.Editor) {
+				if err := e.ClearLineAll(); err != nil {
+					t.Fatal(err)
+				}
+				for i := 0; i < defaultNLines; i++ {
+					if err := e.Print(fmt.Sprintf("line-%d\n", i)); err != nil {
+						t.Fatal(err)
+					}
+				}
+			},
+			expectPId: 1,
+		},
+		{
+			name: "lines = remove",
+			e:    editor,
+			args: args{defaultNLines + 1}, // +1 for current line
+			setUp: func(t *testing.T, e *publisher.Editor) {
+				if err := e.ClearLineAll(); err != nil {
+					t.Fatal(err)
+				}
+				for i := 0; i < defaultNLines; i++ {
+					if err := e.Print(fmt.Sprintf("line-%d\n", i)); err != nil {
+						t.Fatal(err)
+					}
+				}
+			},
+			expectPId: 0,
+		},
+		{
+			name: "lines < remove",
+			e:    editor,
+			args: args{defaultNLines + 1 + 1}, // +1 for current line
+			setUp: func(t *testing.T, e *publisher.Editor) {
+				if err := e.ClearLineAll(); err != nil {
+					t.Fatal(err)
+				}
+				for i := 0; i < defaultNLines; i++ {
+					if err := e.Print(fmt.Sprintf("line-%d\n", i)); err != nil {
+						t.Fatal(err)
+					}
+				}
+			},
+			expectPId: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.e.SetCallback(&publisher.CallbackDefault{}); err != nil {
+				t.Fatal(err)
+			}
+			tt.setUp(t, tt.e)
+			if err := tt.e.ClearLine(tt.args.nline); err != nil {
+				t.Errorf("Editor.ClearLine() error = %v", err)
+			}
+
+			pId, err := tt.e.CurrentPublishId()
+			if err != nil {
+				t.Fatal(err)
+			} else if pId != tt.expectPId {
+				t.Errorf("Editor.ClearLine(), do not match pId after call. got = %v, expect = %v", pId, tt.expectPId)
+			}
+
+			if nline, err := tt.e.LineCount(); err != nil {
+				t.Fatal(err)
+			} else if int64(nline) <= pId {
+				t.Errorf("Editor.ClearLine(), line count should be grather than pId after call. nline = %v, pId = %v", nline, pId)
+			}
+		})
+	}
+}
+
 func TestEditor_ClearLineAll(t *testing.T) {
 	gs := setupGlobals(t)
 	editor := gs.editor
@@ -905,6 +998,13 @@ func TestEditor_ClearLineAll(t *testing.T) {
 			}
 			if err := tt.e.Sync(); err != nil {
 				t.Fatal(err)
+			}
+			pId, err := tt.e.CurrentPublishId()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if pId != 0 {
+				t.Errorf("Editor.ClearLineAll(), pId is different from expect. got = %v, expect = %v", pId, 0)
 			}
 		})
 	}
