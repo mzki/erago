@@ -55,7 +55,13 @@ func NewCallbackThrottler(ctx context.Context, d time.Duration, ui UI, encoder p
 }
 
 func (thr *CallbackThrottler) throttleLoop(ctx context.Context) {
-	var syncMsg *publisher.Message = nil
+	handleAsyncErr := func(newErr error) {
+		thr.asyncErr.Set(errors.Join(
+			thr.asyncErr.Err(),
+			newErr,
+		))
+		thr.messageLooper.Close()
+	}
 	defer close(thr.doneCh)
 	for {
 		select {
@@ -64,31 +70,22 @@ func (thr *CallbackThrottler) throttleLoop(ctx context.Context) {
 		case <-thr.closeCh:
 			return
 		case msg := <-thr.syncCh:
-			if syncMsg != nil {
-				panic("duplicated sync")
-			}
-			syncMsg = msg
-		case <-thr.ticker.C:
-			var msg *publisher.Message
-			if syncMsg != nil {
-				msg = syncMsg
-				syncMsg = nil // to consume
-			} else {
-				msg = thr.createAsyncTask(func() {
-					err := thr.pendingEvents.publish(thr.ui, thr.encoder)
-					if err != nil {
-						thr.asyncErr.Set(err)
-						thr.messageLooper.Close()
-					}
-				})
-			}
 			err := thr.messageLooper.Send(thr.ctx, msg)
 			if err != nil {
-				thr.asyncErr.Set(errors.Join(
-					thr.asyncErr.Err(),
-					fmt.Errorf("throttleLoop failed to send publish task: %w", err),
-				))
-				thr.messageLooper.Close()
+				handleAsyncErr(fmt.Errorf("throttleLoop failed to send sync message: %w", err))
+				return // to quit loop
+			}
+			thr.ticker.Reset(thr.duration) // to defer to publish event since it was already triggred by extrenal.
+		case <-thr.ticker.C:
+			msg := thr.createAsyncTask(func() {
+				err := thr.pendingEvents.publish(thr.ui, thr.encoder)
+				if err != nil {
+					handleAsyncErr(fmt.Errorf("throttleLoop failed to publish on tick event: %w", err))
+				}
+			})
+			err := thr.messageLooper.Send(thr.ctx, msg)
+			if err != nil {
+				handleAsyncErr(fmt.Errorf("throttleLoop failed to send publish task: %w", err))
 				return // quit throttle loop
 			}
 		}

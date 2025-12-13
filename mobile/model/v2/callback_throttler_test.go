@@ -648,9 +648,90 @@ func TestCallbackThrottler_OnSync_Period(t *testing.T) {
 				sum += d
 			}
 			ave := float64(sum) / float64(len(deltaList))
-			if ave > float64(throttlePeriod)*1.10 || ave < float64(throttlePeriod)*0.90 {
+			if dExp := throttlePeriod / 2; ave >= float64(dExp) {
 				dAve := time.Duration(ave)
-				t.Errorf("Sync period time is not matched with throttle period, got %v, err %v", dAve, throttlePeriod)
+				t.Errorf("Sync period time is not matched with expected period, expect %v < %v", dAve, dExp)
+			}
+		})
+	}
+}
+
+func TestCallbackThrottler_Publish_Period(t *testing.T) {
+	t.Parallel()
+	type keyRecvChType string
+	const keyRecvCh = keyRecvChType("recvCh")
+	const throttlePeriod = 100 * time.Millisecond
+	type args struct{}
+	tests := []struct {
+		name         string
+		newThrottler func(ctx context.Context) *CallbackThrottler
+		newCtx       func() (context.Context, context.CancelFunc)
+		args         args
+	}{
+		{
+			name: "measure publish period",
+			newThrottler: func(ctx context.Context) *CallbackThrottler {
+				recvCh := ctx.Value(keyRecvCh).(chan struct{})
+				ui := &uiStub{
+					OnRemoveAllFunc: func() error {
+						recvCh <- struct{}{}
+						return nil
+					},
+				}
+				return newCallbackThrottlerForTest(ctx, throttlePeriod, ui)
+			},
+			newCtx: func() (context.Context, context.CancelFunc) {
+				ctx := context.WithValue(context.Background(), keyRecvCh, make(chan struct{}, 1)) // 1 buffer to avoid blocking
+				return context.WithTimeout(ctx, 3*time.Second)
+			},
+			args: args{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := tt.newCtx()
+			defer cancel()
+			thr := tt.newThrottler(ctx)
+			thr.StartThrottle()
+			defer func() {
+				if err := thr.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}()
+			syncStep := func() {
+				t.Helper()
+				if err := thr.OnRemoveAll(); err != nil {
+					t.Fatalf("CallbackThrottler.OnRemoveAll() error = %v", err)
+				}
+				// do not call Sync to wait to publish event at throttle period.
+				recvCh := ctx.Value(keyRecvCh).(chan struct{})
+				select {
+				case <-recvCh:
+					// success
+				case <-ctx.Done():
+					t.Error("Timeout to recieve singal from UI, missing call UI.OnRemoveAll?")
+				}
+			}
+
+			// dry run 1st time
+			syncStep()
+
+			const nSampleSize = 10 // 100ms * 10 = 1sec, make sure this time is less than context timeout.
+			deltaList := make([]time.Duration, 0, nSampleSize)
+			for i := 0; i < 10; i++ {
+				now := time.Now()
+				syncStep()
+				delta := time.Since(now)
+				deltaList = append(deltaList, delta)
+			}
+			sum := time.Duration(0)
+			for _, d := range deltaList {
+				sum += d
+			}
+			ave := float64(sum) / float64(len(deltaList))
+			if ave < float64(throttlePeriod)*0.9 || float64(throttlePeriod)*1.1 < ave {
+				dAve := time.Duration(ave)
+				t.Errorf("Sync period time is not matched with expected period, expect %v == %v", dAve, throttlePeriod)
 			}
 		})
 	}
