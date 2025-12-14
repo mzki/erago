@@ -5,54 +5,58 @@ import (
 	"testing"
 )
 
-func TestParagraph_JsonDump(t *testing.T) {
-	p := Paragraph{
-		Id: 100,
-		Lines: []*Line{
+func TestParagraphList_JsonDump(t *testing.T) {
+	p := ParagraphList{
+		Paragraphs: []*Paragraph{
 			{
-				Boxes: []*Box{
+				Id: 100,
+				Lines: []*Line{
 					{
-						RuneWidth:     10,
-						LineCountHint: 1,
-						ContentType:   ContentType_CONTENT_TYPE_TEXT,
-						Data: &Box_TextData{
-							TextData: &TextData{
-								Text:    "abcdefghij",
-								Fgcolor: 0x000000, // Black
-								Bgcolor: 0xffffff, // White
+						Boxes: []*Box{
+							{
+								RuneWidth:     10,
+								LineCountHint: 1,
+								ContentType:   ContentType_CONTENT_TYPE_TEXT,
+								Data: &Box_TextData{
+									TextData: &TextData{
+										Text:    "abcdefghij",
+										Fgcolor: 0x000000, // Black
+										Bgcolor: 0xffffff, // White
+									},
+								},
+							},
+							{
+								RuneWidth:     10,
+								LineCountHint: 10,
+								ContentType:   ContentType_CONTENT_TYPE_IMAGE,
+								Data: &Box_ImageData{
+									ImageData: &ImageData{
+										Source:          "/path/to/image.png",
+										WidthPx:         100,
+										HeightPx:        100,
+										WidthTextScale:  15,
+										HeightTextScale: 10,
+										Data:            []byte{0x0, 0x1, 0x2},
+										DataFetchType:   0,
+									},
+								},
+							},
+							{
+								RuneWidth:     7,
+								LineCountHint: 1,
+								ContentType:   ContentType_CONTENT_TYPE_SPACE,
+								Data: &Box_SpaceData{
+									SpaceData: &SpaceData{},
+								},
 							},
 						},
-					},
-					{
-						RuneWidth:     10,
-						LineCountHint: 10,
-						ContentType:   ContentType_CONTENT_TYPE_IMAGE,
-						Data: &Box_ImageData{
-							ImageData: &ImageData{
-								Source:          "/path/to/image.png",
-								WidthPx:         100,
-								HeightPx:        100,
-								WidthTextScale:  15,
-								HeightTextScale: 10,
-								Data:            []byte{0x0, 0x1, 0x2},
-								DataFetchType:   0,
-							},
-						},
-					},
-					{
-						RuneWidth:     7,
-						LineCountHint: 1,
-						ContentType:   ContentType_CONTENT_TYPE_SPACE,
-						Data: &Box_SpaceData{
-							SpaceData: &SpaceData{},
-						},
+						RuneWidth: 10 + 10 + 7,
 					},
 				},
-				RuneWidth: 10 + 10 + 7,
+				Alignment: Alignment_ALIGNMENT_CENTER,
+				Fixed:     true,
 			},
 		},
-		Alignment: Alignment_ALIGNMENT_CENTER,
-		Fixed:     true,
 	}
 
 	jsonbytes, err := json.Marshal(&p)
@@ -61,7 +65,7 @@ func TestParagraph_JsonDump(t *testing.T) {
 	}
 	t.Logf("Dumped Json:\n%v", string(jsonbytes))
 
-	var decodedP Paragraph
+	var decodedP ParagraphList
 	if err := json.Unmarshal(jsonbytes, &decodedP); err != nil {
 		t.Fatalf("Unmarshall error: %v", err)
 	}
