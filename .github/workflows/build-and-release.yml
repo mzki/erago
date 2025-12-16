@@ -216,7 +216,7 @@ jobs:
 
       # needs Go since use go generate internally. 
       - name: Set up go-licenses
-        run: go install github.com/google/go-licenses@v1.5.0
+        run: go install github.com/google/go-licenses@v2.0.1
           
       - name: Generate credits
         run: bash scripts/credits -o build
