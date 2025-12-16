@@ -3,11 +3,11 @@
 {
 	"name": "Go-Dev",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.23-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/go:2-1.25-trixie",
 	// "dockerFile": "../dockerfiles/mobile/Dockerfile",
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.23"
+			"version": "1.25"
 		}
 	},
 

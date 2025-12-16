@@ -11,7 +11,7 @@ ENV SHELL /bin/bash
 # We need Workaround for ca-certificates-java to install JDK>11 properly.
 # See https://bugs.launchpad.net/ubuntu/+source/ca-certificates-java/+bug/2012191
 RUN apt-get update \
-  && apt-get install --no-install-recommends -y unzip openjdk-17-jdk \
+  && apt-get install --no-install-recommends -y unzip openjdk-21-jdk \
   && apt-get -y clean \
   && rm -rf /var/lib/apt/lists/*
 
