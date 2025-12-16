@@ -44,7 +44,7 @@ func (ldrs *customLoaders) LuaLoader(L *lua.LState) int {
 	for ldr, ldrHelper := range ldrs.loaders {
 		modpath, msg := ldrs.findFile(L, name, ldr)
 		if len(modpath) == 0 {
-			merr.Add(fmt.Errorf(msg))
+			merr.Add(fmt.Errorf("%s", msg))
 			continue
 		}
 		lfunc, err := ldrs.loadLFunc(L, ldr, modpath, name)

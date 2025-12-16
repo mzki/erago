@@ -112,7 +112,7 @@ func raiseErrorf(L *lua.LState, format string, args ...any) {
 
 func raiseErrorE(L *lua.LState, err error) {
 	setRegGValue[error](L, regKeyInternalError, err)
-	L.RaiseError(err.Error())
+	L.RaiseError("%v", err)
 }
 
 func getAndClearRaisedError(L *lua.LState) error {

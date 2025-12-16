@@ -212,8 +212,8 @@ func (ip *Interpreter) extendPcall(L *lua.LState) int {
 		msg := L.OptString(orgTop+2, "nothing")
 		err := ip.extractScriptInterruptError(msg)
 		if err != nil {
-			L.Pop(2)          // to reset rawFunc returns
-			L.RaiseError(msg) // re-throw msg itself to keep special error context in message.
+			L.Pop(2)                // to reset rawFunc returns
+			L.RaiseError("%s", msg) // re-throw msg itself to keep special error context in message.
 			return 0
 		}
 	}
@@ -244,7 +244,7 @@ func (ip *Interpreter) extendXPcall(L *lua.LState) int {
 	if ok := L.ToBool(orgTop + 1); !ok {
 		msg := L.OptString(orgTop+2, "nothing")
 		if err := ip.extractScriptInterruptError(msg); err != nil {
-			L.RaiseError(msg) // re-throw msg itself to keep special error context in message.
+			L.RaiseError("%s", msg) // re-throw msg itself to keep special error context in message.
 			return 0
 		}
 	}
