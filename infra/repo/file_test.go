@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"testing"
 
@@ -168,5 +170,83 @@ func TestMarshallWithTarget(t *testing.T) {
 
 	if loadedChara != loadedTarget {
 		t.Fatal("relationship of charachter and chara reference is broken.")
+	}
+}
+
+// Assume that bench should be launched at infra/repo directory.
+func createBenchdataForBench() (*state.GameState, error) {
+	csvM := csv.NewCsvManager()
+	err := csvM.Initialize(csv.Config{
+		Dir:          "../../stub/CSV",
+		CharaPattern: "Chara/*.csv",
+	})
+	if err != nil {
+		return nil, err
+	}
+	gameState := state.NewGameState(csvM, NewFileRepository(csvM, Config{
+		SaveFileDir: "./testdata",
+	}))
+	return gameState, nil
+}
+
+const testdataFilePathForBench = "./testdata/save_bench.sav"
+
+func BenchmarkSerializeSystemData(b *testing.B) {
+	gameState, err := createBenchdataForBench()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	{
+		fp, err := os.Create(testdataFilePathForBench)
+		if err != nil {
+			b.Fatal(err)
+		}
+		defer fp.Close()
+
+		if err := serialize(fp, gameState.SystemData); err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	buf.Grow(3 * 1024 * 1024) // 3MiB
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := serialize(buf, gameState.SystemData)
+		if err != nil {
+			b.Fatal(err)
+		}
+		buf.Reset()
+	}
+
+}
+
+func BenchmarkDeserializeSystemData(b *testing.B) {
+	gameState, err := createBenchdataForBench()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	fp, err := os.Open(testdataFilePathForBench)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer fp.Close()
+
+	orgBuf := new(bytes.Buffer)
+	if _, err := io.Copy(orgBuf, fp); err != nil {
+		b.Fatal(err)
+	}
+	bs := orgBuf.Bytes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf := bytes.NewBuffer(bs)
+		err := deserialize(buf, gameState.SystemData)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
