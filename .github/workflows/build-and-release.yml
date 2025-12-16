@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false # see https://github.com/actions/setup-go/issues/403
 
       - name: Set up Go environment values
         run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"  
@@ -85,7 +85,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false # see https://github.com/actions/setup-go/issues/403
 
       - name: Set up Go environment values
         run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"  
@@ -137,7 +137,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false # see https://github.com/actions/setup-go/issues/403
 
       - name: Set up Go environment values
         run: echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
@@ -181,7 +181,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false # see https://github.com/actions/setup-go/issues/403
 
       - name: Generate document
         run: bash scripts/gendoc -o build/document
@@ -212,7 +212,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false # see https://github.com/actions/setup-go/issues/403
 
       # needs Go since use go generate internally. 
       - name: Set up go-licenses
